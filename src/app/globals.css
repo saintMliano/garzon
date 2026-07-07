@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #fafaf9;
+  --foreground: #1c1917;
+  --accent: #f97316;
+  --accent-dark: #ea580c;
+  --accent-light: #fff7ed;
+  --card: #ffffff;
+  --muted: #78716c;
+  --border: #e7e5e4;
+  --success: #22c55e;
+  --danger: #ef4444;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-light: var(--accent-light);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ===== BASE ===== */
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 999px; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ===== CATEGORY PILLS ===== */
+.category-active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up { animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.5s ease-out both; }
+
+@keyframes fade-in-fast {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in-fast { animation: fade-in-fast 0.2s ease-out both; }
+
+.stagger-card { animation: fade-in 0.4s ease-out both; }
+
+@keyframes pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.animate-bounce-subtle { animation: bounce-subtle 0.4s ease-in-out; }
+
+/* Added item flash */
+@keyframes item-added {
+  0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+}
+.flash-added { animation: item-added 0.6s ease-out; }
+
+/* ===== GLASS EFFECT ===== */
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+}
+
+/* ===== NOTIFICATION DOT ===== */
+.notification-dot {
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 12px; height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+.notification-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.4);
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* ===== DASHBOARD DARK MODE ===== */
+.dashboard-dark {
+  --background: #0c0a09;
+  --foreground: #fafaf9;
+  --card: #1c1917;
+  --muted: #a8a29e;
+  --border: #292524;
+  background: #0c0a09;
+  color: #fafaf9;
+}
+.dashboard-dark .dash-card {
+  background: #1c1917;
+  border-color: #292524;
+}
+.dashboard-dark .dash-card:hover {
+  border-color: #44403c;
+}
+.dashboard-dark .dash-header {
+  background: #1c1917;
+  border-color: #292524;
+}
+.dashboard-dark .dash-col-empty {
+  background: rgba(28, 25, 23, 0.5);
+  border-color: #292524;
+}
+.dashboard-dark .dash-text-primary { color: #fafaf9; }
+.dashboard-dark .dash-text-secondary { color: #a8a29e; }
+.dashboard-dark .dash-text-muted { color: #78716c; }
+.dashboard-dark .dash-bg-surface { background: #292524; }
+
+/* ===== TIMER URGENCY ===== */
+.timer-warning { color: #f59e0b; }
+.timer-danger { color: #ef4444; font-weight: 700; }
+
+/* ===== SAFE AREA (notch phones) ===== */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
