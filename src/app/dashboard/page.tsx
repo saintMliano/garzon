@@ -24,9 +24,27 @@ const ACTION_ICONS: Record<string, string> = {
   nuevo: "✅", aceptado: "🔥", preparando: "🔔", listo: "📦",
 };
 
+// Singleton AudioContext: browsers suspend contexts created without a user
+// gesture, so we create/resume this one lazily from a click handler and
+// reuse it for every notification.
+let sharedAudioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  if (!sharedAudioCtx) {
+    try {
+      sharedAudioCtx = new AudioContext();
+    } catch {
+      return null;
+    }
+  }
+  return sharedAudioCtx;
+}
+
 function playNotificationSound() {
+  const ctx = sharedAudioCtx;
+  if (!ctx || ctx.state !== "running") return;
   try {
-    const ctx = new AudioContext();
     // Double beep for urgency
     [0, 0.2].forEach((offset) => {
       const osc = ctx.createOscillator();
@@ -81,6 +99,10 @@ export default function DashboardPage() {
   const [resolvingLocal, setResolvingLocal] = useState(true);
   const [noLocal, setNoLocal] = useState(false);
 
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   useEffect(() => {
     async function resolveLocal() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -101,33 +123,42 @@ export default function DashboardPage() {
     resolveLocal();
   }, [supabase]);
 
-  const fetchPedidos = useCallback(async (localId: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Kanban: todos los pedidos activos del local, sin filtro de fecha (son
+  // pocos por definición ya que excluyen estados terminales).
+  const fetchPedidos = useCallback(async () => {
+    if (!localId) return;
 
     const { data } = await supabase
       .from("pedidos")
       .select(`*, pedido_items (*, producto:productos (*))`)
       .eq("local_id", localId)
-      .gte("created_at", today.toISOString())
-      .neq("estado", "entregado")
+      .not("estado", "in", "(entregado,cancelado)")
       .order("created_at", { ascending: true });
 
     setPedidos((data ?? []) as PedidoConItems[]);
     setLoading(false);
 
+    // Stats del header: sí filtran por día, pero excluyen cancelados para
+    // que la "Venta" no cuente pedidos rechazados.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const { data: allToday } = await supabase
-      .from("pedidos").select("total").eq("local_id", localId).gte("created_at", today.toISOString()).returns<{ total: number }[]>();
+      .from("pedidos")
+      .select("total")
+      .eq("local_id", localId)
+      .gte("created_at", today.toISOString())
+      .neq("estado", "cancelado")
+      .returns<{ total: number }[]>();
 
     if (allToday) {
       setTodayStats({ count: allToday.length, total: allToday.reduce((s, p) => s + p.total, 0) });
     }
-  }, [supabase]);
+  }, [supabase, localId]);
 
   useEffect(() => {
     if (!localId) return;
 
-    fetchPedidos(localId);
     const channel = supabase
       .channel("dashboard-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "pedidos", filter: `local_id=eq.${localId}` }, (payload) => {
@@ -135,12 +166,46 @@ export default function DashboardPage() {
           playNotificationSound();
           if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
         }
-        fetchPedidos(localId);
+        fetchPedidos();
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          // Cubre tanto la carga inicial como cada re-suscripción tras una
+          // reconexión.
+          fetchPedidos();
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn(`[dashboard] realtime "${status}"; dependiendo del polling de respaldo`);
+        }
+      });
 
-    return () => { supabase.removeChannel(channel); };
+    // Polling de respaldo: cubre huecos de realtime (reconexiones lentas,
+    // eventos perdidos, etc.).
+    const pollInterval = setInterval(() => fetchPedidos(), 30000);
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") fetchPedidos();
+    }
+    function handleOnline() {
+      fetchPedidos();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("online", handleOnline);
+    };
   }, [supabase, localId, fetchPedidos]);
+
+  // Oculta el toast de error automáticamente.
+  useEffect(() => {
+    if (!errorMsg) return;
+    const timeout = setTimeout(() => setErrorMsg(null), 4000);
+    return () => clearTimeout(timeout);
+  }, [errorMsg]);
 
   useEffect(() => {
     const nuevoCount = pedidos.filter((p) => p.estado === "nuevo").length;
@@ -150,14 +215,43 @@ export default function DashboardPage() {
     prevCountRef.current = nuevoCount;
   }, [pedidos]);
 
-  async function updateStatus(pedidoId: string, currentStatus: string) {
-    const nextStatus = NEXT_STATUS[currentStatus];
+  // Compare-and-set: solo aplica el update si el pedido sigue en
+  // `currentStatus`, para no pisar cambios hechos desde otra tablet.
+  async function updateStatus(pedidoId: string, currentStatus: string, targetStatus?: string) {
+    const nextStatus = targetStatus ?? NEXT_STATUS[currentStatus];
     if (!nextStatus) return;
 
-    await supabase.from("pedidos").update({ estado: nextStatus, updated_at: new Date().toISOString() }).eq("id", pedidoId);
+    setUpdatingId(pedidoId);
+    const { data, error } = await supabase
+      .from("pedidos")
+      .update({ estado: nextStatus, updated_at: new Date().toISOString() })
+      .eq("id", pedidoId)
+      .eq("estado", currentStatus)
+      .select();
+    setUpdatingId(null);
 
-    if (nextStatus === "entregado") {
-      setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
+    if (error || !data || data.length === 0) {
+      setErrorMsg("No se pudo actualizar el pedido; reintenta.");
+      fetchPedidos();
+      return;
+    }
+
+    fetchPedidos();
+  }
+
+  async function handleReject(pedidoId: string, currentStatus: string) {
+    if (!window.confirm("¿Rechazar este pedido? El cliente será notificado.")) return;
+    await updateStatus(pedidoId, currentStatus, "cancelado");
+  }
+
+  async function enableSound() {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state !== "running") await ctx.resume();
+      setSoundEnabled(ctx.state === "running");
+    } catch {
+      setSoundEnabled(false);
     }
   }
 
@@ -226,6 +320,16 @@ export default function DashboardPage() {
                 <p className="text-lg font-bold text-green-400 tabular-nums">{formatPrice(todayStats.total)}</p>
               </div>
             </div>
+
+            {/* Sound unlock (autoplay policy: requiere gesto del usuario) */}
+            {!soundEnabled && (
+              <button
+                onClick={enableSound}
+                className="px-3 py-2 rounded-xl dash-bg-surface dash-text-secondary text-xs font-semibold hover:opacity-80 transition-opacity whitespace-nowrap"
+              >
+                🔔 Activar sonido
+              </button>
+            )}
 
             {/* Notification bell */}
             <div className="relative">
@@ -342,17 +446,29 @@ export default function DashboardPage() {
                           </div>
                         )}
 
-                        {/* Total + Action */}
-                        <div className="flex items-center justify-between pt-3 border-t border-stone-800">
+                        {/* Total + Actions */}
+                        <div className="flex items-center justify-between pt-3 border-t border-stone-800 gap-2">
                           <span className="font-bold dash-text-primary text-[15px] tabular-nums">{formatPrice(pedido.total)}</span>
-                          <button
-                            onClick={() => updateStatus(pedido.id, pedido.estado)}
-                            className={`px-4 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg bg-gradient-to-r ${
-                              COLUMNS.find(c => c.key === (NEXT_STATUS[pedido.estado] ?? pedido.estado))?.accent ?? "from-stone-600 to-stone-700"
-                            }`}
-                          >
-                            {ACTION_ICONS[pedido.estado]} {ACTION_LABELS[pedido.estado] ?? "Siguiente"}
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            {pedido.estado !== "listo" && (
+                              <button
+                                onClick={() => handleReject(pedido.id, pedido.estado)}
+                                disabled={updatingId === pedido.id}
+                                className="px-2.5 py-2 rounded-lg text-[11px] font-semibold text-red-400/70 hover:text-red-300 hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                              >
+                                Rechazar
+                              </button>
+                            )}
+                            <button
+                              onClick={() => updateStatus(pedido.id, pedido.estado)}
+                              disabled={updatingId === pedido.id}
+                              className={`px-4 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg bg-gradient-to-r disabled:opacity-60 disabled:hover:scale-100 ${
+                                COLUMNS.find(c => c.key === (NEXT_STATUS[pedido.estado] ?? pedido.estado))?.accent ?? "from-stone-600 to-stone-700"
+                              }`}
+                            >
+                              {ACTION_ICONS[pedido.estado]} {ACTION_LABELS[pedido.estado] ?? "Siguiente"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))
@@ -363,6 +479,13 @@ export default function DashboardPage() {
           })}
         </div>
       </main>
+
+      {/* Toast de error, discreto y auto-ocultable */}
+      {errorMsg && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+          ⚠️ {errorMsg}
+        </div>
+      )}
     </div>
   );
 }

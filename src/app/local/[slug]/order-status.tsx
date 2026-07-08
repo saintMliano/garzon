@@ -66,6 +66,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
 
   const currentStepIndex = STEPS.findIndex((s) => s.key === status);
   const isComplete = status === "listo" || status === "entregado";
+  const isCancelled = status === "cancelado";
   const progressPercent = isComplete ? 100 : (currentStepIndex / (STEPS.length - 1)) * 100;
 
   return (
@@ -76,14 +77,16 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
         {/* Header badge */}
         <div className="text-center mb-8">
           <div className={`w-24 h-24 mx-auto rounded-[28px] flex items-center justify-center text-5xl mb-6 shadow-xl transition-all duration-700 ${
-            isComplete
-              ? "bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-200/50"
-              : "bg-gradient-to-br from-orange-400 to-amber-500 shadow-orange-200/50"
+            isCancelled
+              ? "bg-gradient-to-br from-red-300 to-red-400 shadow-red-100/50"
+              : isComplete
+                ? "bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-200/50"
+                : "bg-gradient-to-br from-orange-400 to-amber-500 shadow-orange-200/50"
           }`}>
-            {isComplete ? "🎉" : "⏳"}
+            {isCancelled ? "❌" : isComplete ? "🎉" : "⏳"}
           </div>
           <h1 className="text-2xl font-black text-stone-900 leading-tight">
-            {isComplete ? "¡Tu pedido está listo!" : "Pedido en proceso"}
+            {isCancelled ? "Pedido cancelado" : isComplete ? "¡Tu pedido está listo!" : "Pedido en proceso"}
           </h1>
           <p className="text-stone-400 mt-2 text-sm font-medium">{localName}</p>
           <div className="flex items-center justify-center gap-2 mt-2">
@@ -96,69 +99,85 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100 mb-6">
-          {/* Visual progress */}
-          <div className="mb-6">
-            <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700 ease-out"
-                style={{
-                  width: `${progressPercent}%`,
-                  background: isComplete
-                    ? "linear-gradient(90deg, #22c55e, #10b981)"
-                    : "linear-gradient(90deg, #f97316, #f59e0b)",
-                }}
-              />
+        {isCancelled ? (
+          /* Cancelled card */
+          <div className="bg-red-50/60 rounded-3xl p-6 shadow-sm border border-red-100 mb-6 text-center">
+            <p className="text-[14px] text-red-500 font-medium leading-relaxed">
+              El local no pudo tomar tu pedido. Acércate a caja o consulta con el personal.
+            </p>
+          </div>
+        ) : (
+          /* Progress bar */
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100 mb-6">
+            {/* Visual progress */}
+            <div className="mb-6">
+              <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${progressPercent}%`,
+                    background: isComplete
+                      ? "linear-gradient(90deg, #22c55e, #10b981)"
+                      : "linear-gradient(90deg, #f97316, #f59e0b)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Steps */}
+            <div className="space-y-0">
+              {STEPS.map((step, i) => {
+                const isActive = i === currentStepIndex;
+                const isDone = i < currentStepIndex || isComplete;
+
+                return (
+                  <div key={step.key} className="flex items-start gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition-all duration-500 ${
+                        isDone
+                          ? "bg-green-50 text-green-600 border border-green-100"
+                          : isActive
+                            ? "bg-orange-50 text-orange-600 border border-orange-200 ring-4 ring-orange-50 shadow-sm"
+                            : "bg-stone-50 text-stone-300 border border-stone-100"
+                      }`}>
+                        {isDone ? "✓" : isActive ? step.activeIcon : step.icon}
+                      </div>
+                      {i < STEPS.length - 1 && (
+                        <div className={`w-0.5 h-6 transition-all duration-500 my-1 rounded-full ${
+                          isDone ? "bg-green-200" : "bg-stone-100"
+                        }`} />
+                      )}
+                    </div>
+
+                    <div className="pt-2.5">
+                      <p className={`font-semibold text-[14px] transition-colors ${
+                        isDone ? "text-green-600" : isActive ? "text-orange-600" : "text-stone-300"
+                      }`}>
+                        {step.label}
+                      </p>
+                      {isActive && !isComplete && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                          <p className="text-[11px] text-stone-400">{statusLabel(status)}...</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-
-          {/* Steps */}
-          <div className="space-y-0">
-            {STEPS.map((step, i) => {
-              const isActive = i === currentStepIndex;
-              const isDone = i < currentStepIndex || isComplete;
-
-              return (
-                <div key={step.key} className="flex items-start gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition-all duration-500 ${
-                      isDone
-                        ? "bg-green-50 text-green-600 border border-green-100"
-                        : isActive
-                          ? "bg-orange-50 text-orange-600 border border-orange-200 ring-4 ring-orange-50 shadow-sm"
-                          : "bg-stone-50 text-stone-300 border border-stone-100"
-                    }`}>
-                      {isDone ? "✓" : isActive ? step.activeIcon : step.icon}
-                    </div>
-                    {i < STEPS.length - 1 && (
-                      <div className={`w-0.5 h-6 transition-all duration-500 my-1 rounded-full ${
-                        isDone ? "bg-green-200" : "bg-stone-100"
-                      }`} />
-                    )}
-                  </div>
-
-                  <div className="pt-2.5">
-                    <p className={`font-semibold text-[14px] transition-colors ${
-                      isDone ? "text-green-600" : isActive ? "text-orange-600" : "text-stone-300"
-                    }`}>
-                      {step.label}
-                    </p>
-                    {isActive && !isComplete && (
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-                        <p className="text-[11px] text-stone-400">{statusLabel(status)}...</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        )}
 
         {/* CTA */}
-        {isComplete ? (
+        {isCancelled ? (
+          <button
+            onClick={onNewOrder}
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-stone-600 to-stone-700 text-white font-bold text-[15px] shadow-xl shadow-stone-200/40 hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
+          >
+            Hacer otro pedido 🍔
+          </button>
+        ) : isComplete ? (
           <button
             onClick={onNewOrder}
             className="w-full h-14 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-xl shadow-orange-200/40 hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"

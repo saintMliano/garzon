@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-07-08):** se implementaron las Fases 0 y 1 del plan de endurecimiento (auditoría de seguridad y robustez). Ver la sección [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos) y [Estado Actual](#-estado-actual-y-próximos-pasos).
+> **Última actualización (2026-07-08):** implementadas las Fases 0, 1 y 2 del plan de endurecimiento (auditoría de seguridad y robustez). Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -104,11 +104,33 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - [x] Temporizadores visuales con alertas semánticas de retraso por pedido.
 - [x] **Fase 0 — Seguridad:** Supabase Auth + RLS por local + RPCs (`crear_pedido`, `get_order_status`); tabla `local_staff`.
 - [x] **Fase 1 — Integridad y persistencia:** total calculado en servidor, `NOT NULL`/`CHECK` en el esquema, carrito y pedido activo persistidos en `localStorage`, arreglo del spinner infinito con slug inválido, blindaje del modal de checkout.
+- [x] **Fase 2 — Robustez de cocina:** reconexión de realtime (callback de estado + refetch en `SUBSCRIBED`) + polling de respaldo (30s) + refetch en `visibilitychange`/`online`; se quitó el filtro de medianoche del Kanban (las estadísticas del día excluyen cancelados); actualizaciones de estado con compare-and-set y aviso de error; desbloqueo del sonido por gesto (botón "Activar sonido"); estado `cancelado` con botón "Rechazar" en cocina y pantalla terminal para el cliente.
 
 ### Pendiente / Futuro (plan de endurecimiento)
-- [ ] **Fase 2 — Robustez de cocina:** reconexión de realtime + polling de respaldo, quitar el filtro de "medianoche" que oculta pedidos activos, manejo de errores en las actualizaciones de estado (compare-and-set), estado `cancelado` y flujo de rechazo de pedidos, desbloqueo del sonido por gesto.
 - [ ] **Fase 3 — Multi-tenant real:** numeración de pedidos por local (hoy `numero_pedido` es un SERIAL global), lectura de `?mesa=` desde el QR y mesas configurables por local, metadata/SEO por local (`generateMetadata`).
 - [ ] **Fase 4 — Calidad y rendimiento:** menú como Server Component, tipos generados con `supabase gen types`, `next/image` para las fotos, índice en `categorias(local_id)`, trigger de `updated_at`, búsqueda de menú tolerante a tildes.
 - [ ] Módulo de pago en línea integrado (Webpay / Stripe) opcional antes de procesar el pedido.
 - [ ] Control de stock (inventario) automático al vender productos.
 - [ ] Dashboard de administración histórica y analíticas de venta diaria/mensual.
+
+---
+
+## 📝 Historial de actualizaciones
+
+> Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-08 — Fase 2: Robustez de cocina
+- **Realtime resiliente en el dashboard:** suscripción con callback de estado (refetch en `SUBSCRIBED`, cubre carga inicial y reconexiones), polling de respaldo cada 30s y refetch al recuperar visibilidad/conexión (`visibilitychange`/`online`).
+- **Sin filtro de medianoche:** el Kanban trae todos los pedidos `estado NOT IN ('entregado','cancelado')` sin recorte por fecha; las estadísticas del día excluyen cancelados.
+- **Actualizaciones de estado seguras:** `updateStatus` usa compare-and-set (`.eq('estado', actual)`), muestra aviso de error y re-sincroniza; botón deshabilitado mientras el request está en vuelo.
+- **Sonido desbloqueado por gesto:** `AudioContext` singleton + botón "Activar sonido" en el header.
+- **Rechazo de pedidos:** nuevo estado `cancelado` (migración `fase2-cancelado.sql`), botón "Rechazar" en cocina y pantalla terminal "Pedido cancelado" para el cliente.
+
+### 2026-07-08 — Fase 1: Integridad y persistencia
+- `NOT NULL` en las FK (`categorias`/`productos`/`pedidos.local_id`, `pedido_items.pedido_id`) y `CHECK` de precio/total/cantidad (migración `fase1-integridad.sql`).
+- Carrito y pedido activo persistidos en `localStorage` por local (sobreviven a recargas; auto-limpieza al entregar).
+- Arreglo del spinner infinito con slug inválido; blindaje del modal de checkout contra doble envío.
+
+### 2026-07-08 — Fase 0: Seguridad y multi-tenant
+- Autenticación de cocina (Supabase Auth + `@supabase/ssr` + `proxy.ts`), tabla `local_staff` y RLS por local (migración `fase0-auth-rls.sql`).
+- Se cerró el acceso público a `pedidos`/`pedido_items`; el cliente anónimo opera solo vía RPCs `crear_pedido` (total en servidor) y `get_order_status`.

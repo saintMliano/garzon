@@ -3,7 +3,8 @@ export type OrderStatus =
     | "aceptado"
     | "preparando"
     | "listo"
-    | "entregado";
+    | "entregado"
+    | "cancelado";
 
 export interface Local {
     id: string;
