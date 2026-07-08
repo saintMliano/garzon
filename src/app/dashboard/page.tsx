@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice, statusColor, timeAgo, orderNumber } from "@/lib/utils";
 import type { OrderStatus, PedidoConItems } from "@/types/database";
@@ -308,6 +309,19 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
+            {/* Nav */}
+            <nav className="hidden md:flex items-center gap-1 dash-bg-surface rounded-xl p-1">
+              <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
+                Pedidos
+              </span>
+              <Link
+                href="/dashboard/menu"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Menú
+              </Link>
+            </nav>
+
             {/* Stats */}
             <div className="hidden sm:flex items-center gap-5">
               <div className="text-right">

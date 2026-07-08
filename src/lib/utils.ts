@@ -3,6 +3,11 @@ export function formatPrice(price: number): string {
     return "$" + price.toLocaleString("es-CL");
 }
 
+/** Normalize string for accent-insensitive search: "Dinámico" → "dinamico" */
+export function normalizar(s: string): string {
+    return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
 /** Map order status to display label */
 export function statusLabel(status: string): string {
     const labels: Record<string, string> = {

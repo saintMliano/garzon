@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, normalizar } from "@/lib/utils";
 import type { Local, Categoria, Producto } from "@/types/database";
 import CartSheet from "./cart-sheet";
 import CheckoutModal from "./checkout-modal";
@@ -107,8 +107,8 @@ export default function LocalPage() {
   // Filter products by search
   const filteredProducts = search.trim()
     ? productos.filter((p) =>
-        p.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        (p.descripcion?.toLowerCase().includes(search.toLowerCase()))
+        normalizar(p.nombre).includes(normalizar(search)) ||
+        normalizar(p.descripcion ?? "").includes(normalizar(search))
       )
     : null;
 
