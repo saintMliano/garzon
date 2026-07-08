@@ -23,6 +23,7 @@ export default function LocalPage() {
   const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState("");
   const [flashedId, setFlashedId] = useState<string | null>(null);
+  const [mesaFromQR, setMesaFromQR] = useState<string | null>(null);
   const categoryRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const { addItem, itemCount, total, items, updateQuantity } = useCart();
@@ -61,6 +62,13 @@ export default function LocalPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Leer la mesa desde el QR (?mesa=...) sin useSearchParams para evitar un Suspense boundary
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mesa = new URLSearchParams(window.location.search).get("mesa");
+    setMesaFromQR(mesa);
+  }, []);
 
   // Restaurar el pedido activo (si lo hay) al montar o cambiar de local
   useEffect(() => {
@@ -338,6 +346,8 @@ export default function LocalPage() {
       {showCheckout && local && (
         <CheckoutModal
           localId={local.id}
+          mesas={local.mesas ?? undefined}
+          initialMesa={mesaFromQR}
           onClose={() => setShowCheckout(false)}
           onConfirmed={(orderId) => {
             setShowCheckout(false);
@@ -352,30 +362,6 @@ export default function LocalPage() {
   );
 }
 
-/* ===== CLIENT-SIDE FALLBACK IMAGE MAP (demo products) ===== */
-const FALLBACK_IMAGES: Record<string, string> = {
-  "Barros Luco": "/food/barros-luco.png",
-  "Barros Jarpa": "/food/barros-luco.png",
-  "Chacarero": "/food/chacarero.png",
-  "Lomito": "/food/lomito.png",
-  "Churrasco": "/food/barros-luco.png",
-  "Ave Mayo": "/food/ave-palta.png",
-  "Ave Palta": "/food/ave-palta.png",
-  "Completo": "/food/completo.png",
-  "Italiano": "/food/italiano.png",
-  "Dinámico": "/food/completo.png",
-  "AS Completo": "/food/italiano.png",
-  "Papas Fritas Porción": "/food/papas-fritas.png",
-  "Papas Fritas Familiar": "/food/papas-fritas.png",
-  "Papas con Cheddar": "/food/papas-cheddar.png",
-  "Coca-Cola 350ml": "/food/coca-cola.png",
-  "Coca-Cola 1.5L": "/food/coca-cola.png",
-  "Sprite 350ml": "/food/coca-cola.png",
-  "Fanta 350ml": "/food/coca-cola.png",
-  "Agua Mineral 600ml": "/food/jugo-natural.png",
-  "Jugo Natural": "/food/jugo-natural.png",
-};
-
 /* ===== PRODUCT CARD COMPONENT ===== */
 function ProductCard({
   prod, icon, qty, flashed, onAdd, onUpdateQty, delay,
@@ -384,7 +370,7 @@ function ProductCard({
   onAdd: () => void; onUpdateQty: (q: number) => void; delay: number;
 }) {
   const inCart = qty > 0;
-  const imgSrc = prod.imagen_url || FALLBACK_IMAGES[prod.nombre];
+  const imgSrc = prod.imagen_url;
 
   return (
     <div

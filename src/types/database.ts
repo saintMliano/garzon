@@ -16,6 +16,7 @@ export interface Local {
     color_primario: string;
     activo: boolean;
     created_at: string;
+    mesas: string[] | null;
 }
 
 export interface Categoria {

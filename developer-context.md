@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-07-08):** implementadas las Fases 0, 1 y 2 del plan de endurecimiento (auditoría de seguridad y robustez). Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-07-08):** implementadas las Fases 0, 1, 2 y 3 del plan de endurecimiento (auditoría de seguridad y robustez). Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -105,10 +105,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - [x] **Fase 0 — Seguridad:** Supabase Auth + RLS por local + RPCs (`crear_pedido`, `get_order_status`); tabla `local_staff`.
 - [x] **Fase 1 — Integridad y persistencia:** total calculado en servidor, `NOT NULL`/`CHECK` en el esquema, carrito y pedido activo persistidos en `localStorage`, arreglo del spinner infinito con slug inválido, blindaje del modal de checkout.
 - [x] **Fase 2 — Robustez de cocina:** reconexión de realtime (callback de estado + refetch en `SUBSCRIBED`) + polling de respaldo (30s) + refetch en `visibilitychange`/`online`; se quitó el filtro de medianoche del Kanban (las estadísticas del día excluyen cancelados); actualizaciones de estado con compare-and-set y aviso de error; desbloqueo del sonido por gesto (botón "Activar sonido"); estado `cancelado` con botón "Rechazar" en cocina y pantalla terminal para el cliente.
+- [x] **Fase 3 — Multi-tenant real:** numeración de pedidos **por local, reiniciada por día** (antes `SERIAL` global; ahora se calcula en `crear_pedido` bajo advisory lock); lectura de `?mesa=` desde el QR (mesa pre-seleccionada y bloqueada) y **mesas configurables por local** (`locales.mesas`); imágenes de productos movidas a datos (`productos.imagen_url`, se eliminó el mapa `FALLBACK_IMAGES` del código); slug demo de la landing por variable de entorno (`NEXT_PUBLIC_DEMO_SLUG`). *(El SEO/metadata por local se pospuso a la Fase 4 porque depende de migrar el menú a Server Component.)*
 
 ### Pendiente / Futuro (plan de endurecimiento)
-- [ ] **Fase 3 — Multi-tenant real:** numeración de pedidos por local (hoy `numero_pedido` es un SERIAL global), lectura de `?mesa=` desde el QR y mesas configurables por local, metadata/SEO por local (`generateMetadata`).
-- [ ] **Fase 4 — Calidad y rendimiento:** menú como Server Component, tipos generados con `supabase gen types`, `next/image` para las fotos, índice en `categorias(local_id)`, trigger de `updated_at`, búsqueda de menú tolerante a tildes.
+- [ ] **Fase 4 — Calidad, rendimiento y SEO:** menú como Server Component, metadata/SEO por local (`generateMetadata`), tipos generados con `supabase gen types`, `next/image` para las fotos, índice en `categorias(local_id)`, trigger de `updated_at`, búsqueda de menú tolerante a tildes.
+- [ ] **Fase 5 — Dominios propios + white-label:** columna `dominio` en `locales`, enrutado por `Host` en `proxy.ts`, theming por tenant (logo/colores/textos).
+- [ ] **Fase 6 — Panel de administración self-service y onboarding** de locales (gestión de menú/precios/mesas/branding sin SQL).
 - [ ] Módulo de pago en línea integrado (Webpay / Stripe) opcional antes de procesar el pedido.
 - [ ] Control de stock (inventario) automático al vender productos.
 - [ ] Dashboard de administración histórica y analíticas de venta diaria/mensual.
@@ -118,6 +120,11 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-08 — Fase 3: Multi-tenant real
+- **Numeración por local, reiniciada por día:** se quitó el `SERIAL` global de `numero_pedido`; ahora `crear_pedido` asigna el correlativo por local (hora de Chile) bajo `pg_advisory_xact_lock` para evitar colisiones (migración `fase3-multitenant.sql`).
+- **Mesa por QR + mesas configurables:** el menú lee `?mesa=` de la URL y la pasa al checkout pre-seleccionada y bloqueada ("📍 … · Detectada por el código QR"); las opciones de mesa salen de `locales.mesas` (columna nueva `text[]`), con fallback por defecto. *Convención: el QR debe codificar la etiqueta completa, p. ej. `?mesa=Mesa%205`.*
+- **Sin hardcodes del tenant demo:** se eliminó el mapa `FALLBACK_IMAGES` del código; las fotos ahora vienen de `productos.imagen_url` (pobladas en la base). El enlace demo de la landing usa `NEXT_PUBLIC_DEMO_SLUG` (fallback `el-lalo`).
 
 ### 2026-07-08 — Fase 2: Robustez de cocina
 - **Realtime resiliente en el dashboard:** suscripción con callback de estado (refetch en `SUBSCRIBED`, cubre carga inicial y reconexiones), polling de respaldo cada 30s y refetch al recuperar visibilidad/conexión (`visibilitychange`/`online`).

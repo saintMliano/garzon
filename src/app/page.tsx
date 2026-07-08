@@ -41,6 +41,8 @@ const STEPS = [
 ];
 
 export default function Home() {
+  const demoSlug = process.env.NEXT_PUBLIC_DEMO_SLUG || "el-lalo";
+
   return (
     <div className="flex flex-col min-h-screen bg-stone-50">
       {/* ===== HERO ===== */}
@@ -67,7 +69,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in" style={{ animationDelay: "300ms" }}>
             <Link
-              href="/local/el-lalo"
+              href={`/local/${demoSlug}`}
               className="group flex items-center justify-center gap-2 h-14 px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-xl shadow-orange-500/20 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <span className="text-lg">📱</span> Probar Menú Demo
@@ -142,7 +144,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/local/el-lalo"
+              href={`/local/${demoSlug}`}
               className="h-12 px-8 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
               Ver Demo en Vivo →

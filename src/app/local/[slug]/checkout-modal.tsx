@@ -7,16 +7,20 @@ import { formatPrice } from "@/lib/utils";
 
 interface CheckoutModalProps {
   localId: string;
+  mesas?: string[];
+  initialMesa?: string | null;
   onClose: () => void;
   onConfirmed: (orderId: string) => void;
 }
 
-const MESA_OPTIONS = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6", "Barra", "Para llevar"];
+const DEFAULT_MESA_OPTIONS = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6", "Barra", "Para llevar"];
 
-export default function CheckoutModal({ localId, onClose, onConfirmed }: CheckoutModalProps) {
+export default function CheckoutModal({ localId, mesas, initialMesa, onClose, onConfirmed }: CheckoutModalProps) {
   const { items, total, clearCart } = useCart();
+  const mesaOptions = mesas && mesas.length > 0 ? mesas : DEFAULT_MESA_OPTIONS;
+  const mesaBloqueada = !!initialMesa;
   const [nombre, setNombre] = useState("");
-  const [mesa, setMesa] = useState("");
+  const [mesa, setMesa] = useState(initialMesa || "");
   const [notas, setNotas] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -112,22 +116,29 @@ export default function CheckoutModal({ localId, onClose, onConfirmed }: Checkou
           {/* Mesa quick select */}
           <div>
             <label className="block text-sm font-semibold text-stone-700 mb-2">¿Dónde estás?</label>
-            <div className="grid grid-cols-4 gap-2">
-              {MESA_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setMesa(mesa === opt ? "" : opt)}
-                  className={`py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
-                    mesa === opt
-                      ? "bg-orange-500 text-white shadow-sm shadow-orange-200"
-                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
+            {mesaBloqueada ? (
+              <div className="flex flex-col items-start gap-1 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
+                <span className="font-bold text-orange-700 text-sm">📍 {mesa}</span>
+                <span className="text-[11px] text-orange-400">Detectada por el código QR</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {mesaOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setMesa(mesa === opt ? "" : opt)}
+                    className={`py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
+                      mesa === opt
+                        ? "bg-orange-500 text-white shadow-sm shadow-orange-200"
+                        : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Notes */}
