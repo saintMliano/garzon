@@ -1,7 +1,10 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { useParams } from "next/navigation";
 import type { CartItem, Producto } from "@/types/database";
+
+const CART_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas
 
 interface CartContextType {
     items: CartItem[];
@@ -17,7 +20,42 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
+    const { slug } = useParams<{ slug: string }>();
     const [items, setItems] = useState<CartItem[]>([]);
+    const [hydrated, setHydrated] = useState(false);
+
+    // Hidratar el carrito desde localStorage al montar o cambiar de local
+    useEffect(() => {
+        setHydrated(false);
+        if (typeof window === "undefined" || !slug) return;
+        const key = `garzon:cart:${slug}`;
+        try {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                const parsed = JSON.parse(raw) as { items: CartItem[]; ts: number };
+                if (Date.now() - parsed.ts > CART_TTL_MS) {
+                    localStorage.removeItem(key);
+                    setItems([]);
+                } else {
+                    setItems(parsed.items ?? []);
+                }
+            } else {
+                setItems([]);
+            }
+        } catch {
+            localStorage.removeItem(key);
+            setItems([]);
+        } finally {
+            setHydrated(true);
+        }
+    }, [slug]);
+
+    // Persistir el carrito en localStorage
+    useEffect(() => {
+        if (typeof window === "undefined" || !slug || !hydrated) return;
+        const key = `garzon:cart:${slug}`;
+        localStorage.setItem(key, JSON.stringify({ items, ts: Date.now() }));
+    }, [items, slug, hydrated]);
 
     const addItem = useCallback((producto: Producto) => {
         setItems((prev) => {
@@ -59,7 +97,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const clearCart = useCallback(() => {
         setItems([]);
-    }, []);
+        if (typeof window !== "undefined" && slug) {
+            localStorage.removeItem(`garzon:cart:${slug}`);
+        }
+    }, [slug]);
 
     const total = items.reduce(
         (sum, item) => sum + item.producto.precio * item.cantidad,

@@ -64,6 +64,12 @@ export interface PedidoConItems extends Pedido {
     pedido_items: (PedidoItem & { producto: Producto })[];
 }
 
+export interface LocalStaff {
+    user_id: string;
+    local_id: string;
+    created_at: string;
+}
+
 // Cart types (client-side only)
 export interface CartItem {
     producto: Producto;

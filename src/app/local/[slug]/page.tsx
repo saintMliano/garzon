@@ -20,30 +20,64 @@ export default function LocalPage() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState("");
   const [flashedId, setFlashedId] = useState<string | null>(null);
   const categoryRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const { addItem, itemCount, total, items, updateQuantity } = useCart();
 
-  useEffect(() => {
-    async function load() {
-      const { data: localData } = await supabase
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const { data: localData, error: localError } = await supabase
         .from("locales").select("*").eq("slug", slug).single();
-      if (!localData) return;
+      // PGRST116 = "no rows returned" -> el local simplemente no existe, no es un error de red/consulta
+      if (localError && localError.code !== "PGRST116") throw localError;
+      if (!localData) {
+        setLocal(null);
+        return;
+      }
       setLocal(localData);
 
-      const { data: cats } = await supabase
+      const { data: cats, error: catsError } = await supabase
         .from("categorias").select("*").eq("local_id", localData.id).order("orden");
-      const { data: prods } = await supabase
+      if (catsError) throw catsError;
+      const { data: prods, error: prodsError } = await supabase
         .from("productos").select("*").eq("local_id", localData.id).eq("disponible", true).order("orden");
+      if (prodsError) throw prodsError;
 
       setCategorias(cats ?? []);
       setProductos(prods ?? []);
       if (cats && cats.length > 0) setActiveCategory(cats[0].id);
+    } catch {
+      setLoadError(true);
+    } finally {
       setLoading(false);
     }
+  }, [slug]);
+
+  useEffect(() => {
     load();
+  }, [load]);
+
+  // Restaurar el pedido activo (si lo hay) al montar o cambiar de local
+  useEffect(() => {
+    if (typeof window === "undefined" || !slug) return;
+    const key = `garzon:order:${slug}`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { id: string; ts: number };
+      if (Date.now() - parsed.ts > 3 * 60 * 60 * 1000) {
+        localStorage.removeItem(key);
+        return;
+      }
+      setConfirmedOrderId(parsed.id);
+    } catch {
+      localStorage.removeItem(key);
+    }
   }, [slug]);
 
   function scrollToCategory(catId: string) {
@@ -75,7 +109,14 @@ export default function LocalPage() {
       <OrderStatus
         orderId={confirmedOrderId}
         localName={local?.nombre ?? ""}
-        onNewOrder={() => setConfirmedOrderId(null)}
+        onNewOrder={() => {
+          setConfirmedOrderId(null);
+          if (typeof window !== "undefined") localStorage.removeItem(`garzon:order:${slug}`);
+        }}
+        onDelivered={() => {
+          setConfirmedOrderId(null);
+          if (typeof window !== "undefined") localStorage.removeItem(`garzon:order:${slug}`);
+        }}
       />
     );
   }
@@ -89,6 +130,24 @@ export default function LocalPage() {
             <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
           </div>
           <p className="text-stone-400 text-sm font-medium">Cargando menú...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-8 text-center min-h-screen">
+        <div className="animate-fade-in">
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-red-50 flex items-center justify-center text-4xl mb-5">⚠️</div>
+          <h2 className="text-xl font-bold text-stone-800">No se pudo cargar el menú</h2>
+          <p className="text-stone-500 mt-2 text-sm">Revisa tu conexión e intenta nuevamente.</p>
+          <button
+            onClick={() => load()}
+            className="mt-5 h-11 px-6 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm active:scale-95 transition-all"
+          >
+            Reintentar
+          </button>
         </div>
       </div>
     );
@@ -277,7 +336,17 @@ export default function LocalPage() {
         <CartSheet onClose={() => setShowCart(false)} onCheckout={() => { setShowCart(false); setShowCheckout(true); }} />
       )}
       {showCheckout && local && (
-        <CheckoutModal localId={local.id} onClose={() => setShowCheckout(false)} onConfirmed={(orderId) => { setShowCheckout(false); setConfirmedOrderId(orderId); }} />
+        <CheckoutModal
+          localId={local.id}
+          onClose={() => setShowCheckout(false)}
+          onConfirmed={(orderId) => {
+            setShowCheckout(false);
+            setConfirmedOrderId(orderId);
+            if (typeof window !== "undefined") {
+              localStorage.setItem(`garzon:order:${slug}`, JSON.stringify({ id: orderId, ts: Date.now() }));
+            }
+          }}
+        />
       )}
     </div>
   );

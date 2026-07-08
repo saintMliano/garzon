@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { formatPrice, statusColor, timeAgo, orderNumber } from "@/lib/utils";
 import type { OrderStatus, PedidoConItems } from "@/types/database";
 
@@ -70,18 +70,45 @@ function TimerBadge({ createdAt }: { createdAt: string }) {
 }
 
 export default function DashboardPage() {
+  const supabase = useMemo(() => createClient(), []);
   const [pedidos, setPedidos] = useState<PedidoConItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayStats, setTodayStats] = useState({ count: 0, total: 0 });
   const prevCountRef = useRef(0);
 
-  const fetchPedidos = useCallback(async () => {
+  const [localId, setLocalId] = useState<string | null>(null);
+  const [localNombre, setLocalNombre] = useState("");
+  const [resolvingLocal, setResolvingLocal] = useState(true);
+  const [noLocal, setNoLocal] = useState(false);
+
+  useEffect(() => {
+    async function resolveLocal() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setResolvingLocal(false); setNoLocal(true); return; }
+
+      const { data: staff } = await supabase
+        .from("local_staff").select("local_id").eq("user_id", user.id).limit(1).maybeSingle();
+
+      if (!staff) { setResolvingLocal(false); setNoLocal(true); return; }
+
+      const { data: local } = await supabase
+        .from("locales").select("nombre, slug").eq("id", staff.local_id).single();
+
+      setLocalId(staff.local_id);
+      setLocalNombre(local?.nombre ?? "");
+      setResolvingLocal(false);
+    }
+    resolveLocal();
+  }, [supabase]);
+
+  const fetchPedidos = useCallback(async (localId: string) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const { data } = await supabase
       .from("pedidos")
       .select(`*, pedido_items (*, producto:productos (*))`)
+      .eq("local_id", localId)
       .gte("created_at", today.toISOString())
       .neq("estado", "entregado")
       .order("created_at", { ascending: true });
@@ -90,28 +117,30 @@ export default function DashboardPage() {
     setLoading(false);
 
     const { data: allToday } = await supabase
-      .from("pedidos").select("total").gte("created_at", today.toISOString()).returns<{ total: number }[]>();
+      .from("pedidos").select("total").eq("local_id", localId).gte("created_at", today.toISOString()).returns<{ total: number }[]>();
 
     if (allToday) {
       setTodayStats({ count: allToday.length, total: allToday.reduce((s, p) => s + p.total, 0) });
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
-    fetchPedidos();
+    if (!localId) return;
+
+    fetchPedidos(localId);
     const channel = supabase
       .channel("dashboard-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos", filter: `local_id=eq.${localId}` }, (payload) => {
         if (payload.eventType === "INSERT") {
           playNotificationSound();
           if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
         }
-        fetchPedidos();
+        fetchPedidos(localId);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetchPedidos]);
+  }, [supabase, localId, fetchPedidos]);
 
   useEffect(() => {
     const nuevoCount = pedidos.filter((p) => p.estado === "nuevo").length;
@@ -132,7 +161,12 @@ export default function DashboardPage() {
     }
   }
 
-  if (loading) {
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
+  if (resolvingLocal || (localId && loading)) {
     return (
       <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
         <div className="flex flex-col items-center gap-4">
@@ -141,6 +175,22 @@ export default function DashboardPage() {
             <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
           </div>
           <p className="text-stone-500 text-sm font-medium">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (noLocal) {
+    return (
+      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark px-6">
+        <div className="flex flex-col items-center gap-4 text-center max-w-sm">
+          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
+          <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
+          <p className="text-stone-500 text-sm">Tu cuenta no está vinculada a ningún local. Contacta al administrador.</p>
+          <button
+            onClick={handleSignOut}
+            className="mt-2 px-4 py-2 rounded-xl dash-bg-surface dash-text-secondary text-sm font-semibold hover:opacity-80 transition-opacity"
+          >Cerrar sesión</button>
         </div>
       </div>
     );
@@ -158,8 +208,8 @@ export default function DashboardPage() {
               🍔
             </div>
             <div>
-              <h1 className="font-bold dash-text-primary text-base">Garzón Digital</h1>
-              <p className="text-[11px] dash-text-muted">Panel de Control</p>
+              <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
+              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de Control</p>
             </div>
           </div>
 
@@ -187,6 +237,15 @@ export default function DashboardPage() {
                 </>
               )}
             </div>
+
+            {/* Sign out */}
+            <button
+              onClick={handleSignOut}
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              title="Cerrar sesión"
+            >
+              🚪
+            </button>
           </div>
         </div>
       </header>

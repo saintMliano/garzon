@@ -30,43 +30,38 @@ export default function CheckoutModal({ localId, onClose, onConfirmed }: Checkou
     setError("");
 
     try {
-      const { data: pedido, error: pedidoError } = await supabase
-        .from("pedidos")
-        .insert({
-          local_id: localId,
-          estado: "nuevo",
-          nombre_cliente: nombre.trim(),
-          mesa: mesa.trim() || null,
-          total,
-          notas: notas.trim() || null,
-        })
-        .select()
-        .single();
+      const { data, error: rpcError } = await supabase.rpc("crear_pedido", {
+        p_local_id: localId,
+        p_nombre: nombre.trim(),
+        p_mesa: mesa.trim() || null,
+        p_notas: notas.trim() || null,
+        p_items: items.map((item) => ({
+          producto_id: item.producto.id,
+          cantidad: item.cantidad,
+          notas: item.notas || null,
+        })),
+      });
 
-      if (pedidoError || !pedido) throw new Error(pedidoError?.message ?? "Error creando pedido");
-
-      const itemsToInsert = items.map((item) => ({
-        pedido_id: pedido.id,
-        producto_id: item.producto.id,
-        cantidad: item.cantidad,
-        precio_unitario: item.producto.precio,
-        notas: item.notas || null,
-      }));
-
-      const { error: itemsError } = await supabase.from("pedido_items").insert(itemsToInsert);
-      if (itemsError) throw new Error(itemsError.message);
+      if (rpcError) throw new Error(rpcError.message || "No se pudo enviar el pedido, intenta de nuevo");
 
       clearCart();
-      onConfirmed(pedido.id);
+      onConfirmed(data as string);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al enviar pedido");
+      const message = err instanceof Error ? err.message : "";
+      if (message.includes("no disponible")) {
+        setError("Uno de los productos ya no está disponible. Vuelve al menú y revísalo.");
+      } else if (message.includes("Cantidad inválida")) {
+        setError(message);
+      } else {
+        setError(message || "No se pudo enviar el pedido, intenta de nuevo");
+      }
       setSubmitting(false);
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !submitting && onClose()} />
 
       <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md animate-slide-up shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
@@ -161,7 +156,8 @@ export default function CheckoutModal({ localId, onClose, onConfirmed }: Checkou
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-[50px] rounded-xl border-2 border-stone-200 font-semibold text-stone-500 hover:bg-stone-50 active:scale-[0.98] transition-all text-sm"
+              disabled={submitting}
+              className="flex-1 h-[50px] rounded-xl border-2 border-stone-200 font-semibold text-stone-500 hover:bg-stone-50 active:scale-[0.98] transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >Volver</button>
             <button
               type="submit"

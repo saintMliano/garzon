@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { statusLabel, timeAgo, orderNumber } from "@/lib/utils";
 import type { OrderStatus as OrderStatusType } from "@/types/database";
@@ -9,6 +9,7 @@ interface OrderStatusProps {
   orderId: string;
   localName: string;
   onNewOrder: () => void;
+  onDelivered?: () => void;
 }
 
 const STEPS: { key: OrderStatusType; label: string; icon: string; activeIcon: string }[] = [
@@ -18,34 +19,49 @@ const STEPS: { key: OrderStatusType; label: string; icon: string; activeIcon: st
   { key: "listo", label: "¡Listo para retirar!", icon: "🔔", activeIcon: "🎉" },
 ];
 
-export default function OrderStatus({ orderId, localName, onNewOrder }: OrderStatusProps) {
+export default function OrderStatus({ orderId, localName, onNewOrder, onDelivered }: OrderStatusProps) {
   const [status, setStatus] = useState<OrderStatusType>("nuevo");
   const [orderNum, setOrderNum] = useState(0);
   const [createdAt, setCreatedAt] = useState("");
+  const onDeliveredRef = useRef(onDelivered);
+  onDeliveredRef.current = onDelivered;
 
   useEffect(() => {
-    supabase
-      .from("pedidos").select("estado, numero_pedido, created_at")
-      .eq("id", orderId).single()
-      .then(({ data }) => {
-        if (data) {
-          setStatus(data.estado as OrderStatusType);
-          setOrderNum(data.numero_pedido);
-          setCreatedAt(data.created_at);
-        }
-      });
+    let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    let lastStatus: OrderStatusType | null = null;
 
-    const channel = supabase
-      .channel(`order-${orderId}`)
-      .on("postgres_changes", {
-        event: "UPDATE", schema: "public", table: "pedidos", filter: `id=eq.${orderId}`,
-      }, (payload) => {
-        setStatus(payload.new.estado as OrderStatusType);
-        if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
-      })
-      .subscribe();
+    async function fetchStatus() {
+      const { data } = await supabase.rpc("get_order_status", { p_order_id: orderId });
+      const row = data?.[0];
+      if (!row || cancelled) return;
 
-    return () => { supabase.removeChannel(channel); };
+      const newStatus = row.estado as OrderStatusType;
+      setStatus(newStatus);
+      setOrderNum(row.numero_pedido);
+      setCreatedAt(row.created_at);
+
+      if (lastStatus !== null && lastStatus !== newStatus && "vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+      lastStatus = newStatus;
+
+      if (newStatus === "entregado") {
+        onDeliveredRef.current?.();
+      }
+
+      if (["listo", "entregado", "cancelado"].includes(newStatus) && intervalId) {
+        clearInterval(intervalId);
+      }
+    }
+
+    fetchStatus();
+    intervalId = setInterval(fetchStatus, 4000);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [orderId]);
 
   const currentStepIndex = STEPS.findIndex((s) => s.key === status);
