@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
@@ -175,17 +176,30 @@ export default function LocalPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-full bg-stone-50">
+    <div
+      className="flex flex-col min-h-full bg-stone-50"
+      style={{ ["--brand" as string]: local.color_primario } as React.CSSProperties}
+    >
       {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-30 glass border-b border-stone-200/50">
         <div className="max-w-lg mx-auto px-4 pt-3 pb-2">
           <div className="flex items-center gap-3">
             {/* Local branding */}
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-white/60"
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-white/60 overflow-hidden"
               style={{ background: `${local.color_primario}18` }}
             >
-              🍔
+              {local.logo_url ? (
+                <Image
+                  src={local.logo_url}
+                  alt={local.nombre}
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-cover rounded-2xl"
+                />
+              ) : (
+                "🍔"
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="font-extrabold text-stone-900 text-[17px] leading-tight truncate">
@@ -198,12 +212,16 @@ export default function LocalPage() {
                 </svg>
                 {local.direccion}
               </p>
+              {local.slogan && (
+                <p className="text-[11px] text-stone-400 truncate">{local.slogan}</p>
+              )}
             </div>
             {/* Cart icon in header */}
             {itemCount > 0 && (
               <button
                 onClick={() => setShowCart(true)}
-                className="relative w-11 h-11 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-200 active:scale-90 transition-transform"
+                className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-md shadow-orange-200 active:scale-90 transition-transform"
+                style={{ background: "var(--brand)" }}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8l-1.35-6.73M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
@@ -246,9 +264,14 @@ export default function LocalPage() {
                   onClick={() => scrollToCategory(cat.id)}
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 ${
                     activeCategory === cat.id
-                      ? "category-active"
+                      ? ""
                       : "bg-white text-stone-600 border border-stone-200/80 hover:border-orange-200 hover:text-orange-600"
                   }`}
+                  style={
+                    activeCategory === cat.id
+                      ? { background: "var(--brand)", color: "white", borderColor: "transparent" }
+                      : undefined
+                  }
                 >
                   {cat.icono} {cat.nombre}
                 </button>
@@ -327,7 +350,8 @@ export default function LocalPage() {
         <div className="fixed bottom-0 left-0 right-0 z-40 p-4 safe-bottom animate-slide-up">
           <button
             onClick={() => setShowCart(true)}
-            className="w-full max-w-lg mx-auto flex items-center justify-between h-[58px] px-5 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 text-white font-semibold shadow-xl shadow-orange-300/30 hover:shadow-2xl active:scale-[0.98] transition-all"
+            className="w-full max-w-lg mx-auto flex items-center justify-between h-[58px] px-5 rounded-2xl text-white font-semibold shadow-xl shadow-orange-300/30 hover:shadow-2xl active:scale-[0.98] transition-all"
+            style={{ background: "var(--brand)" }}
           >
             <div className="flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm font-black">
@@ -426,7 +450,8 @@ function ProductCard({
       ) : (
         <button
           onClick={onAdd}
-          className="w-10 h-10 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-90 text-white flex items-center justify-center transition-all shadow-sm shadow-orange-200/60"
+          className="w-10 h-10 rounded-xl active:scale-90 text-white flex items-center justify-center transition-all shadow-sm shadow-orange-200/60"
+          style={{ background: "var(--brand)" }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />

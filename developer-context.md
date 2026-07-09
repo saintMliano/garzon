@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-07-08):** implementadas las Fases 0-3 del plan de endurecimiento y las **Fases 4.1-4.2** (gestión de menú self-service + subida de imágenes). Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-07-09):** implementadas las Fases 0-3 del plan de endurecimiento y las **Fases 4.1-4.3** (gestión de menú, imágenes e identidad visual del local). Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -108,13 +108,14 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - [x] **Fase 3 — Multi-tenant real:** numeración de pedidos **por local, reiniciada por día** (antes `SERIAL` global; ahora se calcula en `crear_pedido` bajo advisory lock); lectura de `?mesa=` desde el QR (mesa pre-seleccionada y bloqueada) y **mesas configurables por local** (`locales.mesas`); imágenes de productos movidas a datos (`productos.imagen_url`, se eliminó el mapa `FALLBACK_IMAGES` del código); slug demo de la landing por variable de entorno (`NEXT_PUBLIC_DEMO_SLUG`). *(El SEO/metadata por local se pospuso porque depende de migrar el menú a Server Component; ahora vive en la Fase 6.)*
 - [x] **Fase 4.1 — Gestión de menú self-service:** panel en `/dashboard/menu` para crear/editar/eliminar categorías y productos, fijar precios y **toggle de disponibilidad** ("se acabó la palta"), respaldado por RLS de escritura por staff (`fase4-1-menu-rls.sql`). Incluye 2 quick wins: búsqueda del menú tolerante a tildes e índice en `categorias(local_id)`.
 - [x] **Fase 4.2 — Imágenes:** bucket público `menu` en Supabase Storage con RLS por local (`fase4-2-storage.sql`); control de subida de foto en el editor de producto; el menú del cliente sirve las imágenes con `next/image` (locales y remotas de Storage).
+- [x] **Fase 4.3 — Identidad visual (white-label):** editor en `/dashboard/config` (nombre, slogan, dirección, teléfono, color primario, logo); el menú del cliente se pinta por tenant vía la variable CSS `--brand` (botones/pills), muestra el logo (`logo_url`) y el slogan (`locales.slogan`).
 
 ### Pendiente / Futuro
 
 **Fase 4 — "El Estudio del Local" (self-service, prioridad actual)** — que un dueño arme y personalice su local sin SQL:
 - [x] **4.1** — Gestión de menú (categorías/productos, precios, disponibilidad).
 - [x] **4.2** — Imágenes: subida a Supabase Storage + `next/image` (fotos de productos; el logo se conectará en la 4.3).
-- [ ] **4.3** — Identidad visual del local (logo, color, textos); el menú del cliente se pinta por tenant (white-label sin dominio propio aún).
+- [x] **4.3** — Identidad visual del local (logo, color, textos); el menú del cliente se pinta por tenant (white-label sin dominio propio aún).
 - [ ] **4.4** — Onboarding: crear un local + su cuenta de dueño desde una pantalla (super-admin; usa service-role key en el servidor).
 - [ ] **4.5** — Pulido (trigger de `updated_at` y otros quick wins).
 
@@ -129,6 +130,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-09 — Fase 4.3: Identidad visual del local (white-label)
+- **Columna `slogan`** en `locales` (`fase4-3-branding.sql`); el-lalo sembrado con una tagline demo. `color_primario` y `logo_url` ya existían.
+- **Editor `/dashboard/config`** (pestaña "Identidad"): nombre, slogan, dirección, teléfono, selector de color primario (picker + hex sincronizados) y subida de logo (reutiliza Storage de la 4.2). Guarda con `UPDATE locales` (RLS de staff).
+- **Menú pintado por tenant:** el contenedor del menú define la variable CSS `--brand = color_primario`; los CTAs (botón +, barra "Ver pedido", pill de categoría activa, botón de carrito) usan `var(--brand)`. El header muestra el `logo_url` si existe (fallback al emoji) y el `slogan` bajo la dirección.
+- *Nota:* el color del precio sigue en naranja fijo (fuera del alcance de esta tanda); ajuste menor pendiente si se quiere 100% white-label.
 
 ### 2026-07-08 — Fase 4.2: Imágenes de productos
 - **Supabase Storage:** bucket público `menu` (`fase4-2-storage.sql`) con RLS — lectura pública, y escritura del staff scopeada por la primera carpeta de la ruta = `local_id` (`<local_id>/<archivo>`).

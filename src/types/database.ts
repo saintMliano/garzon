@@ -14,6 +14,7 @@ export interface Local {
     telefono: string | null;
     logo_url: string | null;
     color_primario: string;
+    slogan: string | null;
     activo: boolean;
     created_at: string;
     mesas: string[] | null;

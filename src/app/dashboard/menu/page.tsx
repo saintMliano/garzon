@@ -347,6 +347,12 @@ export default function MenuPage() {
               <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
                 Menú
               </span>
+              <Link
+                href="/dashboard/config"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Identidad
+              </Link>
             </nav>
 
             <button

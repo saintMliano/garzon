@@ -320,6 +320,12 @@ export default function DashboardPage() {
               >
                 Menú
               </Link>
+              <Link
+                href="/dashboard/config"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Identidad
+              </Link>
             </nav>
 
             {/* Stats */}
