@@ -19,6 +19,7 @@ export default function ConfigPage() {
   const [direccion, setDireccion] = useState("");
   const [telefono, setTelefono] = useState("");
   const [colorPrimario, setColorPrimario] = useState("#f97316");
+  const [colorAcento, setColorAcento] = useState("#f97316");
   const [logoUrl, setLogoUrl] = useState("");
 
   const [subiendoLogo, setSubiendoLogo] = useState(false);
@@ -48,6 +49,7 @@ export default function ConfigPage() {
         setDireccion(l.direccion ?? "");
         setTelefono(l.telefono ?? "");
         setColorPrimario(l.color_primario ?? "#f97316");
+        setColorAcento(l.color_acento ?? "#f97316");
         setLogoUrl(l.logo_url ?? "");
       }
       setResolvingLocal(false);
@@ -112,6 +114,7 @@ export default function ConfigPage() {
         direccion: direccion.trim() || null,
         telefono: telefono.trim() || null,
         color_primario: colorPrimario,
+        color_acento: colorAcento,
         logo_url: logoUrl || null,
       })
       .eq("id", localId);
@@ -268,6 +271,30 @@ export default function ConfigPage() {
                 <div
                   className="w-10 h-10 rounded-lg shrink-0 border border-stone-700"
                   style={{ backgroundColor: colorPrimario }}
+                  title="Vista previa"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold dash-text-secondary block mb-1">Color de acento (precios y detalles)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={colorAcento}
+                  onChange={(e) => setColorAcento(e.target.value)}
+                  className="w-11 h-10 rounded-lg dash-bg-surface cursor-pointer border-0 p-1"
+                />
+                <input
+                  value={colorAcento}
+                  onChange={(e) => setColorAcento(e.target.value)}
+                  className="flex-1 rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
+                  placeholder="#f97316"
+                  maxLength={7}
+                />
+                <div
+                  className="w-10 h-10 rounded-lg shrink-0 border border-stone-700"
+                  style={{ backgroundColor: colorAcento }}
                   title="Vista previa"
                 />
               </div>

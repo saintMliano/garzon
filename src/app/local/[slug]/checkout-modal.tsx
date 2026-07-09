@@ -96,7 +96,7 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
             ))}
             <div className="flex items-center justify-between pt-2 border-t border-stone-200 mt-2">
               <span className="font-bold text-stone-800 text-sm">Total</span>
-              <span className="font-black text-orange-600">{formatPrice(total)}</span>
+              <span className="font-black" style={{ color: "var(--accent)" }}>{formatPrice(total)}</span>
             </div>
           </div>
 
@@ -130,9 +130,10 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
                     onClick={() => setMesa(mesa === opt ? "" : opt)}
                     className={`py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
                       mesa === opt
-                        ? "bg-orange-500 text-white shadow-sm shadow-orange-200"
+                        ? "text-white shadow-sm shadow-orange-200"
                         : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                     }`}
+                    style={mesa === opt ? { background: "var(--brand)" } : undefined}
                   >
                     {opt}
                   </button>
@@ -173,7 +174,8 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
             <button
               type="submit"
               disabled={submitting}
-              className="flex-[2] h-[50px] rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold shadow-lg shadow-orange-200/50 hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+              className="flex-[2] h-[50px] rounded-xl text-white font-bold shadow-lg shadow-orange-200/50 hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+              style={{ background: "var(--brand)" }}
             >
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">

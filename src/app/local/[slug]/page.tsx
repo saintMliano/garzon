@@ -178,7 +178,7 @@ export default function LocalPage() {
   return (
     <div
       className="flex flex-col min-h-full bg-stone-50"
-      style={{ ["--brand" as string]: local.color_primario } as React.CSSProperties}
+      style={{ ["--brand" as string]: local.color_primario, ["--accent" as string]: local.color_acento } as React.CSSProperties}
     >
       {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-30 glass border-b border-stone-200/50">
@@ -431,7 +431,7 @@ function ProductCard({
         {prod.descripcion && (
           <p className="text-[11px] text-stone-400 mt-0.5 line-clamp-1 leading-snug">{prod.descripcion}</p>
         )}
-        <p className="text-[14px] font-bold text-orange-600 mt-1">{formatPrice(prod.precio)}</p>
+        <p className="text-[14px] font-bold mt-1" style={{ color: "var(--accent)" }}>{formatPrice(prod.precio)}</p>
       </div>
 
       {/* Add / Qty control */}

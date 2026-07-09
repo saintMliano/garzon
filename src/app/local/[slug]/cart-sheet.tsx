@@ -62,7 +62,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                         <h3 className="font-semibold text-stone-800 text-[14px] leading-tight">
                           {item.producto.nombre}
                         </h3>
-                        <p className="text-[13px] text-orange-600 font-bold mt-1">
+                        <p className="text-[13px] font-bold mt-1" style={{ color: "var(--accent)" }}>
                           {formatPrice(item.producto.precio * item.cantidad)}
                           {item.cantidad > 1 && (
                             <span className="text-[11px] text-stone-400 font-normal ml-1">
@@ -117,11 +117,12 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
           <div className="border-t border-stone-100 px-5 py-4 safe-bottom">
             <div className="flex justify-between items-center mb-3">
               <span className="text-stone-500 text-sm font-medium">Total</span>
-              <span className="text-2xl font-black text-stone-900">{formatPrice(total)}</span>
+              <span className="text-2xl font-black" style={{ color: "var(--accent)" }}>{formatPrice(total)}</span>
             </div>
             <button
               onClick={onCheckout}
-              className="w-full h-[52px] rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-lg shadow-orange-200/50 hover:shadow-xl active:scale-[0.98] transition-all"
+              className="w-full h-[52px] rounded-2xl text-white font-bold text-[15px] shadow-lg shadow-orange-200/50 hover:shadow-xl active:scale-[0.98] transition-all"
+              style={{ background: "var(--brand)" }}
             >
               Confirmar Pedido →
             </button>

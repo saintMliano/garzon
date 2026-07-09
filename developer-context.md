@@ -108,7 +108,7 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - [x] **Fase 3 — Multi-tenant real:** numeración de pedidos **por local, reiniciada por día** (antes `SERIAL` global; ahora se calcula en `crear_pedido` bajo advisory lock); lectura de `?mesa=` desde el QR (mesa pre-seleccionada y bloqueada) y **mesas configurables por local** (`locales.mesas`); imágenes de productos movidas a datos (`productos.imagen_url`, se eliminó el mapa `FALLBACK_IMAGES` del código); slug demo de la landing por variable de entorno (`NEXT_PUBLIC_DEMO_SLUG`). *(El SEO/metadata por local se pospuso porque depende de migrar el menú a Server Component; ahora vive en la Fase 6.)*
 - [x] **Fase 4.1 — Gestión de menú self-service:** panel en `/dashboard/menu` para crear/editar/eliminar categorías y productos, fijar precios y **toggle de disponibilidad** ("se acabó la palta"), respaldado por RLS de escritura por staff (`fase4-1-menu-rls.sql`). Incluye 2 quick wins: búsqueda del menú tolerante a tildes e índice en `categorias(local_id)`.
 - [x] **Fase 4.2 — Imágenes:** bucket público `menu` en Supabase Storage con RLS por local (`fase4-2-storage.sql`); control de subida de foto en el editor de producto; el menú del cliente sirve las imágenes con `next/image` (locales y remotas de Storage).
-- [x] **Fase 4.3 — Identidad visual (white-label):** editor en `/dashboard/config` (nombre, slogan, dirección, teléfono, color primario, logo); el menú del cliente se pinta por tenant vía la variable CSS `--brand` (botones/pills), muestra el logo (`logo_url`) y el slogan (`locales.slogan`).
+- [x] **Fase 4.3 — Identidad visual (white-label):** editor en `/dashboard/config` (nombre, slogan, dirección, teléfono, color primario, **color de acento**, logo); el menú del cliente se pinta por tenant vía las variables CSS `--brand` (CTAs) y `--accent` (precios), muestra el logo (`logo_url`) y el slogan (`locales.slogan`). Todo el flujo del cliente (menú + carrito + checkout) queda marcado.
 
 ### Pendiente / Futuro
 
@@ -121,6 +121,7 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 - [ ] **Fase 5 — Dominios propios:** columna `dominio` en `locales`, enrutado por `Host` en `proxy.ts`, SSL automático (al cerrar un cliente que lo pida).
 - [ ] **Fase 6 — Calidad, rendimiento y SEO:** menú como Server Component, metadata/SEO por local (`generateMetadata`), tipos generados con `supabase gen types`.
+- [ ] **Fase 7 — Marca profunda (cuando haya cliente):** que el cliente perciba más la marca del local dentro de la app — página de información/historia, equipo/personal, y theming más rico. Se profundizará con el caso real del primer cliente.
 - [ ] Módulo de pago en línea (Webpay / Stripe) opcional antes de procesar el pedido.
 - [ ] Control de stock (inventario) automático al vender productos.
 - [ ] Analíticas históricas de venta diaria/mensual.
@@ -130,6 +131,11 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-09 — Fase 4.3.1: Color de acento configurable
+- **Segundo color de marca** `locales.color_acento` (`fase4-3-1-color-acento.sql`, default naranja) editable por el dueño en `/dashboard/config` (selector picker+hex, junto al primario).
+- **Precios por marca:** el menú define la variable CSS `--accent = color_acento`; los precios (menú, carrito, checkout) la usan. Así el dueño controla dos colores: `--brand` (CTAs) y `--accent` (precios/detalles). Resuelve el pendiente del color de precio de la 4.3.
+- **Theming completo del flujo del cliente:** se llevaron a `var(--brand)` los CTAs que quedaban naranjas en carrito/checkout ("Confirmar Pedido", "Enviar Pedido", mesa seleccionada). Verificado: primario naranja + acento verde → botones naranjas y precios verdes.
 
 ### 2026-07-09 — Fase 4.3: Identidad visual del local (white-label)
 - **Columna `slogan`** en `locales` (`fase4-3-branding.sql`); el-lalo sembrado con una tagline demo. `color_primario` y `logo_url` ya existían.
