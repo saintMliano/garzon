@@ -116,7 +116,9 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - [x] **4.1** — Gestión de menú (categorías/productos, precios, disponibilidad).
 - [x] **4.2** — Imágenes: subida a Supabase Storage + `next/image` (fotos de productos; el logo se conectará en la 4.3).
 - [x] **4.3** — Identidad visual del local (logo, color, textos); el menú del cliente se pinta por tenant (white-label sin dominio propio aún).
-- [ ] **4.4** — Onboarding: crear un local + su cuenta de dueño desde una pantalla (super-admin; usa service-role key en el servidor).
+- [~] **4.4** — Onboarding de locales (super-admin):
+  - [x] **4.4.a** — Base de seguridad: tabla `platform_admins`, endpoint server-only `POST /api/admin/onboard` (crea cuenta+local+vínculo+semilla) con service-role key y verificación de super-admin. Sin UI aún.
+  - [ ] **4.4.b** — Pantalla de alta (`/dashboard/admin`), visible solo para super-admins.
 - [ ] **4.5** — Pulido (trigger de `updated_at` y otros quick wins).
 
 - [ ] **Fase 5 — Dominios propios:** columna `dominio` en `locales`, enrutado por `Host` en `proxy.ts`, SSL automático (al cerrar un cliente que lo pida).
@@ -131,6 +133,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-09 — Fase 4.4.a: Base de seguridad del onboarding
+- **Rol de super-admin:** tabla `platform_admins` (`fase4-4a-platform-admins.sql`) con RLS "cada quien lee solo su fila". Solo el super-admin (el dueño de la plataforma) puede dar de alta locales.
+- **Endpoint server-only** `POST /api/admin/onboard`: verifica sesión + membresía en `platform_admins` (403 si no), y con la **service-role key** crea la cuenta del dueño (contraseña temporal), el `local`, el vínculo `local_staff` y una semilla mínima de categorías; con rollback ante fallo. Valida slug único y email.
+- **Aislamiento de la llave:** `SUPABASE_SERVICE_ROLE_KEY` es server-only (`.env.local`, sin prefijo `NEXT_PUBLIC_`, gitignored); el cliente admin vive en `src/lib/supabase/admin.ts` y solo lo importa el route handler. Nunca llega al navegador.
+- **Verificado con rigor:** no-admin autenticado → 403; slug/email duplicados → 409; input inválido → 400; super-admin → 200 (crea local+dueño+semilla, consistentes en la base). Datos de prueba limpiados.
 
 ### 2026-07-09 — Fase 4.3.1: Color de acento configurable
 - **Segundo color de marca** `locales.color_acento` (`fase4-3-1-color-acento.sql`, default naranja) editable por el dueño en `/dashboard/config` (selector picker+hex, junto al primario).
