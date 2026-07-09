@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Categoria, Producto } from "@/types/database";
@@ -14,6 +15,7 @@ type ProductoForm = {
   categoria_id: string;
   disponible: boolean;
   orden: string;
+  imagen_url: string;
 };
 
 type CategoriaForm = {
@@ -31,6 +33,7 @@ const EMPTY_PRODUCTO_FORM: ProductoForm = {
   categoria_id: "",
   disponible: true,
   orden: "0",
+  imagen_url: "",
 };
 
 const EMPTY_CATEGORIA_FORM: CategoriaForm = {
@@ -62,6 +65,7 @@ export default function MenuPage() {
   const [productoModalOpen, setProductoModalOpen] = useState(false);
   const [productoForm, setProductoForm] = useState<ProductoForm>(EMPTY_PRODUCTO_FORM);
   const [savingProducto, setSavingProducto] = useState(false);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
 
   useEffect(() => {
     async function resolveLocal() {
@@ -211,8 +215,33 @@ export default function MenuPage() {
       categoria_id: prod.categoria_id,
       disponible: prod.disponible,
       orden: String(prod.orden),
+      imagen_url: prod.imagen_url ?? "",
     });
     setProductoModalOpen(true);
+  }
+
+  async function handleImagenChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !localId) return;
+
+    const extFromName = file.name.split(".").pop();
+    const ext = extFromName && extFromName.length <= 5 ? extFromName : "png";
+    const ruta = `${localId}/${crypto.randomUUID()}.${ext}`;
+
+    setSubiendoImagen(true);
+    const { error } = await supabase.storage
+      .from("menu")
+      .upload(ruta, file, { upsert: true, cacheControl: "3600" });
+    setSubiendoImagen(false);
+
+    if (error) {
+      setErrorMsg("No se pudo subir la imagen; reintenta.");
+      return;
+    }
+
+    const { data } = supabase.storage.from("menu").getPublicUrl(ruta);
+    setProductoForm((f) => ({ ...f, imagen_url: data.publicUrl }));
   }
 
   async function saveProducto() {
@@ -229,6 +258,7 @@ export default function MenuPage() {
       categoria_id: productoForm.categoria_id,
       disponible: productoForm.disponible,
       orden: Number(productoForm.orden) || 0,
+      imagen_url: productoForm.imagen_url || null,
     };
 
     const { error } = productoForm.id
@@ -424,8 +454,8 @@ export default function MenuPage() {
                       }`}
                     >
                       <span
-                        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                          prod.disponible ? "translate-x-5" : "translate-x-0.5"
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                          prod.disponible ? "translate-x-5" : "translate-x-0"
                         }`}
                       />
                     </button>
@@ -537,8 +567,39 @@ export default function MenuPage() {
             </h3>
 
             <div className="space-y-3">
-              <div className="rounded-xl border-2 border-dashed border-stone-700 dash-text-muted text-xs text-center py-6">
-                Imagen del producto · disponible en la 4.2
+              <div>
+                <label className="text-xs font-semibold dash-text-secondary block mb-1">Imagen del producto</label>
+                {productoForm.imagen_url ? (
+                  <div className="flex items-center gap-3 rounded-xl dash-bg-surface px-3 py-2.5">
+                    <Image
+                      src={productoForm.imagen_url}
+                      alt="Vista previa"
+                      width={64}
+                      height={64}
+                      unoptimized
+                      className="w-16 h-16 rounded-lg object-cover shrink-0"
+                    />
+                    <button
+                      onClick={() => setProductoForm((f) => ({ ...f, imagen_url: "" }))}
+                      className="px-3 py-2 rounded-lg dash-bg-surface dash-text-secondary text-xs font-semibold hover:opacity-80 transition-opacity"
+                    >
+                      Quitar imagen
+                    </button>
+                  </div>
+                ) : (
+                  <label className={`flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity ${
+                    subiendoImagen ? "opacity-60 pointer-events-none" : "hover:opacity-80"
+                  } dash-text-muted`}>
+                    {subiendoImagen ? "Subiendo…" : "Subir imagen"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      disabled={subiendoImagen}
+                      onChange={handleImagenChange}
+                    />
+                  </label>
+                )}
               </div>
 
               <div>
@@ -611,8 +672,8 @@ export default function MenuPage() {
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                      productoForm.disponible ? "translate-x-5" : "translate-x-0.5"
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                      productoForm.disponible ? "translate-x-5" : "translate-x-0"
                     }`}
                   />
                 </button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice, normalizar } from "@/lib/utils";
@@ -384,11 +385,12 @@ function ProductCard({
       {/* Product thumbnail */}
       {imgSrc ? (
         <div className="w-[60px] h-[60px] rounded-xl overflow-hidden flex-shrink-0 transition-transform group-hover:scale-105 bg-stone-50">
-          <img
+          <Image
             src={imgSrc}
             alt={prod.nombre}
+            width={60}
+            height={60}
             className="w-full h-full object-cover"
-            loading="lazy"
           />
         </div>
       ) : (
