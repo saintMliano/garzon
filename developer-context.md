@@ -134,6 +134,9 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-07-10 — CLAUDE.md (cerebro del proyecto)
+- Se agregó `CLAUDE.md` en la raíz: contexto/persona que cualquier instancia de IA (Fable 5 u otra) carga automáticamente al abrir el repo — establece el rol de "arquitecto/cerebro", la arquitectura intocable, los protocolos (seguridad, verificación, git+bitácora) y la primera tarea (revisión de consolidación). No cambia código de la app.
+
 ### 2026-07-10 — Fase 4.5: Pulido (cierre de la Fase 4)
 - **Trigger `updated_at`:** `pedidos.updated_at` se mantiene en el servidor ante cualquier UPDATE (`fase4-5-updated-at.sql`, función `set_updated_at`); se quitó el seteo manual desde el dashboard. Base para analíticas de tiempos.
 - **Temporizador de cocina:** el `TimerBadge` acota el tiempo a ≥ 0 (`Math.max(0, …)`) para no mostrar valores negativos con desfase de reloj de la tablet.
