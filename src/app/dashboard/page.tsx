@@ -68,7 +68,7 @@ function TimerBadge({ createdAt }: { createdAt: string }) {
 
   useEffect(() => {
     function update() {
-      const diff = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
+      const diff = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000));
       const mins = Math.floor(diff / 60);
       const secs = diff % 60;
       setElapsed(`${mins}:${secs.toString().padStart(2, "0")}`);
@@ -225,7 +225,7 @@ export default function DashboardPage() {
     setUpdatingId(pedidoId);
     const { data, error } = await supabase
       .from("pedidos")
-      .update({ estado: nextStatus, updated_at: new Date().toISOString() })
+      .update({ estado: nextStatus })
       .eq("id", pedidoId)
       .eq("estado", currentStatus)
       .select();

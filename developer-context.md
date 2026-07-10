@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-07-09):** implementadas las Fases 0-3 del plan de endurecimiento y la **Fase 4 completa (4.1-4.4)** — "El Estudio del Local": gestión de menú, imágenes, identidad visual y onboarding de locales. Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-07-09):** implementadas las Fases 0-3 del plan de endurecimiento y la **Fase 4 completa (4.1-4.5)** — "El Estudio del Local": gestión de menú, imágenes, identidad visual, onboarding de locales y pulido. Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -119,7 +119,7 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - [x] **4.4** — Onboarding de locales (super-admin):
   - [x] **4.4.a** — Base de seguridad: tabla `platform_admins`, endpoint server-only `POST /api/admin/onboard` (crea cuenta+local+vínculo+semilla) con service-role key y verificación de super-admin.
   - [x] **4.4.b** — Pantalla de alta `/dashboard/admin` (solo super-admin): formulario nombre/slug/email + **logo del local** (se sube server-side en el endpoint), y tarjeta con las credenciales del dueño + links.
-- [ ] **4.5** — Pulido (trigger de `updated_at` y otros quick wins).
+- [x] **4.5** — Pulido: trigger `updated_at` en pedidos (server-side), clamp del temporizador de cocina ante desfase de reloj, y `.env.example`.
 
 - [ ] **Fase 5 — Dominios propios:** columna `dominio` en `locales`, enrutado por `Host` en `proxy.ts`, SSL automático (al cerrar un cliente que lo pida).
 - [ ] **Fase 6 — Calidad, rendimiento y SEO:** menú como Server Component, metadata/SEO por local (`generateMetadata`), tipos generados con `supabase gen types`.
@@ -133,6 +133,11 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-10 — Fase 4.5: Pulido (cierre de la Fase 4)
+- **Trigger `updated_at`:** `pedidos.updated_at` se mantiene en el servidor ante cualquier UPDATE (`fase4-5-updated-at.sql`, función `set_updated_at`); se quitó el seteo manual desde el dashboard. Base para analíticas de tiempos.
+- **Temporizador de cocina:** el `TimerBadge` acota el tiempo a ≥ 0 (`Math.max(0, …)`) para no mostrar valores negativos con desfase de reloj de la tablet.
+- **`.env.example`:** documenta las variables requeridas (incluida `SUPABASE_SERVICE_ROLE_KEY` server-only) para futuros setups/deploys.
 
 ### 2026-07-09 — Fase 4.4.b: Pantalla de alta de locales
 - **UI `/dashboard/admin`** (pestaña "Alta de local"): visible con gate cliente (chequea `platform_admins`) + gate real en el servidor. Formulario nombre / slug autosugerido / email del dueño / **logo del local** (opcional), y tarjeta de resultado con email + contraseña temporal (botones "Copiar") y links a menú/dashboard.
