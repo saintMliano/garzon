@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const MIME_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
 
 // ============================================================
 // POST /api/admin/onboard  — Alta de un local nuevo (solo super-admin).
@@ -51,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   // 3. Validación de entrada.
-  let body: { nombre?: string; slug?: string; email?: string };
+  let body: { nombre?: string; slug?: string; email?: string; logo?: string };
   try {
     body = await request.json();
   } catch {
@@ -141,6 +149,28 @@ export async function POST(request: Request) {
     { local_id: local.id, nombre: "Bebidas", icono: "🥤", orden: 2 },
   ]);
 
+  // 4f. Logo (opcional): se sube server-side con la service-role key, porque
+  //     el super-admin no es staff del local nuevo y la RLS de Storage lo
+  //     bloquearía desde el cliente. Best-effort: si falla, el alta igual sigue.
+  let logoUrl: string | null = null;
+  const logo = typeof body.logo === "string" ? body.logo : null;
+  const match = logo?.match(/^data:([^;]+);base64,(.+)$/);
+  if (match) {
+    const mime = match[1];
+    const ext = MIME_EXT[mime] ?? "png";
+    const buffer = Buffer.from(match[2], "base64");
+    if (buffer.length > 0 && buffer.length <= 3 * 1024 * 1024) {
+      const path = `${local.id}/logo-${randomUUID()}.${ext}`;
+      const { error: upErr } = await admin.storage
+        .from("menu")
+        .upload(path, buffer, { contentType: mime, upsert: true });
+      if (!upErr) {
+        logoUrl = admin.storage.from("menu").getPublicUrl(path).data.publicUrl;
+        await admin.from("locales").update({ logo_url: logoUrl }).eq("id", local.id);
+      }
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     localId: local.id,
@@ -148,6 +178,7 @@ export async function POST(request: Request) {
     slug,
     email,
     tempPassword,
+    logoUrl,
     menuUrl: `/local/${slug}`,
     dashboardUrl: "/dashboard",
   });

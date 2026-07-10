@@ -326,6 +326,12 @@ export default function DashboardPage() {
               >
                 Identidad
               </Link>
+              <Link
+                href="/dashboard/admin"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Alta de local
+              </Link>
             </nav>
 
             {/* Stats */}

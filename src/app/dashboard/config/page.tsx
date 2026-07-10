@@ -192,6 +192,12 @@ export default function ConfigPage() {
               <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
                 Identidad
               </span>
+              <Link
+                href="/dashboard/admin"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Alta de local
+              </Link>
             </nav>
 
             <button
