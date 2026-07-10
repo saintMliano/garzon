@@ -112,6 +112,10 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 ### Pendiente / Futuro
 
+- [ ] **Consolidación pre-Fase 5** (prioridad actual): auditoría hecha el 2026-07-10; hallazgos y
+  plan ejecutable de 8 tareas (T1 rotación de secretos … T8 tests de integración) en
+  [`plan/`](plan/README.md). Ninguna tarea ejecutada aún.
+
 **Fase 4 — "El Estudio del Local" (self-service, prioridad actual)** — que un dueño arme y personalice su local sin SQL:
 - [x] **4.1** — Gestión de menú (categorías/productos, precios, disponibilidad).
 - [x] **4.2** — Imágenes: subida a Supabase Storage + `next/image` (fotos de productos; el logo se conectará en la 4.3).
@@ -133,6 +137,19 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-10 — Revisión de consolidación + plan ejecutable (`plan/`)
+- **Auditoría completa de Fases 0-4** (doc vs. código real: migraciones, RPCs, RLS, Storage,
+  onboarding, flujo cliente/cocina). Veredicto: arquitectura declarada = código real; apto para
+  demo/piloto, **no** para producción. Hallazgos por severidad en [`plan/AUDITORIA.md`](plan/AUDITORIA.md):
+  1 crítico (secretos por rotar), 3 altos (crear_pedido sin rate-limit/topes, sin máquina de
+  estados y staff puede editar cualquier columna de pedidos, staff puede editar slug/activo de su
+  local), 6 medios y 4 bajos.
+- **Plan de consolidación ejecutable** en [`plan/`](plan/README.md): 8 tareas autocontenidas
+  (T1-T8) con SQL/código exacto, criterios de aceptación, verificación y guardrails, diseñadas
+  para que modelos/desarrolladores menos capaces las ejecuten sin re-decidir arquitectura; más
+  esbozos de F5/F6 en `plan/backlog/`. Solo documentación: cero cambios de código o base en este
+  commit.
 
 ### 2026-07-10 — CLAUDE.md (cerebro del proyecto)
 - Se agregó `CLAUDE.md` en la raíz: contexto/persona que cualquier instancia de IA (Fable 5 u otra) carga automáticamente al abrir el repo — establece el rol de "arquitecto/cerebro", la arquitectura intocable, los protocolos (seguridad, verificación, git+bitácora) y la primera tarea (revisión de consolidación). No cambia código de la app.
