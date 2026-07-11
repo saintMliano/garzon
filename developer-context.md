@@ -149,6 +149,13 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-07-11 — Consolidación T7: tipos reales de la base
+- **`src/types/supabase.ts` (nuevo):** tipos de la base en el formato estándar de `supabase gen types` (`Database { public: { Tables, Views, Functions, Enums, CompositeTypes } }` con `Row`/`Insert`/`Update`/`Relationships` por tabla), cubriendo las 7 tablas reales (`locales` con `mesas`/`slogan`/`color_acento`, `categorias`, `productos`, `pedidos`, `pedido_items`, `local_staff`, `platform_admins`) y las RPCs `crear_pedido`/`get_order_status`, con la nulabilidad real de `supabase-schema.sql` + todas las migraciones (`numero_pedido` requerido en Insert, `categoria_id`/`producto_id` nullables, columnas con DEFAULT opcionales).
+- **`src/types/database.ts`:** `Database = Record<string, any>` (que anulaba el tipado de TODAS las consultas) reemplazado por `export type { Database } from "./supabase"`; `Producto.categoria_id` corregido a `string | null`. Las interfaces de dominio (`Local`, `Producto`, etc.) se mantienen intactas.
+- Ajustes mínimos de tipos (sin lógica): casts a tipos de dominio en `local/[slug]/page.tsx` (columnas con DEFAULT son nullables en la base pero el dominio las asume presentes) y `prod.categoria_id ?? ""` en el formulario de `dashboard/menu`.
+- **Prueba de fuego:** `from("tabla_inexistente")` es error de compilación; `select("columna_inexistente")` tipa el resultado como `SelectQueryError<"column … does not exist">` y falla al consumirlo. Nota: `Views`/`Enums`/`CompositeTypes` vacíos deben ser `{ [_ in never]: never }` (con `Record<string, never>` el `keyof` es `string` y `from()` acepta cualquier nombre).
+- **Los tipos se escribieron A MANO** (sin CLI de Supabase en este entorno). **Tras cada migración futura hay que actualizar `src/types/supabase.ts`**, o regenerarlo con `npx supabase gen types typescript --project-id <ref> --schema public > src/types/supabase.ts`. (Plan: T7.)
+
 ### 2026-07-10 — Revisión de consolidación + plan ejecutable (`plan/`)
 - **Auditoría completa de Fases 0-4** (doc vs. código real: migraciones, RPCs, RLS, Storage,
   onboarding, flujo cliente/cocina). Veredicto: arquitectura declarada = código real; apto para

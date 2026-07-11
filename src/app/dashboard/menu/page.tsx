@@ -217,7 +217,7 @@ export default function MenuPage() {
       nombre: prod.nombre,
       descripcion: prod.descripcion ?? "",
       precio: String(prod.precio),
-      categoria_id: prod.categoria_id,
+      categoria_id: prod.categoria_id ?? "",
       disponible: prod.disponible,
       orden: String(prod.orden),
       imagen_url: prod.imagen_url ?? "",

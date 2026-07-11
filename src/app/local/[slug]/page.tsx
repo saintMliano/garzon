@@ -42,7 +42,8 @@ export default function LocalPage() {
         setLocal(null);
         return;
       }
-      setLocal(localData);
+      // Cast: en la base estas columnas tienen DEFAULT (nullable), pero el dominio las asume presentes.
+      setLocal(localData as Local);
 
       const { data: cats, error: catsError } = await supabase
         .from("categorias").select("*").eq("local_id", localData.id).order("orden");
@@ -51,8 +52,8 @@ export default function LocalPage() {
         .from("productos").select("*").eq("local_id", localData.id).eq("disponible", true).order("orden");
       if (prodsError) throw prodsError;
 
-      setCategorias(cats ?? []);
-      setProductos(prods ?? []);
+      setCategorias((cats ?? []) as Categoria[]);
+      setProductos((prods ?? []) as Producto[]);
       if (cats && cats.length > 0) setActiveCategory(cats[0].id);
     } catch {
       setLoadError(true);
