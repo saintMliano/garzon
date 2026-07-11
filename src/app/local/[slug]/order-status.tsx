@@ -50,8 +50,12 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
         onDeliveredRef.current?.();
       }
 
-      if (["listo", "entregado", "cancelado"].includes(newStatus) && intervalId) {
+      if (["entregado", "cancelado"].includes(newStatus) && intervalId) {
         clearInterval(intervalId);
+      } else if (newStatus === "listo" && intervalId) {
+        // El pedido ya está listo: bajar la frecuencia mientras se espera la entrega.
+        clearInterval(intervalId);
+        intervalId = setInterval(fetchStatus, 15000);
       }
     }
 

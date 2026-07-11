@@ -100,6 +100,8 @@ export default function DashboardPage() {
   const [resolvingLocal, setResolvingLocal] = useState(true);
   const [noLocal, setNoLocal] = useState(false);
 
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -108,6 +110,10 @@ export default function DashboardPage() {
     async function resolveLocal() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setResolvingLocal(false); setNoLocal(true); return; }
+
+      const { data: adminRow } = await supabase
+        .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+      setIsPlatformAdmin(!!adminRow);
 
       const { data: staff } = await supabase
         .from("local_staff").select("local_id").eq("user_id", user.id).limit(1).maybeSingle();
@@ -141,8 +147,14 @@ export default function DashboardPage() {
 
     // Stats del header: sí filtran por día, pero excluyen cancelados para
     // que la "Venta" no cuente pedidos rechazados.
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Medianoche de HOY en America/Santiago (consistente con la numeración de
+    // pedidos, que también usa la hora de Chile), independiente de la zona de
+    // la tablet.
+    const now = new Date();
+    const chileNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }));
+    const offsetMs = now.getTime() - chileNow.getTime();
+    chileNow.setHours(0, 0, 0, 0);
+    const today = new Date(chileNow.getTime() + offsetMs);
 
     const { data: allToday } = await supabase
       .from("pedidos")
@@ -326,12 +338,14 @@ export default function DashboardPage() {
               >
                 Identidad
               </Link>
-              <Link
-                href="/dashboard/admin"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Alta de local
-              </Link>
+              {isPlatformAdmin && (
+                <Link
+                  href="/dashboard/admin"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+                >
+                  Alta de local
+                </Link>
+              )}
             </nav>
 
             {/* Stats */}

@@ -50,6 +50,7 @@ export default function MenuPage() {
   const [localNombre, setLocalNombre] = useState("");
   const [resolvingLocal, setResolvingLocal] = useState(true);
   const [noLocal, setNoLocal] = useState(false);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -71,6 +72,10 @@ export default function MenuPage() {
     async function resolveLocal() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setResolvingLocal(false); setNoLocal(true); return; }
+
+      const { data: adminRow } = await supabase
+        .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+      setIsPlatformAdmin(!!adminRow);
 
       const { data: staff } = await supabase
         .from("local_staff").select("local_id").eq("user_id", user.id).limit(1).maybeSingle();
@@ -353,12 +358,14 @@ export default function MenuPage() {
               >
                 Identidad
               </Link>
-              <Link
-                href="/dashboard/admin"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Alta de local
-              </Link>
+              {isPlatformAdmin && (
+                <Link
+                  href="/dashboard/admin"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+                >
+                  Alta de local
+                </Link>
+              )}
             </nav>
 
             <button

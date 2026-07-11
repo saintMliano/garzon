@@ -151,6 +151,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
   esbozos de F5/F6 en `plan/backlog/`. Solo documentación: cero cambios de código o base en este
   commit.
 
+### 2026-07-10 — Consolidación T5: fixes del cliente
+- **Seguimiento hasta `entregado`:** `order-status.tsx` ahora sigue sondeando en `listo` (a 15 s) y solo se detiene en `entregado`/`cancelado`; así el cliente ve la entrega y la auto-limpieza (`onDelivered`) por fin ocurre en el flujo normal (antes se detenía en `listo` y nunca la disparaba).
+- **Stats con hora de Chile:** el dashboard calcula la medianoche del día en `America/Santiago` (consistente con la numeración de pedidos), no con la zona de la tablet.
+- **Link "Alta de local" solo para super-admin:** las 4 páginas del dashboard consultan `platform_admins` y ocultan el link a quien no es admin (la página ya estaba gateada; esto es solo visibilidad).
+- Verificado: pedido llevado hasta entregado → el cliente vuelve solo al menú y limpia el `localStorage`; el no-admin no ve "Alta de local". (Plan: T5.)
+
 ### 2026-07-10 — Consolidación T4: columnas protegidas de locales + límites de Storage
 - Privilegios de columna en `locales` (migración `consolidacion-t4-locales-storage.sql`): `REVOKE UPDATE` + `GRANT UPDATE` solo sobre las 8 columnas de branding/operación (nombre, slogan, direccion, telefono, logo_url, color_primario, color_acento, mesas). El staff ya no puede cambiar `slug` ni `activo` (quedan al service-role).
 - Bucket `menu`: `file_size_limit` 3 MB + `allowed_mime_types` solo imágenes (antes el límite solo existía en el endpoint de onboarding).
