@@ -45,9 +45,10 @@ Los pedidos avanzan secuencialmente a través de 4 columnas interactivas:
 - **Autenticación:** Supabase Auth (email + contraseña) para el personal de cocina, con `@supabase/ssr` para gestión de sesión vía cookies. El acceso al dashboard está protegido a nivel de servidor.
 
 ### Clientes de Supabase (¡importante!)
-El proyecto usa **dos** clientes según el contexto:
+El proyecto usa **tres** clientes según el contexto:
 - `src/lib/supabase.ts` — cliente **anónimo** (clave pública). Lo usan las páginas públicas del cliente: menú, checkout (llamando RPCs) y seguimiento del pedido. Solo puede leer el menú público y ejecutar las dos RPCs permitidas; **no** puede leer ni escribir la tabla `pedidos` directamente.
 - `src/lib/supabase/client.ts` y `src/lib/supabase/server.ts` — clientes **autenticados** (`@supabase/ssr`) que leen la sesión desde cookies. Los usa el dashboard de cocina para que las políticas RLS reconozcan al usuario y filtren por su local.
+- `src/lib/supabase/admin.ts` — cliente **admin** (service-role key, **SOLO SERVIDOR**). Bypassa RLS y opera auth admin. Únicamente lo importa el route handler `/api/admin/onboard`; jamás debe llegar a un client component.
 
 ### Estructura de Base de Datos (Supabase)
 Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de endurecimiento en la carpeta [`migrations/`](migrations/).
@@ -55,26 +56,33 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 **Tablas:**
 - **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, etc.
 - **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). Lectura pública (el menú es público).
-- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas y estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`). **Acceso público revocado** (ver Seguridad).
+- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas y estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`). **Acceso público revocado** (ver Seguridad).
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
 - **`local_staff` (nueva):** Vincula usuarios de `auth.users` con `locales` (`user_id`, `local_id`). Determina qué local ve/gestiona cada cuenta de cocina. Se administra por SQL/rol de servicio.
+- **`platform_admins`:** marca qué usuarios son super-admins de la plataforma (pueden dar de alta locales vía `/api/admin/onboard`). RLS: cada quien lee solo su fila; se administra por service-role.
 
 **Integridad:** las FK `local_id` (categorias/productos/pedidos) y `pedido_id` (pedido_items) son `NOT NULL`. Hay `CHECK` en `precio > 0`, `total > 0`, `cantidad > 0` y `precio_unitario >= 0`.
 
 ### Funciones RPC (contrato del cliente anónimo)
 El cliente anónimo **no** toca la tabla `pedidos` directamente; opera vía dos funciones `SECURITY DEFINER`:
-- **`crear_pedido(p_local_id, p_nombre, p_mesa, p_notas, p_items jsonb) → uuid`**: crea el pedido y sus ítems en una sola transacción, **calcula el total en el servidor** leyendo el precio real de `productos` (ignora cualquier total enviado por el cliente), valida que el local esté activo y que cada producto exista y esté `disponible`. Devuelve el id del pedido.
+- **`crear_pedido(p_local_id, p_nombre, p_mesa, p_notas, p_items jsonb) → uuid`**: crea el pedido y sus ítems en una sola transacción, **calcula el total en el servidor** leyendo el precio real de `productos` **una sola vez** (ignora cualquier total enviado por el cliente), valida que el local esté activo y que cada producto exista y esté `disponible`. **Endurecida (T2):** rate-limit de 15 pedidos por local por minuto, topes de tamaño (cantidad ≤ 99, ≤ 50 productos, monto ≤ $10M) y `bigint` para evitar overflow. Devuelve el id del pedido.
 - **`get_order_status(p_order_id) → (estado, numero_pedido, created_at)`**: expone solo campos no sensibles del pedido cuyo UUID conoce el cliente (para el seguimiento).
+
+**Actualización de pedidos:** el staff solo puede cambiar la columna `estado` (privilegios de columna), y un trigger valida las transiciones del Kanban en el servidor (`nuevo→aceptado/cancelado`, `aceptado→preparando/cancelado`, `preparando→listo/cancelado`, `listo→entregado`). Las columnas `slug`/`activo` de `locales` y el `total` de `pedidos` no son actualizables por el staff (quedan al service-role).
 
 ### Estructura de Carpetas Clave
 - `src/app/page.tsx`: Landing page comercial que presenta el servicio.
 - `src/app/login/page.tsx`: Login del personal de cocina (email + contraseña).
 - `src/proxy.ts`: Middleware de Next 16 (convención `proxy`, antes `middleware`). Refresca la sesión y **redirige a `/login` si se accede a `/dashboard` sin sesión**.
 - `src/app/dashboard/page.tsx`: Tablero Kanban de cocina. Usa el cliente autenticado, resuelve el `local_id` del usuario vía `local_staff`, y **filtra todas las consultas y la suscripción realtime por `local_id`**. Incluye botón de cerrar sesión y muestra el nombre real del local.
-- `src/app/local/[slug]/`: Ruta dinámica del cliente. `page.tsx` (menú + persistencia), `checkout-modal.tsx` (llama `crear_pedido`), `order-status.tsx` (seguimiento vía `get_order_status` + **polling cada 4s**, ya no realtime), `cart-sheet.tsx`, `layout.tsx` (envuelve con `CartProvider`).
+- `src/app/dashboard/menu/page.tsx`: gestión self-service del menú (categorías, productos, precios, disponibilidad, fotos).
+- `src/app/dashboard/config/page.tsx`: identidad visual del local (nombre, slogan, colores, logo).
+- `src/app/dashboard/admin/page.tsx`: alta de locales (solo super-admin; el link se oculta a quien no lo es).
+- `src/app/api/admin/onboard/route.ts`: endpoint server-only de onboarding (usa el cliente admin / service-role).
+- `src/app/local/[slug]/`: Ruta dinámica del cliente. `page.tsx` (menú + persistencia), `checkout-modal.tsx` (llama `crear_pedido`), `order-status.tsx` (seguimiento vía `get_order_status` + **polling cada 4s**, 15s al llegar a `listo`, hasta `entregado`/`cancelado`), `cart-sheet.tsx`, `layout.tsx` (envuelve con `CartProvider`).
 - `src/lib/cart-context.tsx`: Contexto del carrito, **persistido en `localStorage`** por slug.
-- `src/lib/supabase.ts` / `src/lib/supabase/{client,server}.ts`: clientes anónimo y autenticados (ver arriba).
-- `migrations/`: migraciones SQL idempotentes de endurecimiento (`fase0-auth-rls.sql`, `fase1-integridad.sql`).
+- `src/lib/supabase.ts` / `src/lib/supabase/{client,server}.ts` / `src/lib/supabase/admin.ts`: clientes anónimo, autenticados y admin (ver arriba).
+- `migrations/`: migraciones SQL idempotentes de endurecimiento (`fase0` … `fase4-5`, más las de consolidación `consolidacion-t2/t3/t4`).
 
 ---
 
@@ -89,8 +97,11 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
   - `locales`, `categorias` y `productos` mantienen lectura pública (el menú es público).
 - **Precio a prueba de manipulación:** `crear_pedido` recalcula el total en el servidor; un cliente no puede enviar un pedido con total falso.
 - **Realtime:** el dashboard (autenticado) mantiene realtime filtrado por `local_id`. El seguimiento del **cliente** usa polling porque, al cerrar la lectura pública, el anónimo ya no recibe eventos `postgres_changes` de `pedidos`.
+- **Endurecimiento (consolidación T2-T4):** `crear_pedido` con rate-limit por local y topes de tamaño/monto; el staff solo puede cambiar la columna `estado` de sus pedidos (transiciones validadas por trigger en el servidor), no el `total`; no puede cambiar `slug`/`activo` de su local; el bucket `menu` limita tamaño (3 MB) y tipos (solo imágenes).
 
 > **Cuenta demo:** el local `el-lalo` está vinculado en `local_staff` a la cuenta del dueño (login por email + contraseña). Las credenciales no se versionan.
+
+> **Limitación conocida (onboarding):** el rollback de `/api/admin/onboard` es compensatorio (best-effort), no transaccional: si el borrado compensatorio falla puede quedar un usuario o local huérfano; se detecta buscando filas de `locales` sin fila asociada en `local_staff`.
 
 ---
 
@@ -150,6 +161,9 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
   para que modelos/desarrolladores menos capaces las ejecuten sin re-decidir arquitectura; más
   esbozos de F5/F6 en `plan/backlog/`. Solo documentación: cero cambios de código o base en este
   commit.
+
+### 2026-07-10 — Consolidación T6: coherencia documental
+- Sincronizado `developer-context.md` con el código real: **tres** clientes Supabase (se agregó `admin.ts`); tabla `platform_admins` y estado `cancelado` en el modelo de datos; rutas de la Fase 4 (`dashboard/{menu,config,admin}`, `/api/admin/onboard`, `lib/supabase/admin.ts`) en la estructura de carpetas; reflejo del endurecimiento T2-T4 (rate-limit/topes de `crear_pedido`, máquina de estados, columnas protegidas de `locales`, límites del bucket) en RPCs/Seguridad; y una nota de la limitación conocida del rollback del onboarding. Solo documentación. (Plan: T6.)
 
 ### 2026-07-10 — Consolidación T5: fixes del cliente
 - **Seguimiento hasta `entregado`:** `order-status.tsx` ahora sigue sondeando en `listo` (a 15 s) y solo se detiene en `entregado`/`cancelado`; así el cliente ve la entrega y la auto-limpieza (`onDelivered`) por fin ocurre en el flujo normal (antes se detenía en `listo` y nunca la disparaba).

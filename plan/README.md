@@ -36,7 +36,7 @@ paralelo (ramas separadas). T8 (tests) va al final porque debe cubrir las reglas
 | T3 | [Máquina de estados de pedidos + restringir UPDATE a `estado`](tareas/T3-maquina-estados-pedidos.md) | P1 | SQL | [x] |
 | T4 | [Proteger columnas de `locales` + límites del bucket](tareas/T4-proteger-locales-y-storage.md) | P1 | SQL | [x] |
 | T5 | [Fixes del cliente (polling a entregado, stats con hora de Chile, link admin)](tareas/T5-fixes-cliente.md) | P2 | TypeScript | [x] |
-| T6 | [Coherencia documental de `developer-context.md`](tareas/T6-coherencia-docs.md) | P2 | Docs | [ ] |
+| T6 | [Coherencia documental de `developer-context.md`](tareas/T6-coherencia-docs.md) | P2 | Docs | [x] |
 | T7 | [Tipos reales de la base (`Database`)](tareas/T7-tipos-generados.md) | P3 | TypeScript | [ ] |
 | T8 | [Suite mínima de tests de integración](tareas/T8-tests-integracion.md) | P3 | Tests | [ ] |
 
