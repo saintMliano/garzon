@@ -56,6 +56,8 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
         setError("Uno de los productos ya no está disponible. Vuelve al menú y revísalo.");
       } else if (message.includes("Cantidad inválida")) {
         setError(message);
+      } else if (message.includes("Demasiados pedidos")) {
+        setError("El local está recibiendo muchos pedidos; espera un minuto e intenta de nuevo.");
       } else {
         setError(message || "No se pudo enviar el pedido, intenta de nuevo");
       }

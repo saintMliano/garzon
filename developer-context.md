@@ -151,6 +151,11 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
   esbozos de F5/F6 en `plan/backlog/`. Solo documentación: cero cambios de código o base en este
   commit.
 
+### 2026-07-10 — Consolidación T2: crear_pedido v4 (endurecido)
+- `crear_pedido` (migración `consolidacion-t2-crear-pedido-v4.sql`): lee el precio de cada producto UNA sola vez (fija carrera total↔items), usa `bigint` + tope de $10.000.000 por pedido (evita overflow del `int`), acota tamaños (cantidad ≤ 99, ≤ 50 productos, largos de nombre/mesa/notas) y agrega rate-limit de 15 pedidos por local por minuto bajo el advisory lock (anti-spam anónimo).
+- Cliente: `checkout-modal.tsx` muestra un mensaje claro ante el rate-limit.
+- Verificado: pedido normal (items = total), cantidad 100 y tope de monto rechazados, 16º pedido/minuto bloqueado. (Plan: T2.)
+
 ### 2026-07-10 — CLAUDE.md (cerebro del proyecto)
 - Se agregó `CLAUDE.md` en la raíz: contexto/persona que cualquier instancia de IA (Fable 5 u otra) carga automáticamente al abrir el repo — establece el rol de "arquitecto/cerebro", la arquitectura intocable, los protocolos (seguridad, verificación, git+bitácora) y la primera tarea (revisión de consolidación). No cambia código de la app.
 
