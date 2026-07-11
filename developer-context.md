@@ -151,6 +151,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
   esbozos de F5/F6 en `plan/backlog/`. Solo documentación: cero cambios de código o base en este
   commit.
 
+### 2026-07-10 — Consolidación T4: columnas protegidas de locales + límites de Storage
+- Privilegios de columna en `locales` (migración `consolidacion-t4-locales-storage.sql`): `REVOKE UPDATE` + `GRANT UPDATE` solo sobre las 8 columnas de branding/operación (nombre, slogan, direccion, telefono, logo_url, color_primario, color_acento, mesas). El staff ya no puede cambiar `slug` ni `activo` (quedan al service-role).
+- Bucket `menu`: `file_size_limit` 3 MB + `allowed_mime_types` solo imágenes (antes el límite solo existía en el endpoint de onboarding).
+- El editor `/dashboard/config` ya enviaba solo columnas permitidas (no requirió cambio de cliente).
+- Verificado: staff edita branding OK, pero `slug`/`activo` → permission denied; subida > 3 MB rechazada por el bucket. (Plan: T4.)
+
 ### 2026-07-10 — Consolidación T3: máquina de estados de pedidos
 - Trigger `validar_transicion_pedido` (migración `consolidacion-t3-maquina-estados.sql`): valida en el servidor las transiciones del Kanban (nuevo→aceptado/cancelado, aceptado→preparando/cancelado, preparando→listo/cancelado, listo→entregado); rechaza saltos/reversas.
 - Privilegios de columna: `REVOKE UPDATE ON pedidos` + `GRANT UPDATE (estado) TO authenticated` — el staff solo puede tocar `estado`, no `total` ni otras columnas. La RLS de Fase 0 sigue decidiendo las filas.
