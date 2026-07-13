@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-07-09):** implementadas las Fases 0-3 del plan de endurecimiento y la **Fase 4 completa (4.1-4.5)** — "El Estudio del Local": gestión de menú, imágenes, identidad visual, onboarding de locales y pulido. Ver [Seguridad y Arquitectura de Datos](#-seguridad-y-arquitectura-de-datos), [Estado Actual](#-estado-actual-y-próximos-pasos) y el [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-07-12):** consolidación T7 completa (tipado real de Supabase). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -148,6 +148,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-07-12 — Consolidación T7: tipado real de Supabase
+- **Tipado estricto de base de datos:** creado `src/types/supabase.ts` con la estructura del esquema de Supabase, y modificado `src/types/database.ts` para exportar `Database` desde allí.
+- **Tipado de interfaz Producto:** cambiada la propiedad `categoria_id` a nullable (`string | null`) para reflejar la restricción `ON DELETE SET NULL` de Postgres.
+- **Solución de compatibilidad de tipos:** corregida la asignación de `categoria_id` en el formulario de edición de productos en el dashboard del menú, y añadidos casts explícitos a `Local`, `Categoria[]` y `Producto[]` al setear los estados correspondientes en la página del local.
+- **Validación:** compilado exitoso (`npm run build`) bajo tipado estricto de TypeScript.
 
 ### 2026-07-10 — Revisión de consolidación + plan ejecutable (`plan/`)
 - **Auditoría completa de Fases 0-4** (doc vs. código real: migraciones, RPCs, RLS, Storage,

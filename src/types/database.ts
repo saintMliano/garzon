@@ -32,7 +32,7 @@ export interface Categoria {
 export interface Producto {
     id: string;
     local_id: string;
-    categoria_id: string;
+    categoria_id: string | null;
     nombre: string;
     descripcion: string | null;
     precio: number;
@@ -82,5 +82,4 @@ export interface CartItem {
 }
 
 // Supabase Database type
-// Using 'any' for simplified typing — in production, generate types with `supabase gen types`
-export type Database = Record<string, any>;
+export type { Database } from "./supabase";
