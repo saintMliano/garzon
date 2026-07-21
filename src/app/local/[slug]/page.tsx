@@ -27,6 +27,9 @@ export default function LocalPage() {
   const [flashedId, setFlashedId] = useState<string | null>(null);
   const [mesaFromQR, setMesaFromQR] = useState<string | null>(null);
   const categoryRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const pillRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const pillContainerRef = useRef<HTMLDivElement>(null);
+  const isManualScrolling = useRef(false);
 
   const { addItem, itemCount, total, items, updateQuantity } = useCart();
 
@@ -93,10 +96,82 @@ export default function LocalPage() {
     }
   }, [slug]);
 
-  function scrollToCategory(catId: string) {
+  const scrollToCategory = useCallback((catId: string) => {
     setActiveCategory(catId);
+    isManualScrolling.current = true;
     categoryRefs.current.get(catId)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+    setTimeout(() => {
+      isManualScrolling.current = false;
+    }, 800);
+  }, []);
+
+  // Sync scroll position with active category pill
+  useEffect(() => {
+    if (loading || loadError || search || categorias.length === 0) return;
+
+    let rafId: number;
+
+    const handleScroll = () => {
+      if (isManualScrolling.current) return;
+
+      const headerOffset = 150; // offset matching scroll-mt-40
+      const categoryElements = categorias
+        .map((cat) => ({ id: cat.id, el: categoryRefs.current.get(cat.id) }))
+        .filter((item): item is { id: string; el: HTMLElement } => item.el !== null && item.el !== undefined);
+
+      if (categoryElements.length === 0) return;
+
+      // Check if user scrolled near bottom of page -> activate last category
+      const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60;
+      if (isAtBottom) {
+        const lastCat = categoryElements[categoryElements.length - 1];
+        setActiveCategory((prev) => (prev !== lastCat.id ? lastCat.id : prev));
+        return;
+      }
+
+      // Find current category section in viewport
+      let currentId = categoryElements[0].id;
+      for (const item of categoryElements) {
+        const rect = item.el.getBoundingClientRect();
+        if (rect.top <= headerOffset) {
+          currentId = item.id;
+        } else {
+          break;
+        }
+      }
+
+      setActiveCategory((prev) => (prev !== currentId ? currentId : prev));
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(handleScroll);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, [loading, loadError, search, categorias]);
+
+  // Auto-scroll category pill container horizontally when activeCategory changes
+  useEffect(() => {
+    if (!activeCategory) return;
+    const pillEl = pillRefs.current.get(activeCategory);
+    if (pillEl && pillContainerRef.current) {
+      const container = pillContainerRef.current;
+      const pillLeft = pillEl.offsetLeft;
+      const pillWidth = pillEl.offsetWidth;
+      const containerWidth = container.clientWidth;
+      const targetScrollLeft = pillLeft - containerWidth / 2 + pillWidth / 2;
+
+      container.scrollTo({
+        left: targetScrollLeft,
+        behavior: "smooth",
+      });
+    }
+  }, [activeCategory]);
 
   const handleAdd = useCallback((prod: Producto) => {
     addItem(prod);
@@ -259,11 +334,12 @@ export default function LocalPage() {
 
         {/* Category pills — hidden during search */}
         {!search && (
-          <div className="overflow-x-auto scrollbar-hide px-4 pb-3">
+          <div ref={pillContainerRef} className="overflow-x-auto scrollbar-hide px-4 pb-3">
             <div className="flex gap-2 max-w-lg mx-auto">
               {categorias.map((cat) => (
                 <button
                   key={cat.id}
+                  ref={(el) => { if (el) pillRefs.current.set(cat.id, el); }}
                   onClick={() => scrollToCategory(cat.id)}
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 ${
                     activeCategory === cat.id

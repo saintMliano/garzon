@@ -154,6 +154,7 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - **`src/middleware.ts` (optimizado):** Se reemplazó `src/proxy.ts` por `src/middleware.ts` con evaluación condicional: sólo invoca `supabase.auth.getUser()` en rutas de `/dashboard` o si hay cookies de auth activas (`sb-*`). Las visitas públicas al menú (`/local/[slug]`) ya no sufren latencia de autenticación.
 - **Redirección automática a `/login`:** El dashboard (`/dashboard`, `/dashboard/menu`, `/dashboard/config`, `/dashboard/admin`) redirige a `/login` al detectar que no hay usuario en sesión cliente, evitando pantallas en blanco o "Sin local asociado" al perder la sesión.
 - **Carga en paralelo en `/local/[slug]`:** `categorias` y `productos` ahora se consultan en paralelo con `Promise.all()`, reduciendo a la mitad la latencia de carga del menú.
+- **Scroll spy en el menú público:** Se sincronizó la barra de categorías superior con el scroll de la página utilizando `requestAnimationFrame`. La categoría visible actualmente en pantalla se resalta automáticamente y la barra horizontal se desplaza de forma fluida para centrar la categoría activa.
 
 ### 2026-07-12 — Consolidación T7: tipado real de Supabase
 - **Tipado estricto de base de datos:** creado `src/types/supabase.ts` con la estructura del esquema de Supabase, y modificado `src/types/database.ts` para exportar `Database` desde allí.
