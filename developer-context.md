@@ -149,6 +149,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-07-21 — Fix de Supabase + optimización de Middleware y menú cliente
+- **Re-activación de Supabase:** Se verificó la reactivación del proyecto en Supabase (`https://jrffaxuvxzitzlqdwroy.supabase.co`), resolviendo el error `ENOTFOUND` que bloqueaba las consultas.
+- **`src/middleware.ts` (optimizado):** Se reemplazó `src/proxy.ts` por `src/middleware.ts` con evaluación condicional: sólo invoca `supabase.auth.getUser()` en rutas de `/dashboard` o si hay cookies de auth activas (`sb-*`). Las visitas públicas al menú (`/local/[slug]`) ya no sufren latencia de autenticación.
+- **Redirección automática a `/login`:** El dashboard (`/dashboard`, `/dashboard/menu`, `/dashboard/config`, `/dashboard/admin`) redirige a `/login` al detectar que no hay usuario en sesión cliente, evitando pantallas en blanco o "Sin local asociado" al perder la sesión.
+- **Carga en paralelo en `/local/[slug]`:** `categorias` y `productos` ahora se consultan en paralelo con `Promise.all()`, reduciendo a la mitad la latencia de carga del menú.
+
 ### 2026-07-12 — Consolidación T7: tipado real de Supabase
 - **Tipado estricto de base de datos:** creado `src/types/supabase.ts` con la estructura del esquema de Supabase, y modificado `src/types/database.ts` para exportar `Database` desde allí.
 - **Tipado de interfaz Producto:** cambiada la propiedad `categoria_id` a nullable (`string | null`) para reflejar la restricción `ON DELETE SET NULL` de Postgres.
