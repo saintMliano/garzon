@@ -31,6 +31,7 @@ export default function LocalPage() {
   const { addItem, itemCount, total, items, updateQuantity } = useCart();
 
   const load = useCallback(async () => {
+    if (!slug) return;
     setLoading(true);
     setLoadError(false);
     try {
@@ -45,17 +46,19 @@ export default function LocalPage() {
       // Cast: en la base estas columnas tienen DEFAULT (nullable), pero el dominio las asume presentes.
       setLocal(localData as Local);
 
-      const { data: cats, error: catsError } = await supabase
-        .from("categorias").select("*").eq("local_id", localData.id).order("orden");
+      const [{ data: cats, error: catsError }, { data: prods, error: prodsError }] = await Promise.all([
+        supabase.from("categorias").select("*").eq("local_id", localData.id).order("orden"),
+        supabase.from("productos").select("*").eq("local_id", localData.id).eq("disponible", true).order("orden")
+      ]);
+
       if (catsError) throw catsError;
-      const { data: prods, error: prodsError } = await supabase
-        .from("productos").select("*").eq("local_id", localData.id).eq("disponible", true).order("orden");
       if (prodsError) throw prodsError;
 
       setCategorias((cats ?? []) as Categoria[]);
       setProductos((prods ?? []) as Producto[]);
       if (cats && cats.length > 0) setActiveCategory(cats[0].id);
-    } catch {
+    } catch (err) {
+      console.error("[LocalPage] Error cargando menú:", err);
       setLoadError(true);
     } finally {
       setLoading(false);

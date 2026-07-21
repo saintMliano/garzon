@@ -109,7 +109,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function resolveLocal() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setResolvingLocal(false); setNoLocal(true); return; }
+      if (!user) { window.location.href = "/login"; return; }
 
       const { data: adminRow } = await supabase
         .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();

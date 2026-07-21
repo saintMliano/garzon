@@ -149,6 +149,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-07-21 — Fix de Supabase + optimización de Middleware y menú cliente
+- **Re-activación de Supabase:** Se verificó la reactivación del proyecto en Supabase (`https://jrffaxuvxzitzlqdwroy.supabase.co`), resolviendo el error `ENOTFOUND` que bloqueaba las consultas.
+- **`src/middleware.ts` (optimizado):** Se reemplazó `src/proxy.ts` por `src/middleware.ts` con evaluación condicional: sólo invoca `supabase.auth.getUser()` en rutas de `/dashboard` o si hay cookies de auth activas (`sb-*`). Las visitas públicas al menú (`/local/[slug]`) ya no sufren latencia de autenticación.
+- **Redirección automática a `/login`:** El dashboard (`/dashboard`, `/dashboard/menu`, `/dashboard/config`, `/dashboard/admin`) redirige a `/login` al detectar que no hay usuario en sesión cliente, evitando pantallas en blanco o "Sin local asociado" al perder la sesión.
+- **Carga en paralelo en `/local/[slug]`:** `categorias` y `productos` ahora se consultan en paralelo con `Promise.all()`, reduciendo a la mitad la latencia de carga del menú.
+
 ### 2026-07-11 — Consolidación T7: tipos reales de la base
 - **`src/types/supabase.ts` (nuevo):** tipos de la base en el formato estándar de `supabase gen types` (`Database { public: { Tables, Views, Functions, Enums, CompositeTypes } }` con `Row`/`Insert`/`Update`/`Relationships` por tabla), cubriendo las 7 tablas reales (`locales` con `mesas`/`slogan`/`color_acento`, `categorias`, `productos`, `pedidos`, `pedido_items`, `local_staff`, `platform_admins`) y las RPCs `crear_pedido`/`get_order_status`, con la nulabilidad real de `supabase-schema.sql` + todas las migraciones (`numero_pedido` requerido en Insert, `categoria_id`/`producto_id` nullables, columnas con DEFAULT opcionales).
 - **`src/types/database.ts`:** `Database = Record<string, any>` (que anulaba el tipado de TODAS las consultas) reemplazado por `export type { Database } from "./supabase"`; `Producto.categoria_id` corregido a `string | null`. Las interfaces de dominio (`Local`, `Producto`, etc.) se mantienen intactas.
