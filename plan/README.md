@@ -31,7 +31,7 @@ paralelo (ramas separadas). T8 (tests) va al final porque debe cubrir las reglas
 
 | # | Tarea | Prioridad | Tipo | Estado |
 |---|-------|-----------|------|--------|
-| T1 | [Rotación de secretos](tareas/T1-rotacion-secretos.md) | **P0 — bloqueante producción** | Manual (dueño) + checklist | [ ] |
+| T1 | [Rotación de secretos](tareas/T1-rotacion-secretos.md) | **P0 — bloqueante producción** | Manual (dueño) + checklist | [x] |
 | T2 | [Endurecer `crear_pedido` (rate-limit + topes + fix de carrera)](tareas/T2-endurecer-crear-pedido.md) | P1 | SQL | [x] |
 | T3 | [Máquina de estados de pedidos + restringir UPDATE a `estado`](tareas/T3-maquina-estados-pedidos.md) | P1 | SQL | [x] |
 | T4 | [Proteger columnas de `locales` + límites del bucket](tareas/T4-proteger-locales-y-storage.md) | P1 | SQL | [x] |

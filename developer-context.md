@@ -149,6 +149,12 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-07-22 — Consolidación T1: Rotación de secretos completada
+- **Rotación de Service-Role Key:** `SUPABASE_SERVICE_ROLE_KEY` fue regenerada en Supabase y actualizada en Vercel, `.env.local` y `.env.test`. Las claves expuestas en historiales previos quedaron revocadas e invalidadas (`HTTP 401`).
+- **Reset de Contraseña de Postgres:** Restablecida la clave directa de Postgres en Supabase Dashboard.
+- **Reset de Contraseña Super-Admin:** Actualizada la contraseña del usuario super-admin (`emiliogalvez14@gmail.com`) en Supabase Auth mediante la API de administración.
+- **Verificación:** Ejecución limpia de `npm test` (19/19 tests pasados) validando autenticación, aislamiento RLS y permisos del servidor con las credenciales rotadas.
+
 ### 2026-07-22 — Consolidación T8: Suite de tests de integración (Vitest)
 - **Suite de tests de integración (`tests/`):** Implementada la suite completa de 19 tests automatizados contra la API real de Supabase utilizando Vitest.
 - **Fixtures e integración limpia (`tests/setup.ts`):** Creación y limpieza automatizada en cascada de locales (`test-local-a-<ts>`), categorías, productos, usuarios de prueba en Auth y vínculos `local_staff`, garantizando estado neutro sin datos huérfanos.
