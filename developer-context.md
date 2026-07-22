@@ -149,6 +149,16 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-07-22 — Consolidación T8: Suite de tests de integración (Vitest)
+- **Suite de tests de integración (`tests/`):** Implementada la suite completa de 19 tests automatizados contra la API real de Supabase utilizando Vitest.
+- **Fixtures e integración limpia (`tests/setup.ts`):** Creación y limpieza automatizada en cascada de locales (`test-local-a-<ts>`), categorías, productos, usuarios de prueba en Auth y vínculos `local_staff`, garantizando estado neutro sin datos huérfanos.
+- **Cobertura de invariantes de seguridad:**
+  - `tests/rls-aislamiento.test.ts`: RLS de lectura/escritura anónima bloqueada, aislamiento multi-tenant estricto entre staff de distintos locales, restricción de UPDATE en `total` (T3) y `slug`/`activo` (T4).
+  - `tests/crear-pedido.test.ts`: RPC `crear_pedido` con recálculo de total en servidor, rechazo de productos ajenos/no disponibles, tope de 99 unidades, 50 ítems y rate-limit de 15 pedidos/min (T2).
+  - `tests/estados.test.ts`: Transición secuencial del Kanban (`nuevo` ➡️ `aceptado` ➡️ `preparando` ➡️ `listo` ➡️ `entregado`) y rechazo de saltos o reversas inválidas por el trigger Postgres (T3).
+  - `tests/get-order-status.test.ts`: Consulta de estado pública por UUID y respuesta segura ante UUID inexistente.
+- **Verificación:** `npm test` verde en ejecuciones consecutivas (19/19 tests pasados).
+
 ### 2026-07-21 — Fix de Supabase + optimización de Middleware y menú cliente
 - **Re-activación de Supabase:** Se verificó la reactivación del proyecto en Supabase (`https://jrffaxuvxzitzlqdwroy.supabase.co`), resolviendo el error `ENOTFOUND` que bloqueaba las consultas.
 - **`src/middleware.ts` (optimizado):** Se reemplazó `src/proxy.ts` por `src/middleware.ts` con evaluación condicional: sólo invoca `supabase.auth.getUser()` en rutas de `/dashboard` o si hay cookies de auth activas (`sb-*`). Las visitas públicas al menú (`/local/[slug]`) ya no sufren latencia de autenticación.

@@ -1,0 +1,251 @@
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+import path from "path";
+import type { Database } from "@/types/database";
+
+// Cargar variables de entorno desde .env.test
+dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
+
+export const SUPABASE_URL = process.env.TEST_SUPABASE_URL;
+export const SUPABASE_ANON_KEY = process.env.TEST_SUPABASE_ANON_KEY;
+export const SUPABASE_SERVICE_ROLE_KEY = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error(
+    "Faltan variables de entorno requeridas en .env.test (TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY, TEST_SUPABASE_SERVICE_ROLE_KEY)."
+  );
+}
+
+// Cliente Admin (service-role, bypassa RLS)
+export const adminClient = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+
+// Cliente Anónimo (simula cliente de la web pública)
+export const anonClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+
+export type TestFixtures = {
+  localA: {
+    id: string;
+    slug: string;
+    nombre: string;
+    catId: string;
+    prodAvailable: { id: string; nombre: string; precio: number };
+    prodUnavailable: { id: string; nombre: string; precio: number };
+  };
+  localB: {
+    id: string;
+    slug: string;
+    nombre: string;
+    catId: string;
+    prodAvailable: { id: string; nombre: string; precio: number };
+  };
+  staffA: {
+    id: string;
+    email: string;
+    pass: string;
+  };
+  staffB: {
+    id: string;
+    email: string;
+    pass: string;
+  };
+};
+
+export async function setupTestFixtures(): Promise<TestFixtures> {
+  const ts = Date.now();
+  const rand = Math.random().toString(36).substring(2, 7);
+
+  // 1. Crear Locales de Prueba
+  const slugA = `test-local-a-${ts}-${rand}`;
+  const slugB = `test-local-b-${ts}-${rand}`;
+
+  const { data: localA, error: errLocalA } = await adminClient
+    .from("locales")
+    .insert({
+      nombre: `Test Local A ${ts}`,
+      slug: slugA,
+      direccion: "Calle Test 123",
+      color_primario: "#f97316",
+      color_acento: "#f97316",
+      activo: true,
+      mesas: ["Mesa 1", "Mesa 2"],
+    })
+    .select()
+    .single();
+
+  if (errLocalA || !localA) throw new Error(`Error creando Local A: ${errLocalA?.message}`);
+
+  const { data: localB, error: errLocalB } = await adminClient
+    .from("locales")
+    .insert({
+      nombre: `Test Local B ${ts}`,
+      slug: slugB,
+      direccion: "Calle Test 456",
+      color_primario: "#3b82f6",
+      color_acento: "#3b82f6",
+      activo: true,
+      mesas: ["Mesa A"],
+    })
+    .select()
+    .single();
+
+  if (errLocalB || !localB) throw new Error(`Error creando Local B: ${errLocalB?.message}`);
+
+  // 2. Crear Categorías
+  const { data: catA, error: errCatA } = await adminClient
+    .from("categorias")
+    .insert({ local_id: localA.id, nombre: "Hamburguesas Test", orden: 1, icono: "🍔" })
+    .select()
+    .single();
+
+  if (errCatA || !catA) throw new Error(`Error creando Categoria A: ${errCatA?.message}`);
+
+  const { data: catB, error: errCatB } = await adminClient
+    .from("categorias")
+    .insert({ local_id: localB.id, nombre: "Bebidas Test", orden: 1, icono: "🥤" })
+    .select()
+    .single();
+
+  if (errCatB || !catB) throw new Error(`Error creando Categoria B: ${errCatB?.message}`);
+
+  // 3. Crear Productos
+  const { data: prodA1, error: errProdA1 } = await adminClient
+    .from("productos")
+    .insert({
+      local_id: localA.id,
+      categoria_id: catA.id,
+      nombre: "Burguer Clasica",
+      precio: 5000,
+      disponible: true,
+      orden: 1,
+    })
+    .select()
+    .single();
+
+  const { data: prodA2, error: errProdA2 } = await adminClient
+    .from("productos")
+    .insert({
+      local_id: localA.id,
+      categoria_id: catA.id,
+      nombre: "Burguer Agotada",
+      precio: 6000,
+      disponible: false,
+      orden: 2,
+    })
+    .select()
+    .single();
+
+  const { data: prodB1, error: errProdB1 } = await adminClient
+    .from("productos")
+    .insert({
+      local_id: localB.id,
+      categoria_id: catB.id,
+      nombre: "Cola Test",
+      precio: 2000,
+      disponible: true,
+      orden: 1,
+    })
+    .select()
+    .single();
+
+  if (errProdA1 || errProdA2 || errProdB1 || !prodA1 || !prodA2 || !prodB1) {
+    throw new Error("Error creando productos de prueba");
+  }
+
+  // 4. Crear Usuarios de Prueba en Auth
+  const emailA = `test-staff-a-${ts}-${rand}@test.garzon`;
+  const passA = `PassA-${ts}!`;
+  const { data: userA, error: errUserA } = await adminClient.auth.admin.createUser({
+    email: emailA,
+    password: passA,
+    email_confirm: true,
+  });
+
+  if (errUserA || !userA.user) throw new Error(`Error creando Usuario Staff A: ${errUserA?.message}`);
+
+  const emailB = `test-staff-b-${ts}-${rand}@test.garzon`;
+  const passB = `PassB-${ts}!`;
+  const { data: userB, error: errUserB } = await adminClient.auth.admin.createUser({
+    email: emailB,
+    password: passB,
+    email_confirm: true,
+  });
+
+  if (errUserB || !userB.user) throw new Error(`Error creando Usuario Staff B: ${errUserB?.message}`);
+
+  // 5. Vincular Staff a Locales
+  await adminClient.from("local_staff").insert([
+    { user_id: userA.user.id, local_id: localA.id },
+    { user_id: userB.user.id, local_id: localB.id },
+  ]);
+
+  return {
+    localA: {
+      id: localA.id,
+      slug: slugA,
+      nombre: localA.nombre,
+      catId: catA.id,
+      prodAvailable: { id: prodA1.id, nombre: prodA1.nombre, precio: prodA1.precio },
+      prodUnavailable: { id: prodA2.id, nombre: prodA2.nombre, precio: prodA2.precio },
+    },
+    localB: {
+      id: localB.id,
+      slug: slugB,
+      nombre: localB.nombre,
+      catId: catB.id,
+      prodAvailable: { id: prodB1.id, nombre: prodB1.nombre, precio: prodB1.precio },
+    },
+    staffA: { id: userA.user.id, email: emailA, pass: passA },
+    staffB: { id: userB.user.id, email: emailB, pass: passB },
+  };
+}
+
+export async function cleanupTestFixtures(fixtures: TestFixtures) {
+  if (!fixtures) return;
+
+  const localIds = [fixtures.localA.id, fixtures.localB.id];
+  const userIds = [fixtures.staffA.id, fixtures.staffB.id];
+
+  try {
+    // 1. Borrar pedidos e ítems asociados
+    const { data: pedidos } = await adminClient
+      .from("pedidos")
+      .select("id")
+      .in("local_id", localIds);
+
+    if (pedidos && pedidos.length > 0) {
+      const orderIds = pedidos.map((p) => p.id);
+      await adminClient.from("pedido_items").delete().in("pedido_id", orderIds);
+      await adminClient.from("pedidos").delete().in("id", orderIds);
+    }
+
+    // 2. Borrar productos y categorías
+    await adminClient.from("productos").delete().in("local_id", localIds);
+    await adminClient.from("categorias").delete().in("local_id", localIds);
+
+    // 3. Borrar local_staff
+    await adminClient.from("local_staff").delete().in("local_id", localIds);
+
+    // 4. Borrar locales
+    await adminClient.from("locales").delete().in("id", localIds);
+
+    // 5. Borrar usuarios de Auth
+    for (const uid of userIds) {
+      await adminClient.auth.admin.deleteUser(uid);
+    }
+  } catch (err) {
+    console.error("[setupTestFixtures] Error durante la limpieza:", err);
+  }
+}
+
+export async function createAuthenticatedClient(email: string, pass: string) {
+  const client = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { error } = await client.auth.signInWithPassword({ email, password: pass });
+  if (error) throw new Error(`Error autenticando cliente test (${email}): ${error.message}`);
+  return client;
+}
