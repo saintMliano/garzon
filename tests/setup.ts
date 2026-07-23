@@ -155,31 +155,33 @@ export async function setupTestFixtures(): Promise<TestFixtures> {
     throw new Error("Error creando productos de prueba");
   }
 
-  // 4. Crear Usuarios de Prueba en Auth
+  // 4. Crear Usuarios de Prueba en Auth con reintento por rate-limit/JWT transient errors
+  async function createTestUser(email: string, pass: string) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const res = await adminClient.auth.admin.createUser({
+        email,
+        password: pass,
+        email_confirm: true,
+      });
+      if (res.data?.user) return res.data.user;
+      if (attempt === 3) throw new Error(`Error creando usuario ${email}: ${res.error?.message}`);
+      await new Promise((r) => setTimeout(r, 500 * attempt));
+    }
+    throw new Error(`Error creando usuario ${email}`);
+  }
+
   const emailA = `test-staff-a-${ts}-${rand}@test.garzon`;
   const passA = `PassA-${ts}!`;
-  const { data: userA, error: errUserA } = await adminClient.auth.admin.createUser({
-    email: emailA,
-    password: passA,
-    email_confirm: true,
-  });
-
-  if (errUserA || !userA.user) throw new Error(`Error creando Usuario Staff A: ${errUserA?.message}`);
+  const userAObj = await createTestUser(emailA, passA);
 
   const emailB = `test-staff-b-${ts}-${rand}@test.garzon`;
   const passB = `PassB-${ts}!`;
-  const { data: userB, error: errUserB } = await adminClient.auth.admin.createUser({
-    email: emailB,
-    password: passB,
-    email_confirm: true,
-  });
-
-  if (errUserB || !userB.user) throw new Error(`Error creando Usuario Staff B: ${errUserB?.message}`);
+  const userBObj = await createTestUser(emailB, passB);
 
   // 5. Vincular Staff a Locales
   await adminClient.from("local_staff").insert([
-    { user_id: userA.user.id, local_id: localA.id },
-    { user_id: userB.user.id, local_id: localB.id },
+    { user_id: userAObj.id, local_id: localA.id },
+    { user_id: userBObj.id, local_id: localB.id },
   ]);
 
   return {
@@ -198,8 +200,8 @@ export async function setupTestFixtures(): Promise<TestFixtures> {
       catId: catB.id,
       prodAvailable: { id: prodB1.id, nombre: prodB1.nombre, precio: prodB1.precio },
     },
-    staffA: { id: userA.user.id, email: emailA, pass: passA },
-    staffB: { id: userB.user.id, email: emailB, pass: passB },
+    staffA: { id: userAObj.id, email: emailA, pass: passA },
+    staffB: { id: userBObj.id, email: emailB, pass: passB },
   };
 }
 

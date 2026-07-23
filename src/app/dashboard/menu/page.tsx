@@ -68,6 +68,8 @@ export default function MenuPage() {
   const [savingProducto, setSavingProducto] = useState(false);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
 
+  const [localesList, setLocalesList] = useState<{ id: string; nombre: string; slug: string }[]>([]);
+
   useEffect(() => {
     async function resolveLocal() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -75,22 +77,60 @@ export default function MenuPage() {
 
       const { data: adminRow } = await supabase
         .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
-      setIsPlatformAdmin(!!adminRow);
+      const isAdmin = !!adminRow;
+      setIsPlatformAdmin(isAdmin);
 
-      const { data: staff } = await supabase
-        .from("local_staff").select("local_id").eq("user_id", user.id).limit(1).maybeSingle();
+      let availableLocales: { id: string; nombre: string; slug: string }[] = [];
 
-      if (!staff) { setResolvingLocal(false); setNoLocal(true); return; }
+      if (isAdmin) {
+        const { data: all } = await supabase
+          .from("locales")
+          .select("id, nombre, slug")
+          .order("nombre");
+        availableLocales = all ?? [];
+      } else {
+        const { data: staffRows } = await supabase
+          .from("local_staff")
+          .select("local_id, locales(id, nombre, slug)")
+          .eq("user_id", user.id);
 
-      const { data: local } = await supabase
-        .from("locales").select("nombre, slug").eq("id", staff.local_id).single();
+        availableLocales = (staffRows ?? [])
+          .map((s: any) => s.locales)
+          .filter((l: any): l is { id: string; nombre: string; slug: string } => Boolean(l && l.id));
+      }
 
-      setLocalId(staff.local_id);
-      setLocalNombre(local?.nombre ?? "");
+      if (availableLocales.length === 0) {
+        setResolvingLocal(false);
+        setNoLocal(true);
+        return;
+      }
+
+      setLocalesList(availableLocales);
+
+      const savedLocalId = typeof window !== "undefined" ? localStorage.getItem("garzon_selected_local_id") : null;
+      const validSaved = availableLocales.find((l) => l.id === savedLocalId);
+      const chosen = validSaved || availableLocales[0];
+
+      setLocalId(chosen.id);
+      setLocalNombre(chosen.nombre);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("garzon_selected_local_id", chosen.id);
+      }
       setResolvingLocal(false);
     }
     resolveLocal();
   }, [supabase]);
+
+  function handleLocalChange(newId: string) {
+    const chosen = localesList.find((l) => l.id === newId);
+    if (!chosen) return;
+    setLocalId(chosen.id);
+    setLocalNombre(chosen.nombre);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("garzon_selected_local_id", chosen.id);
+    }
+    fetchMenu(chosen.id);
+  }
 
   async function fetchMenu(currentLocalId: string) {
     setLoading(true);
@@ -336,7 +376,23 @@ export default function MenuPage() {
               🍔
             </div>
             <div>
-              <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
+              {localesList.length > 1 ? (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={localId ?? ""}
+                    onChange={(e) => handleLocalChange(e.target.value)}
+                    className="bg-stone-900 border border-stone-700 text-white font-bold text-sm md:text-base rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer shadow-sm"
+                  >
+                    {localesList.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
+              )}
               <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
