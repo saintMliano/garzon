@@ -1,0 +1,870 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { formatPrice } from "@/lib/utils";
+import type { OrderStatus } from "@/types/database";
+
+// ============================================================
+// Tipos de las RPCs de reportes (F6).
+// Los montos son enteros en pesos chilenos.
+// ============================================================
+
+type ResumenVentas = {
+  pedidos_total: number;
+  pedidos_entregados: number;
+  pedidos_pendientes: number;
+  pedidos_cancelados: number;
+  venta_entregada: number;
+  venta_total: number;
+  ticket_promedio: number;
+};
+
+type VentaPorDia = {
+  dia: string; // YYYY-MM-DD
+  pedidos: number;
+  venta: number;
+};
+
+type TopProducto = {
+  // `string | null` a propósito, aunque los tipos generados digan `string`:
+  // Postgres no expone la nulabilidad de las columnas que devuelve una función,
+  // y `pedido_items.producto_id` es ON DELETE SET NULL, así que un producto
+  // borrado del menú deja ítems históricos sin id. No lo "corrijas" a `string`.
+  producto_id: string | null;
+  nombre: string;
+  unidades: number;
+  venta: number;
+};
+
+/**
+ * Resultado del reporte, etiquetado con la `clave` (local + rango) que lo produjo.
+ * Comparar esa clave contra la actual es lo que define si hay que mostrar el
+ * spinner, sin necesidad de un `setLoading(true)` sincrónico dentro del efecto.
+ */
+type DatosReporte = {
+  clave: string;
+  resumen: ResumenVentas | null;
+  porDia: VentaPorDia[];
+  topProductos: TopProducto[];
+};
+
+type PedidoExport = {
+  numero_pedido: number;
+  created_at: string;
+  mesa: string | null;
+  nombre_cliente: string;
+  estado: OrderStatus;
+  total: number;
+};
+
+
+// ============================================================
+// Fechas — SIEMPRE en America/Santiago.
+// La tablet del local puede estar en cualquier zona; el corte de día del
+// sistema (numeración de pedidos, RPCs de reporte) es el chileno.
+// ============================================================
+
+function hoyChile(): string {
+  // en-CA da formato YYYY-MM-DD
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
+}
+
+/** Suma (o resta) días a una fecha YYYY-MM-DD. Mediodía UTC evita saltos por horario de verano. */
+function sumarDias(fecha: string, dias: number): string {
+  const d = new Date(`${fecha}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Primer día del mes al que pertenece `fecha`. */
+function primerDiaMes(fecha: string): string {
+  return `${fecha.slice(0, 7)}-01`;
+}
+
+/** Diferencia en ms entre la hora de Chile y UTC para un instante dado (cubre el cambio de hora). */
+function offsetChileMs(instante: Date): number {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(instante);
+
+  const p: Record<string, string> = {};
+  for (const parte of partes) p[parte.type] = parte.value;
+
+  const comoUtc = Date.UTC(
+    Number(p.year),
+    Number(p.month) - 1,
+    Number(p.day),
+    Number(p.hour) % 24, // algunos motores devuelven "24" para medianoche
+    Number(p.minute),
+    Number(p.second)
+  );
+  return comoUtc - instante.getTime();
+}
+
+/** ¿Este instante son exactamente las 00:00 de `fecha` en Chile? (sv-SE da "YYYY-MM-DD HH:mm:ss") */
+function esMedianocheChile(instante: Date, fecha: string): boolean {
+  return instante.toLocaleString("sv-SE", { timeZone: "America/Santiago" }) === `${fecha} 00:00:00`;
+}
+
+/**
+ * Instante UTC de las 00:00 de `fecha` en hora de Chile.
+ * Se usa para que el CSV cubra exactamente el mismo rango que las RPCs.
+ *
+ * Dos candidatos porque el offset del día puede no ser el del instante tentativo
+ * (cambio de hora). Se valida cuál cae de verdad en la medianoche pedida.
+ */
+function inicioDiaChile(fecha: string): Date {
+  const tentativo = new Date(`${fecha}T00:00:00Z`);
+  const c1 = new Date(tentativo.getTime() - offsetChileMs(tentativo));
+  const c2 = new Date(tentativo.getTime() - offsetChileMs(c1));
+
+  const validos = [c1, c2].filter((c) => esMedianocheChile(c, fecha));
+  // En el cambio de hora de septiembre la medianoche no existe (00:00 salta a 01:00)
+  // y ningún candidato es válido; Postgres resuelve ese caso hacia adelante, así
+  // que se toma el instante mayor y el CSV queda alineado con las RPCs.
+  const elegidos = validos.length > 0 ? validos : [c1, c2];
+  return new Date(Math.max(...elegidos.map((c) => c.getTime())));
+}
+
+function fechaHoraChile(iso: string): string {
+  return new Date(iso).toLocaleString("es-CL", {
+    timeZone: "America/Santiago",
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
+
+/** "2026-08-11" → "lun 11 ago" */
+function etiquetaDia(fecha: string): string {
+  return new Date(`${fecha}T12:00:00Z`).toLocaleDateString("es-CL", {
+    timeZone: "UTC",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+/** "2026-08-11" → "11 de agosto de 2026" */
+function fechaLarga(fecha: string): string {
+  return new Date(`${fecha}T12:00:00Z`).toLocaleDateString("es-CL", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+// ============================================================
+// Rangos
+// ============================================================
+
+type PresetRango = "hoy" | "ayer" | "7dias" | "mes" | "mes_pasado" | "personalizado";
+
+const PRESETS: { id: PresetRango; label: string }[] = [
+  { id: "hoy", label: "Hoy" },
+  { id: "ayer", label: "Ayer" },
+  { id: "7dias", label: "Últimos 7 días" },
+  { id: "mes", label: "Este mes" },
+  { id: "mes_pasado", label: "Mes pasado" },
+  { id: "personalizado", label: "Personalizado" },
+];
+
+function rangoDePreset(preset: Exclude<PresetRango, "personalizado">): { desde: string; hasta: string } {
+  const hoy = hoyChile();
+  switch (preset) {
+    case "hoy":
+      return { desde: hoy, hasta: hoy };
+    case "ayer": {
+      const ayer = sumarDias(hoy, -1);
+      return { desde: ayer, hasta: ayer };
+    }
+    case "7dias":
+      return { desde: sumarDias(hoy, -6), hasta: hoy };
+    case "mes":
+      return { desde: primerDiaMes(hoy), hasta: hoy };
+    case "mes_pasado": {
+      const finMesPasado = sumarDias(primerDiaMes(hoy), -1);
+      return { desde: primerDiaMes(finMesPasado), hasta: finMesPasado };
+    }
+  }
+}
+
+const ETIQUETA_ESTADO: Record<OrderStatus, string> = {
+  nuevo: "Nuevo",
+  aceptado: "Aceptado",
+  preparando: "Preparando",
+  listo: "Listo",
+  entregado: "Entregado",
+  cancelado: "Rechazado",
+};
+
+/** Tope de días que se dibujan en el gráfico; más que eso es ilegible igual. */
+const MAX_DIAS_GRAFICO = 180;
+
+// ============================================================
+// CSV
+// ============================================================
+
+function campoCsv(valor: string): string {
+  return `"${valor.replace(/"/g, '""')}"`;
+}
+
+export default function ReportesPage() {
+  const supabase = useMemo(() => createClient(), []);
+
+  const [localId, setLocalId] = useState<string | null>(null);
+  const [localNombre, setLocalNombre] = useState("");
+  const [localSlug, setLocalSlug] = useState("");
+  const [resolvingLocal, setResolvingLocal] = useState(true);
+  const [noLocal, setNoLocal] = useState(false);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [localesList, setLocalesList] = useState<{ id: string; nombre: string; slug: string }[]>([]);
+
+  const rangoInicial = useMemo(() => rangoDePreset("hoy"), []);
+  const [preset, setPreset] = useState<PresetRango>("hoy");
+  const [desde, setDesde] = useState(rangoInicial.desde);
+  const [hasta, setHasta] = useState(rangoInicial.hasta);
+
+  const [datos, setDatos] = useState<DatosReporte | null>(null);
+  const [errorCarga, setErrorCarga] = useState<{ clave: string; msg: string } | null>(null);
+  const [intento, setIntento] = useState(0); // lo incrementa "Reintentar"
+  const [exportando, setExportando] = useState(false);
+  const [errorExport, setErrorExport] = useState<string | null>(null);
+
+  const rangoValido = desde <= hasta;
+  const clave = `${localId ?? ""}|${desde}|${hasta}`;
+
+  const errorMsg = errorCarga?.clave === clave ? errorCarga.msg : null;
+  const datosVigentes = datos?.clave === clave ? datos : null;
+  const loading = !datosVigentes && !errorMsg;
+
+  const resumen = datosVigentes?.resumen ?? null;
+  const porDia = useMemo(() => datosVigentes?.porDia ?? [], [datosVigentes]);
+  const topProductos = useMemo(() => datosVigentes?.topProductos ?? [], [datosVigentes]);
+
+  // ===== Resolución de local (mismo patrón que /dashboard/menu) =====
+  useEffect(() => {
+    async function resolveLocal() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { window.location.href = "/login"; return; }
+
+      const { data: adminRow } = await supabase
+        .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+      // Solo controla la visibilidad del link "Alta de local", no el acceso a datos.
+      setIsPlatformAdmin(!!adminRow);
+
+      // Los locales gestionables salen SIEMPRE de local_staff: la RLS exige esa fila
+      // para leer datos, así que ser super-admin no basta por sí solo.
+      const { data: staffRows, error: staffError } = await supabase
+        .from("local_staff")
+        .select("local_id, locales(id, nombre, slug)")
+        .eq("user_id", user.id);
+
+      let availableLocales: { id: string; nombre: string; slug: string }[] = [];
+
+      if (!staffError) {
+        availableLocales = (staffRows ?? [])
+          .map((s) => s.locales)
+          .filter((l): l is { id: string; nombre: string; slug: string } => Boolean(l && l.id))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
+      }
+
+      if (availableLocales.length === 0) {
+        setResolvingLocal(false);
+        setNoLocal(true);
+        return;
+      }
+
+      setLocalesList(availableLocales);
+
+      const savedLocalId = typeof window !== "undefined" ? localStorage.getItem("garzon_selected_local_id") : null;
+      const validSaved = availableLocales.find((l) => l.id === savedLocalId);
+      const chosen = validSaved || availableLocales[0];
+
+      setLocalId(chosen.id);
+      setLocalNombre(chosen.nombre);
+      setLocalSlug(chosen.slug);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("garzon_selected_local_id", chosen.id);
+      }
+      setResolvingLocal(false);
+    }
+    resolveLocal();
+  }, [supabase]);
+
+  function handleLocalChange(newId: string) {
+    const chosen = localesList.find((l) => l.id === newId);
+    if (!chosen) return;
+    setLocalId(chosen.id);
+    setLocalNombre(chosen.nombre);
+    setLocalSlug(chosen.slug);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("garzon_selected_local_id", chosen.id);
+    }
+    // El efecto de carga reacciona al cambio de localId.
+  }
+
+  // ===== Carga del reporte =====
+  // Nunca se llama setState de forma sincrónica acá: todo ocurre después del
+  // await, y el spinner sale de comparar `datos.clave` con la clave actual.
+  useEffect(() => {
+    if (!localId || !rangoValido) return;
+    let vigente = true;
+
+    async function correr(currentLocalId: string, claveActual: string) {
+      const args = { p_local_id: currentLocalId, p_desde: desde, p_hasta: hasta };
+
+      const [resResumen, resDias, resTop] = await Promise.all([
+        supabase.rpc("reporte_ventas", args),
+        supabase.rpc("reporte_ventas_por_dia", args),
+        supabase.rpc("reporte_top_productos", { ...args, p_limite: 10 }),
+      ]);
+
+      if (!vigente) return; // el usuario ya cambió de rango o de local
+
+      if (resResumen.error || resDias.error || resTop.error) {
+        setErrorCarga({ clave: claveActual, msg: "No se pudo cargar el reporte; reintenta en unos segundos." });
+        return;
+      }
+
+      const filas = (resResumen.data as ResumenVentas[] | null) ?? [];
+      setDatos({
+        clave: claveActual,
+        resumen: filas[0] ?? null,
+        porDia: (resDias.data as VentaPorDia[] | null) ?? [],
+        topProductos: (resTop.data as TopProducto[] | null) ?? [],
+      });
+    }
+
+    // El .catch importa: si el fetch se cae por red (y no devuelve `{ error }`),
+    // sin esto la promesa queda rechazada sin manejar y el spinner se queda
+    // girando para siempre. En una tablet con wifi malo eso pasa.
+    correr(localId, clave).catch(() => {
+      if (!vigente) return;
+      setErrorCarga({ clave, msg: "No se pudo cargar el reporte; revisa la conexión." });
+    });
+    return () => { vigente = false; };
+  }, [supabase, localId, desde, hasta, rangoValido, clave, intento]);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
+  function aplicarPreset(nuevo: PresetRango) {
+    setPreset(nuevo);
+    if (nuevo === "personalizado") return; // conserva el rango visible como punto de partida
+    const rango = rangoDePreset(nuevo);
+    setDesde(rango.desde);
+    setHasta(rango.hasta);
+  }
+
+  // ===== Serie diaria rellenada con ceros =====
+  // La RPC solo devuelve días CON pedidos: sin este relleno, un martes muerto
+  // desaparecería del gráfico en vez de mostrarse en cero.
+  const serieDiaria = useMemo<VentaPorDia[]>(() => {
+    if (!rangoValido) return [];
+    const porFecha = new Map(porDia.map((d) => [d.dia, d]));
+    const serie: VentaPorDia[] = [];
+    let cursor = desde;
+    while (cursor <= hasta && serie.length < MAX_DIAS_GRAFICO) {
+      serie.push(porFecha.get(cursor) ?? { dia: cursor, pedidos: 0, venta: 0 });
+      cursor = sumarDias(cursor, 1);
+    }
+    return serie;
+  }, [porDia, desde, hasta, rangoValido]);
+
+  const maxVentaDia = useMemo(
+    () => serieDiaria.reduce((max, d) => Math.max(max, d.venta), 0),
+    [serieDiaria]
+  );
+  const maxUnidades = useMemo(
+    () => topProductos.reduce((max, p) => Math.max(max, p.unidades), 0),
+    [topProductos]
+  );
+
+  // ===== Exportar CSV =====
+  async function exportarCsv() {
+    if (!localId || !rangoValido) return;
+    setExportando(true);
+    setErrorExport(null);
+
+    const inicio = inicioDiaChile(desde).toISOString();
+    const fin = inicioDiaChile(sumarDias(hasta, 1)).toISOString(); // exclusivo
+
+    // Paginado: PostgREST puede topar la cantidad de filas por respuesta.
+    const PAGINA = 1000;
+    const MAX_PAGINAS = 20;
+    const filas: PedidoExport[] = [];
+
+    for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
+      const { data, error } = await supabase
+        .from("pedidos")
+        .select("numero_pedido, created_at, mesa, nombre_cliente, estado, total")
+        .eq("local_id", localId)
+        .gte("created_at", inicio)
+        .lt("created_at", fin)
+        .order("created_at", { ascending: true })
+        .order("numero_pedido", { ascending: true }) // desempate: sin él el paginado puede repetir filas
+        .range(pagina * PAGINA, pagina * PAGINA + PAGINA - 1);
+
+      if (error) {
+        setErrorExport("No se pudo exportar el detalle; reintenta.");
+        setExportando(false);
+        return;
+      }
+
+      const lote = (data ?? []) as PedidoExport[];
+      filas.push(...lote);
+      if (lote.length < PAGINA) break;
+
+      // Un CSV recortado en silencio se lee como si fuera completo, y con eso el
+      // dueño concilia una caja con datos que le faltan. Si se llega al tope, se
+      // avisa en vez de entregar un archivo mudo.
+      if (pagina === MAX_PAGINAS - 1) {
+        setErrorExport(
+          `El archivo quedó limitado a ${filas.length.toLocaleString("es-CL")} pedidos. ` +
+            "Exportá el período en tramos más cortos para tenerlo completo."
+        );
+      }
+    }
+
+    const cabecera = ["Número", "Fecha y hora", "Mesa", "Cliente", "Estado", "Total"].join(";");
+    const cuerpo = filas.map((p) =>
+      [
+        p.numero_pedido,
+        campoCsv(fechaHoraChile(p.created_at)),
+        campoCsv(p.mesa ?? ""),
+        campoCsv(p.nombre_cliente ?? ""),
+        campoCsv(ETIQUETA_ESTADO[p.estado] ?? p.estado),
+        p.total,
+      ].join(";")
+    );
+
+    // BOM para que Excel en español lea bien las tildes.
+    const contenido = `﻿${[cabecera, ...cuerpo].join("\r\n")}\r\n`;
+    const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = `pedidos-${localSlug || "local"}-${desde}_a_${hasta}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    document.body.removeChild(enlace);
+    URL.revokeObjectURL(url);
+
+    setExportando(false);
+  }
+
+  // ===== Pantallas de espera / sin local =====
+  if (resolvingLocal) {
+    return (
+      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-14 h-14">
+            <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
+            <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
+          </div>
+          <p className="text-stone-500 text-sm font-medium">Cargando reportes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (noLocal) {
+    return (
+      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark px-6">
+        <div className="flex flex-col items-center gap-4 text-center max-w-sm">
+          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
+          <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
+          <p className="text-stone-500 text-sm">Tu cuenta no está vinculada a ningún local. Contacta al administrador.</p>
+          <button
+            onClick={handleSignOut}
+            className="mt-2 px-4 py-2 rounded-xl dash-bg-surface dash-text-secondary text-sm font-semibold hover:opacity-80 transition-opacity"
+          >Cerrar sesión</button>
+        </div>
+      </div>
+    );
+  }
+
+  const ventaPendiente = resumen ? resumen.venta_total - resumen.venta_entregada : 0;
+  // Sin fila de resumen se trata como período vacío: mejor el estado honesto que una pantalla en blanco.
+  const sinPedidos = !resumen || resumen.pedidos_total === 0;
+  const rangoEsUnDia = desde === hasta;
+
+  return (
+    <div className="flex flex-col min-h-screen dashboard-dark">
+      {/* ===== HEADER ===== */}
+      <header className="dash-header border-b px-4 md:px-6 py-3">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
+              🍔
+            </div>
+            <div>
+              {localesList.length > 1 ? (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={localId ?? ""}
+                    onChange={(e) => handleLocalChange(e.target.value)}
+                    className="bg-stone-900 border border-stone-700 text-white font-bold text-sm md:text-base rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer shadow-sm"
+                  >
+                    {localesList.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
+              )}
+              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 md:gap-6">
+            <nav className="flex items-center gap-1 dash-bg-surface rounded-xl p-1">
+              <Link
+                href="/dashboard"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Pedidos
+              </Link>
+              <Link
+                href="/dashboard/menu"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Menú
+              </Link>
+              <Link
+                href="/dashboard/config"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Identidad
+              </Link>
+              <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
+                Reportes
+              </span>
+              {isPlatformAdmin && (
+                <Link
+                  href="/dashboard/admin"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+                >
+                  Alta de local
+                </Link>
+              )}
+            </nav>
+
+            <button
+              onClick={handleSignOut}
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              title="Cerrar sesión"
+            >
+              🚪
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 p-3 md:p-5">
+        <div className="max-w-[1600px] mx-auto space-y-4">
+          {/* ===== SELECTOR DE RANGO ===== */}
+          <div className="dash-card rounded-2xl border-2 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => aplicarPreset(p.id)}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold transition-transform hover:scale-[1.03] active:scale-95 ${
+                      preset === p.id
+                        ? "text-white bg-gradient-to-r from-orange-500 to-amber-500"
+                        : "dash-bg-surface dash-text-secondary"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={exportarCsv}
+                disabled={exportando || loading || !rangoValido || sinPedidos}
+                className="px-3 py-2 rounded-xl text-xs font-semibold dash-bg-surface dash-text-primary hover:opacity-80 transition-opacity disabled:opacity-40"
+                title="Descargar el detalle de pedidos del período"
+              >
+                {exportando ? "Preparando…" : "⬇ Exportar CSV"}
+              </button>
+            </div>
+
+            {preset === "personalizado" && (
+              <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-stone-800">
+                <div>
+                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Desde</label>
+                  <input
+                    type="date"
+                    value={desde}
+                    max={hoyChile()}
+                    onChange={(e) => setDesde(e.target.value)}
+                    className="rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Hasta</label>
+                  <input
+                    type="date"
+                    value={hasta}
+                    max={hoyChile()}
+                    onChange={(e) => setHasta(e.target.value)}
+                    className="rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            <p className="text-[11px] dash-text-muted mt-3">
+              {rangoEsUnDia
+                ? fechaLarga(desde)
+                : `Del ${fechaLarga(desde)} al ${fechaLarga(hasta)}`}
+              {" · hora de Chile"}
+            </p>
+          </div>
+
+          {!rangoValido ? (
+            <div className="dash-card rounded-2xl border-2 p-10 text-center">
+              <p className="dash-text-secondary text-sm font-semibold">
+                La fecha de inicio no puede ser posterior a la de término.
+              </p>
+            </div>
+          ) : loading ? (
+            <div className="dash-card rounded-2xl border-2 p-16 flex flex-col items-center gap-4">
+              <div className="relative w-12 h-12">
+                <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
+                <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
+              </div>
+              <p className="text-stone-500 text-sm font-medium">Calculando el período...</p>
+            </div>
+          ) : errorMsg ? (
+            <div className="dash-card rounded-2xl border-2 p-10 text-center space-y-3">
+              <p className="text-red-300 text-sm font-semibold">⚠️ {errorMsg}</p>
+              <button
+                onClick={() => { setErrorCarga(null); setIntento((n) => n + 1); }}
+                className="px-4 py-2 rounded-xl dash-bg-surface dash-text-secondary text-sm font-semibold hover:opacity-80 transition-opacity"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : sinPedidos ? (
+            <div className="dash-card rounded-2xl border-2 p-16 text-center">
+              <div className="text-3xl mb-3">🧾</div>
+              <p className="dash-text-secondary text-sm font-semibold">Sin pedidos en este período</p>
+              <p className="dash-text-muted text-xs mt-1">Prueba con otro rango de fechas.</p>
+            </div>
+          ) : resumen ? (
+            <>
+              {/* ===== TARJETAS PRINCIPALES ===== */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="dash-card rounded-2xl border-2 p-5">
+                  <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Venta total</p>
+                  <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
+                    {formatPrice(resumen.venta_total)}
+                  </p>
+                  <p className="text-[11px] dash-text-muted mt-1">No incluye pedidos rechazados.</p>
+                </div>
+
+                <div className="dash-card rounded-2xl border-2 p-5">
+                  <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Pedidos</p>
+                  <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
+                    {resumen.pedidos_total.toLocaleString("es-CL")}
+                  </p>
+                  <p className="text-[11px] dash-text-muted mt-1">Total recibidos en el período.</p>
+                </div>
+
+                <div className="dash-card rounded-2xl border-2 p-5">
+                  <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Ticket promedio</p>
+                  <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
+                    {formatPrice(resumen.ticket_promedio)}
+                  </p>
+                  <p className="text-[11px] dash-text-muted mt-1">Promedio por pedido no rechazado.</p>
+                </div>
+              </div>
+
+              {/* ===== DESGLOSE POR ESTADO ===== */}
+              <div className="dash-card rounded-2xl border-2 p-4">
+                <h2 className="font-bold dash-text-primary text-sm mb-3">Desglose del período</h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="rounded-xl dash-bg-surface px-4 py-3 border-l-4 border-green-500">
+                    <p className="text-xs font-semibold dash-text-secondary">Entregados</p>
+                    <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
+                      {formatPrice(resumen.venta_entregada)}
+                    </p>
+                    <p className="text-[11px] dash-text-muted mt-0.5">
+                      {resumen.pedidos_entregados} pedido(s) · esto es lo que debería estar en la caja
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl dash-bg-surface px-4 py-3 border-l-4 border-amber-500">
+                    <p className="text-xs font-semibold dash-text-secondary">Pendientes</p>
+                    <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
+                      {formatPrice(ventaPendiente)}
+                    </p>
+                    <p className="text-[11px] dash-text-muted mt-0.5">
+                      {resumen.pedidos_pendientes} pedido(s) · todavía en curso, aún no cobrados
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl dash-bg-surface px-4 py-3 border-l-4 border-stone-600">
+                    <p className="text-xs font-semibold dash-text-secondary">Rechazados</p>
+                    <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
+                      {resumen.pedidos_cancelados.toLocaleString("es-CL")}
+                    </p>
+                    <p className="text-[11px] dash-text-muted mt-0.5">
+                      No suman a la venta ni al ticket promedio
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ===== VENTAS POR DÍA ===== */}
+              {!rangoEsUnDia && serieDiaria.length > 1 && (
+                <div className="dash-card rounded-2xl border-2 p-4">
+                  <div className="flex items-baseline justify-between mb-4">
+                    {/* "sin rechazados" explícito: el resumen de arriba cuenta TODOS los
+                        pedidos y esta serie excluye los cancelados, así que sin la
+                        aclaración el dueño vería dos cifras distintas de "pedidos de hoy"
+                        en la misma pantalla y no sabría cuál creer. */}
+                    <h2 className="font-bold dash-text-primary text-sm">
+                      Ventas por día{" "}
+                      <span className="font-normal dash-text-muted text-[11px]">· sin rechazados</span>
+                    </h2>
+                    <span className="text-[11px] dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <div className="flex items-end gap-1 md:gap-1.5 h-44 min-w-full">
+                      {serieDiaria.map((d) => {
+                        const alturaPct = maxVentaDia > 0 ? (d.venta / maxVentaDia) * 100 : 0;
+                        return (
+                          <div
+                            key={d.dia}
+                            className="flex-1 min-w-[14px] h-full flex flex-col justify-end items-center group"
+                            title={`${etiquetaDia(d.dia)} · ${d.pedidos} pedido(s) · ${formatPrice(d.venta)}`}
+                          >
+                            <span className="text-[10px] dash-text-muted tabular-nums opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              {d.venta > 0 ? formatPrice(d.venta) : "—"}
+                            </span>
+                            <div
+                              className={`w-full rounded-t-md transition-[height] ${
+                                d.venta > 0
+                                  ? "bg-gradient-to-t from-orange-600 to-amber-400"
+                                  : "bg-stone-800"
+                              }`}
+                              style={{ height: d.venta > 0 ? `max(4px, ${alturaPct}%)` : "3px" }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex gap-1 md:gap-1.5 mt-2 min-w-full">
+                      {serieDiaria.map((d, i) => {
+                        // Con rangos largos se etiquetan solo algunos días para que no se pisen.
+                        const paso = Math.ceil(serieDiaria.length / 15);
+                        const mostrar = i % paso === 0 || i === serieDiaria.length - 1;
+                        return (
+                          <div key={d.dia} className="flex-1 min-w-[14px] text-center">
+                            <span className="text-[10px] dash-text-muted tabular-nums">
+                              {mostrar ? d.dia.slice(8, 10) : ""}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {serieDiaria.length >= MAX_DIAS_GRAFICO && (
+                    <p className="text-[11px] dash-text-muted mt-2">
+                      Se muestran los primeros {MAX_DIAS_GRAFICO} días del rango.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* ===== TOP PRODUCTOS ===== */}
+              <div className="dash-card rounded-2xl border-2 p-4">
+                <h2 className="font-bold dash-text-primary text-sm mb-3">Productos más vendidos</h2>
+
+                {topProductos.length === 0 ? (
+                  <div className="dash-col-empty rounded-xl border-2 border-dashed p-8 text-center dash-text-muted text-sm">
+                    Sin productos vendidos en este período.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left">
+                          <th className="pb-2 text-xs font-semibold dash-text-muted uppercase tracking-wide">Producto</th>
+                          <th className="pb-2 text-xs font-semibold dash-text-muted uppercase tracking-wide w-[35%]">Proporción</th>
+                          <th className="pb-2 text-xs font-semibold dash-text-muted uppercase tracking-wide text-right">Unidades</th>
+                          <th className="pb-2 text-xs font-semibold dash-text-muted uppercase tracking-wide text-right">Venta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topProductos.map((p, i) => {
+                          const anchoPct = maxUnidades > 0 ? (p.unidades / maxUnidades) * 100 : 0;
+                          return (
+                            <tr key={p.producto_id ?? `sin-id-${i}`} className="border-t border-stone-800">
+                              <td className="py-2.5 pr-3 dash-text-primary font-semibold">
+                                <span className="dash-text-muted tabular-nums mr-2">{i + 1}.</span>
+                                {p.nombre}
+                              </td>
+                              <td className="py-2.5 pr-3">
+                                <div className="h-2 rounded-full bg-stone-800 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+                                    style={{ width: `${anchoPct}%` }}
+                                  />
+                                </div>
+                              </td>
+                              <td className="py-2.5 text-right dash-text-primary tabular-nums font-bold whitespace-nowrap">
+                                {p.unidades.toLocaleString("es-CL")}
+                              </td>
+                              <td className="py-2.5 text-right dash-text-secondary tabular-nums whitespace-nowrap">
+                                {formatPrice(p.venta)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </main>
+
+      {/* Toast del exportador, discreto y descartable. */}
+      {errorExport && (
+        <button
+          onClick={() => setErrorExport(null)}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm"
+        >
+          ⚠️ {errorExport}
+        </button>
+      )}
+    </div>
+  );
+}

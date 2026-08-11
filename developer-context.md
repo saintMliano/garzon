@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-07-12):** consolidación T7 completa (tipado real de Supabase). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-10):** auditoría 2 + Fase 5 "Turno autónomo" en curso (roadmap reordenado). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -26,7 +26,15 @@ El panel de cocina cuenta con detalles interactivos avanzados para simular un si
 
 ### Flujo Kanban de Cocina
 Los pedidos avanzan secuencialmente a través de 4 columnas interactivas:
-- **Nuevos** ➡️ **Aceptados** ➡️ **En Cocina** ➡️ **Listos** ➡️ *Entregado* (se archiva fuera del dashboard activo).
+- **Nuevos** ➡️ **Aceptados** ➡️ **En Cocina** ➡️ **Listos** ➡️ *Entregado* (sale del Kanban activo).
+
+**Red de seguridad (F5.5):** marcar "Entregado" saca el pedido de la pantalla, así que ese paso deja
+un toast de **Deshacer** (12 s) y el pedido queda en el panel **"Cerrados hoy"** con botón
+**Reabrir** (transición `entregado → listo`). En una cocina los toques accidentales existen y antes
+no había vuelta atrás. `cancelado` sigue siendo terminal: el cliente ya vio esa pantalla.
+
+**Estado de la conexión:** el header muestra `En vivo` / `Conectando` / `Sin conexión`, para poder
+distinguir "no hay pedidos" de "no me están llegando".
 
 ### Flujo del Cliente (móvil-primero)
 1. El cliente entra a `/local/[slug]` (idealmente por QR), navega el menú y arma su carrito.
@@ -54,7 +62,7 @@ El proyecto usa **tres** clientes según el contexto:
 Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de endurecimiento en la carpeta [`migrations/`](migrations/).
 
 **Tablas:**
-- **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, etc.
+- **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40).
 - **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). Lectura pública (el menú es público).
 - **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas y estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`). **Acceso público revocado** (ver Seguridad).
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
@@ -65,10 +73,12 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 
 ### Funciones RPC (contrato del cliente anónimo)
 El cliente anónimo **no** toca la tabla `pedidos` directamente; opera vía dos funciones `SECURITY DEFINER`:
-- **`crear_pedido(p_local_id, p_nombre, p_mesa, p_notas, p_items jsonb) → uuid`**: crea el pedido y sus ítems en una sola transacción, **calcula el total en el servidor** leyendo el precio real de `productos` **una sola vez** (ignora cualquier total enviado por el cliente), valida que el local esté activo y que cada producto exista y esté `disponible`. **Endurecida (T2):** rate-limit de 15 pedidos por local por minuto, topes de tamaño (cantidad ≤ 99, ≤ 50 productos, monto ≤ $10M) y `bigint` para evitar overflow. Devuelve el id del pedido.
+- **`crear_pedido(p_local_id, p_nombre, p_mesa, p_notas, p_items jsonb) → uuid`**: crea el pedido y sus ítems en una sola transacción, **calcula el total en el servidor** leyendo el precio real de `productos` **una sola vez** (ignora cualquier total enviado por el cliente), valida que el local esté activo y que cada producto exista y esté `disponible`. **Endurecida (T2):** topes de tamaño (cantidad ≤ 99, ≤ 50 productos, monto ≤ $10M) y `bigint` para evitar overflow. **Rate-limit configurable (F5.2):** el tope por local por minuto se lee de `locales.limite_pedidos_min` (default 40; antes era fijo en 15, que un peak legítimo reventaba). Devuelve el id del pedido.
+  > **Limitación conocida:** el rate-limit protege de ráfagas accidentales, no de un atacante decidido — que igual satura y de paso deja fuera a los clientes buenos. La defensa real es un desafío/token de sesión en el checkout (Fase 8).
 - **`get_order_status(p_order_id) → (estado, numero_pedido, created_at)`**: expone solo campos no sensibles del pedido cuyo UUID conoce el cliente (para el seguimiento).
 
-**Actualización de pedidos:** el staff solo puede cambiar la columna `estado` (privilegios de columna), y un trigger valida las transiciones del Kanban en el servidor (`nuevo→aceptado/cancelado`, `aceptado→preparando/cancelado`, `preparando→listo/cancelado`, `listo→entregado`). Las columnas `slug`/`activo` de `locales` y el `total` de `pedidos` no son actualizables por el staff (quedan al service-role).
+**Actualización de pedidos:** el staff solo puede cambiar la columna `estado` (privilegios de columna), y un trigger valida las transiciones del Kanban en el servidor (`nuevo→aceptado/cancelado`, `aceptado→preparando/cancelado`, `preparando→listo/cancelado`, `listo→entregado`, y `entregado→listo` para deshacer una entrega marcada por error). Las columnas `slug`/`activo`/`limite_pedidos_min` de `locales` y el `total` de `pedidos` no son actualizables por el staff (quedan al service-role).
+> **Efecto secundario de la reapertura:** el ciclo `entregado → listo → entregado` reescribe `updated_at` vía el trigger `set_updated_at`, así que esa columna **no** es una base confiable para analíticas de tiempos. La auditoría de cambios de estado que la reemplaza va en la Fase 8.
 
 ### Estructura de Carpetas Clave
 - `src/app/page.tsx`: Landing page comercial que presenta el servicio.
@@ -82,7 +92,15 @@ El cliente anónimo **no** toca la tabla `pedidos` directamente; opera vía dos 
 - `src/app/local/[slug]/`: Ruta dinámica del cliente. `page.tsx` (menú + persistencia), `checkout-modal.tsx` (llama `crear_pedido`), `order-status.tsx` (seguimiento vía `get_order_status` + **polling cada 4s**, 15s al llegar a `listo`, hasta `entregado`/`cancelado`), `cart-sheet.tsx`, `layout.tsx` (envuelve con `CartProvider`).
 - `src/lib/cart-context.tsx`: Contexto del carrito, **persistido en `localStorage`** por slug.
 - `src/lib/supabase.ts` / `src/lib/supabase/{client,server}.ts` / `src/lib/supabase/admin.ts`: clientes anónimo, autenticados y admin (ver arriba).
-- `migrations/`: migraciones SQL idempotentes de endurecimiento (`fase0` … `fase4-5`, más las de consolidación `consolidacion-t2/t3/t4`).
+- `supabase/migrations/`: **migraciones versionadas (desde el 2026-08-11).** Se aplican con
+  `npm run db:push`, que corre solo las pendientes y deja registro en la propia base
+  (`supabase_migrations.schema_migrations`). Es la carpeta viva: toda migración nueva va acá.
+- `migrations/`: **historial previo, ya aplicado a mano.** Se conserva como registro de cómo se
+  llegó al esquema actual. No se re-aplica y no se agregan archivos nuevos.
+- `scripts/`: utilidades de operación que corren con la service-role key (**solo local, nunca en el cliente**):
+  - `limpiar-datos-test.mjs` — borra locales `test-local-*` y usuarios `@test.garzon` huérfanos. Dry-run por defecto; `--borrar` ejecuta.
+  - `crear-cuenta-local.mjs <slug> <email> [password]` — crea/repara la cuenta de acceso de un local que ya existe y verifica con un login real. Para altas nuevas usar `/dashboard/admin`.
+  - `seed-catirekaffe.js` — semilla del menú de un cliente concreto.
 
 ---
 
@@ -123,11 +141,24 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 
 ### Pendiente / Futuro
 
-- [ ] **Consolidación pre-Fase 5** (prioridad actual): auditoría hecha el 2026-07-10; hallazgos y
-  plan ejecutable de 8 tareas (T1 rotación de secretos … T8 tests de integración) en
-  [`plan/`](plan/README.md). Ninguna tarea ejecutada aún.
+- [x] **Consolidación pre-Fase 5:** auditoría del 2026-07-10 y plan de 8 tareas (T1 rotación de
+  secretos … T8 tests de integración) en [`plan/`](plan/README.md). **Las 8 completas.**
 
-**Fase 4 — "El Estudio del Local" (self-service, prioridad actual)** — que un dueño arme y personalice su local sin SQL:
+**Roadmap reordenado (2026-08-10).** Tras la [segunda auditoría](plan/AUDITORIA-2026-08-10.md), el
+dueño del producto aprobó mover "dominios propios" al final: un local de 12 mesas no paga por un
+dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
+
+| Fase | Contenido | Estado |
+|---|---|---|
+| **F5 — Turno autónomo** | Que un local opere un turno completo sin el fundador: cuentas reales, deshacer entrega, historial del día, carga sin realtime, aviso de sonido, rate-limit configurable. [Plan](plan/F5-TURNO-AUTONOMO.md) | **Completa** |
+| **F6 — Cierre de caja** | `/dashboard/reportes`: pedidos, venta, ticket promedio, top productos, ventas por día y export CSV. [Plan](plan/F6-CIERRE-DE-CAJA.md) | **Completa** |
+| F7 — Rendimiento percibido | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito | Pendiente |
+| F8 — Confianza | Idempotencia de `crear_pedido` (`client_request_id`), auditoría de cambios de estado, defensa anti-abuso en el checkout | Pendiente |
+| F9 — Marca completa | Terminar el white-label (`order-status.tsx` sigue naranja fijo), validar contraste en el editor de identidad | Pendiente |
+| F10 — Negocio | Propina sugerida, planes/suscripción, pago en línea | Pendiente |
+| F11 — Dominios propios | Cuando un cliente lo pida **y lo pague** | Pendiente |
+
+**Fase 4 — "El Estudio del Local" (self-service, completa)** — que un dueño arme y personalice su local sin SQL:
 - [x] **4.1** — Gestión de menú (categorías/productos, precios, disponibilidad).
 - [x] **4.2** — Imágenes: subida a Supabase Storage + `next/image` (fotos de productos; el logo se conectará en la 4.3).
 - [x] **4.3** — Identidad visual del local (logo, color, textos); el menú del cliente se pinta por tenant (white-label sin dominio propio aún).
@@ -136,18 +167,114 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
   - [x] **4.4.b** — Pantalla de alta `/dashboard/admin` (solo super-admin): formulario nombre/slug/email + **logo del local** (se sube server-side en el endpoint), y tarjeta con las credenciales del dueño + links.
 - [x] **4.5** — Pulido: trigger `updated_at` en pedidos (server-side), clamp del temporizador de cocina ante desfase de reloj, y `.env.example`.
 
-- [ ] **Fase 5 — Dominios propios:** columna `dominio` en `locales`, enrutado por `Host` en `proxy.ts`, SSL automático (al cerrar un cliente que lo pida).
-- [ ] **Fase 6 — Calidad, rendimiento y SEO:** menú como Server Component, metadata/SEO por local (`generateMetadata`), tipos generados con `supabase gen types`.
-- [ ] **Fase 7 — Marca profunda (cuando haya cliente):** que el cliente perciba más la marca del local dentro de la app — página de información/historia, equipo/personal, y theming más rico. Se profundizará con el caso real del primer cliente.
-- [ ] Módulo de pago en línea (Webpay / Stripe) opcional antes de procesar el pedido.
+*(Las antiguas Fases 5-7 se reordenaron en la tabla de arriba: "dominios propios" pasó a F11,
+"calidad/SEO/Server Components" a F7 y "marca profunda" se repartió entre F7 y F9.)*
+
+**Backlog sin fase asignada:**
+- [ ] Cargador masivo de fotos del menú (arrastrar N fotos, emparejado automático por nombre +
+  manual, redimensionado en el navegador respetando EXIF). Acelera el onboarding de un cliente
+  nuevo de horas a minutos — Catire Kaffe tiene 59 productos y 0 fotos.
 - [ ] Control de stock (inventario) automático al vender productos.
-- [ ] Analíticas históricas de venta diaria/mensual.
+- [ ] Página de información/historia del local (marca profunda, con cliente real).
 
 ---
 
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-11 — Fase 6: cierre de caja (`/dashboard/reportes`)
+
+Resuelve el hallazgo **A5**: el plan comercial le promete al dueño "este mes procesaste X pedidos" y
+ese dato no se podía obtener sin abrir una consola SQL. Plan y decisiones en
+[`plan/F6-CIERRE-DE-CAJA.md`](plan/F6-CIERRE-DE-CAJA.md).
+
+- **Tres RPCs de agregación** (`reporte_ventas`, `reporte_ventas_por_dia`, `reporte_top_productos`),
+  migración `20260811173951_f6_reportes_ventas.sql`. La agregación vive en Postgres, no en el
+  navegador: bajar un mes de pedidos a una tablet para producir seis números escala mal.
+- **`SECURITY INVOKER`, al revés que `crear_pedido`.** Esa es `DEFINER` porque *tiene* que serlo (el
+  anónimo no tiene permisos sobre `pedidos`). Acá quien llama es staff autenticado que ya puede leer
+  lo suyo, así que dejándolas INVOKER **la RLS hace el aislamiento sola**: consultar el `local_id` de
+  otro devuelve ceros, no datos. No hay privilegio extra que se pueda escapar ni verificación de
+  membresía propia que mantener correcta. `anon` no tiene EXECUTE.
+- **Página `/dashboard/reportes`:** rangos (hoy / ayer / 7 días / este mes / mes pasado /
+  personalizado), tarjetas de venta-pedidos-ticket, desglose entregados vs pendientes vs rechazados,
+  ventas por día y top 10 de productos. Sin librería de gráficos: barras en CSS. Link agregado a la
+  nav de las 4 páginas del dashboard.
+- **Exportación a CSV** del detalle del período (`;` + BOM para Excel en español), paginada y con
+  aviso si se topa el límite: un CSV recortado en silencio se lee como completo y con eso el dueño
+  concilia una caja a la que le faltan datos.
+- **Todo en hora de Chile**, incluido el manejo del cambio de horario: verificado que el 4 de abril
+  de 2026 dura 25 h y el 6 de septiembre 23 h — ese día la medianoche no existe y se resuelve hacia
+  adelante, igual que Postgres, para que el CSV y las RPCs cubran exactamente la misma ventana.
+- **Tipos regenerados desde la base** (`npm run db:types`) en vez de mantenerlos a mano. Destapó dos
+  cosas: el banner de `dotenv` se colaba por stdout dentro del archivo generado (silenciado con
+  `quiet: true` en los cuatro scripts), y el checkout le pasaba `null` a `p_mesa`/`p_notas` de
+  `crear_pedido`, cuyos argumentos `text` el generador declara no-nulos. Ahora manda cadena vacía: la
+  RPC ya hace `NULLIF(trim(...), '')`, así que se guarda `NULL` igual.
+- **Verificación:** `npm test` **34/34** (22 + 12 nuevos), build y `tsc` limpios, 0 huérfanos. El
+  aislamiento se probó contra la base real *antes* de escribir la UI: la cuenta de Catire consultando
+  El Lalo recibe ceros mientras el service-role ve $67.900 en ese local. Hay un test que lo fija.
+- **Pendiente:** la revisión visual de la página con datos reales. Requiere iniciar sesión en el
+  dashboard, cosa que no puedo hacer yo.
+
+### 2026-08-10 — Auditoría 2 + Fase 5 "Turno autónomo" (roadmap reordenado)
+
+- **Segunda auditoría** ([`plan/AUDITORIA-2026-08-10.md`](plan/AUDITORIA-2026-08-10.md)), esta vez
+  verificando contra la **base real** y no solo contra el código. Hallazgos: 5 bloqueantes de
+  piloto, 5 altos, 5 medios. La seguridad seguía sana (el anónimo no lee `pedidos`); los
+  bloqueadores eran **de operación**.
+- **Roadmap reordenado** por decisión del dueño: "dominios propios" se va al final (F11) y su lugar
+  lo toma **F5 — Turno autónomo** ([plan](plan/F5-TURNO-AUTONOMO.md)), cuyo criterio de aceptación
+  es que un local opere un turno completo sin el fundador presente.
+- **F5.1 — Limpieza y causa raíz:** borrados 10 locales `test-local-*` huérfanos (con 15 productos,
+  `activo=true` y públicamente enumerables) y 2 usuarios `@test.garzon`. `cleanupTestFixtures`
+  tragaba los fallos en un `catch` silencioso: los tests pasaban en verde mientras ensuciaban la
+  base. Ahora acumula fallos, verifica locales **y** usuarios, y lanza excepción. Nuevo
+  `scripts/limpiar-datos-test.mjs` (dry-run por defecto).
+- **F5.2 — Cuenta de acceso para Catire Kaffe:** el local se había sembrado por script y no tenía
+  dueño (las únicas filas de `local_staff` eran del super-admin). Nuevo
+  `scripts/crear-cuenta-local.mjs`, que además **verifica con un login real**. Credencial genérica
+  mientras sea demo; **rotar antes de entregarla al cliente**.
+- **F5.3 — Selector de local por `local_staff`:** las 3 páginas del dashboard listaban *todos* los
+  locales si el usuario era `platform_admin`, pero la RLS exige fila en `local_staff`: los locales
+  sin vínculo mostraban una cocina vacía **sin error**. Decisión: no se amplió la RLS para
+  `platform_admins` — eso debilitaría la única regla de aislamiento por comodidad de una pantalla.
+- **F5.4 — Carga inicial sin depender de realtime:** el primer fetch colgaba del callback
+  `SUBSCRIBED`; con wifi que bloquea WebSockets la cocina veía "Cargando dashboard…" hasta 30 s.
+  Además: indicador de conexión en el header, y **fix de un bug latente del commit `aad0143`** — el
+  topic del canal era fijo (`dashboard-orders`) y `channel()` reutiliza el canal existente, así que
+  al cambiar de local el `.subscribe()` era un no-op y el local nuevo se quedaba sin realtime.
+  También se agregó guarda contra respuestas en vuelo del local anterior (podían dejar el header en
+  un local y el Kanban en otro). Kanban a 4 columnas desde `lg` (1024px): en `xl` un iPad de 10,9"
+  caía a 2 columnas.
+- **F5.5 — Deshacer entrega:** migración `f5-1-reapertura-pedidos.sql` (transición
+  `entregado → listo`), toast de deshacer (12 s) y panel "Cerrados hoy" con botón Reabrir.
+- **F5.6 — Aviso persistente de sonido:** barra roja a ancho completo mientras el audio no esté
+  activo, y sondeo del `AudioContext` cada 5 s (el navegador lo suspende por su cuenta).
+- **F5.7 — Rate-limit configurable:** migración `f5-2-rate-limit-configurable.sql`, columna
+  `locales.limite_pedidos_min` (default 40, antes fijo en 15) leída por `crear_pedido` v5.
+- **Tests:** 4 nuevos (reapertura, reapertura acotada, límite por defecto, límite configurable).
+- **Revisión adversarial** del diff completo por un segundo agente antes de dar nada por hecho; de
+  ahí salieron el fix del canal de realtime, la guarda de respuestas en vuelo y 6 defectos más.
+- **Pipeline de migraciones (CLI de Supabase):** se acabó el copiar/pegar SQL en el editor. El
+  proyecto quedó vinculado y las migraciones nuevas viven en `supabase/migrations/`, aplicadas con
+  `npm run db:push` — que corre **solo las pendientes** y deja registro en la base. Motivo: hasta
+  hoy `migrations/` era una declaración de intenciones y nadie podía responder "¿esta base tiene la
+  migración T4?" sin ir a mirar. Con 5 pilotos eso es cómo se te cae uno.
+  - **Línea base:** no se pudo hacer `db pull` (necesita Docker), así que el historial previo
+    **no** se importó: `migrations/` queda como registro de cómo se llegó al esquema actual y el
+    versionado arranca desde `f5-1`/`f5-2`.
+  - **Respaldo (plan gratis, sin PITR):** `npm run db:backup` vuelca los datos a `backups/`
+    (gitignoreado) vía service-role. No cubre esquema, contraseñas ni Storage — para eso hace falta
+    Docker o el plan Pro. Regla: respaldar **antes** de cada `db:push`.
+  - `scripts/con-env.mjs` pasa las credenciales por entorno y no por argumento, para que la clave
+    de Postgres no quede en el historial del shell ni en la lista de procesos.
+- **Verificación:** `npm test` **22/22** (19 previos − 1 reemplazado + 4 nuevos), `npm run build` y
+  `tsc` limpios, y `scripts/limpiar-datos-test.mjs` confirma **0 huérfanos** tras la corrida.
+- **Riesgo operativo anotado:** los proyectos gratis de Supabase se pausan por inactividad (ya pasó
+  el 2026-07-21). Con QRs impresos en mesas de un local real, eso es un cliente escaneando y no
+  viendo nada. Pasar a Pro **el día que se instale el primer piloto**, no después.
 
 ### 2026-07-22 — Consolidación T1: Rotación de secretos completada
 - **Rotación de Service-Role Key:** `SUPABASE_SERVICE_ROLE_KEY` fue regenerada en Supabase y actualizada en Vercel, `.env.local` y `.env.test`. Las claves expuestas en historiales previos quedaron revocadas e invalidadas (`HTTP 401`).

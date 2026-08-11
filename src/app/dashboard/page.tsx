@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { formatPrice, statusColor, timeAgo, orderNumber } from "@/lib/utils";
+import { formatPrice, orderNumber } from "@/lib/utils";
 import type { OrderStatus, PedidoConItems } from "@/types/database";
 
 const COLUMNS: { key: OrderStatus; label: string; icon: string; accent: string }[] = [
@@ -62,6 +62,17 @@ function playNotificationSound() {
   } catch { /* Audio not available */ }
 }
 
+// Medianoche de HOY en America/Santiago, consistente con la numeración de
+// pedidos (que también usa hora de Chile) e independiente de la zona horaria
+// que tenga configurada la tablet.
+function medianocheChile(): Date {
+  const now = new Date();
+  const chileNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }));
+  const offsetMs = now.getTime() - chileNow.getTime();
+  chileNow.setHours(0, 0, 0, 0);
+  return new Date(chileNow.getTime() + offsetMs);
+}
+
 function TimerBadge({ createdAt }: { createdAt: string }) {
   const [elapsed, setElapsed] = useState("");
   const [urgency, setUrgency] = useState<"normal" | "warning" | "danger">("normal");
@@ -108,6 +119,29 @@ export default function DashboardPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Estado del canal realtime, visible en el header: en una cocina hay que
+  // poder distinguir "no hay pedidos" de "perdí la conexión".
+  const [conexion, setConexion] = useState<"conectando" | "en-vivo" | "sin-conexion">("conectando");
+
+  // Pedidos cerrados hoy (entregados o cancelados), para poder revisarlos y
+  // deshacer una entrega marcada por error.
+  const [cerrados, setCerrados] = useState<PedidoConItems[]>([]);
+  const [showCerrados, setShowCerrados] = useState(false);
+
+  // Toast de deshacer tras marcar un pedido como entregado.
+  const [undoPedido, setUndoPedido] = useState<{ id: string; numero: number } | null>(null);
+
+  // Espejos en ref de "lo vigente ahora". `localIdRef` deja descartar respuestas
+  // en vuelo del local anterior; `showCerradosRef` deja que el handler de
+  // realtime consulte el panel sin entrar en las dependencias del efecto (si
+  // entrara, abrir el panel forzaría una re-suscripción del canal).
+  // Se declaran ANTES del efecto de realtime para que React los sincronice primero.
+  const localIdRef = useRef<string | null>(null);
+  const showCerradosRef = useRef(false);
+
+  useEffect(() => { localIdRef.current = localId; }, [localId]);
+  useEffect(() => { showCerradosRef.current = showCerrados; }, [showCerrados]);
+
   useEffect(() => {
     async function resolveLocal() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -115,26 +149,24 @@ export default function DashboardPage() {
 
       const { data: adminRow } = await supabase
         .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
-      const isAdmin = !!adminRow;
-      setIsPlatformAdmin(isAdmin);
+      // Solo controla la visibilidad del link "Alta de local", no el acceso a datos.
+      setIsPlatformAdmin(!!adminRow);
+
+      // Los locales gestionables salen SIEMPRE de local_staff: la RLS exige esa
+      // fila para leer/escribir datos, así que ser super-admin no basta por sí
+      // solo. Listar todos los locales mostraba cocinas vacías sin error.
+      const { data: staffRows, error: staffError } = await supabase
+        .from("local_staff")
+        .select("local_id, locales(id, nombre, slug)")
+        .eq("user_id", user.id);
 
       let availableLocales: { id: string; nombre: string; slug: string }[] = [];
 
-      if (isAdmin) {
-        const { data: all } = await supabase
-          .from("locales")
-          .select("id, nombre, slug")
-          .order("nombre");
-        availableLocales = all ?? [];
-      } else {
-        const { data: staffRows } = await supabase
-          .from("local_staff")
-          .select("local_id, locales(id, nombre, slug)")
-          .eq("user_id", user.id);
-
+      if (!staffError) {
         availableLocales = (staffRows ?? [])
-          .map((s: any) => s.locales)
-          .filter((l: any): l is { id: string; nombre: string; slug: string } => Boolean(l && l.id));
+          .map((s) => s.locales)
+          .filter((l): l is { id: string; nombre: string; slug: string } => Boolean(l && l.id))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
       }
 
       if (availableLocales.length === 0) {
@@ -165,6 +197,11 @@ export default function DashboardPage() {
     setLocalId(chosen.id);
     setLocalNombre(chosen.nombre);
     setLoading(true);
+    setConexion("conectando");
+    setCerrados([]);
+    // Sin esto, "Deshacer" seguía visible tras cambiar de local: reabría el
+    // pedido del local anterior y en pantalla no pasaba nada.
+    setUndoPedido(null);
     if (typeof window !== "undefined") {
       localStorage.setItem("garzon_selected_local_id", chosen.id);
     }
@@ -182,19 +219,18 @@ export default function DashboardPage() {
       .not("estado", "in", "(entregado,cancelado)")
       .order("created_at", { ascending: true });
 
+    // Con wifi malo, la respuesta del local anterior puede llegar DESPUÉS de
+    // haber cambiado de local en el selector. Sin esta guarda, el header decía
+    // "Local B" y el Kanban mostraba pedidos de A — y tocar "Aceptar" avanzaba
+    // un pedido del local equivocado.
+    if (localIdRef.current !== localId) return;
+
     setPedidos((data ?? []) as PedidoConItems[]);
     setLoading(false);
 
     // Stats del header: sí filtran por día, pero excluyen cancelados para
     // que la "Venta" no cuente pedidos rechazados.
-    // Medianoche de HOY en America/Santiago (consistente con la numeración de
-    // pedidos, que también usa la hora de Chile), independiente de la zona de
-    // la tablet.
-    const now = new Date();
-    const chileNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }));
-    const offsetMs = now.getTime() - chileNow.getTime();
-    chileNow.setHours(0, 0, 0, 0);
-    const today = new Date(chileNow.getTime() + offsetMs);
+    const today = medianocheChile();
 
     const { data: allToday } = await supabase
       .from("pedidos")
@@ -204,42 +240,98 @@ export default function DashboardPage() {
       .neq("estado", "cancelado")
       .returns<{ total: number }[]>();
 
+    if (localIdRef.current !== localId) return;
+
     if (allToday) {
       setTodayStats({ count: allToday.length, total: allToday.reduce((s, p) => s + p.total, 0) });
     }
   }, [supabase, localId]);
 
+  // Pedidos ya cerrados hoy. Se consultan aparte del Kanban porque son los
+  // únicos que no queremos en pantalla permanentemente.
+  const fetchCerrados = useCallback(async () => {
+    if (!localId) return;
+
+    const { data } = await supabase
+      .from("pedidos")
+      .select(`*, pedido_items (*, producto:productos (*))`)
+      .eq("local_id", localId)
+      .in("estado", ["entregado", "cancelado"])
+      // Por `updated_at` y no `created_at`: una fuente de soda que cierra
+      // después de medianoche entrega pedidos tomados "ayer", y con el filtro
+      // por fecha de creación esos quedaban fuera del panel de ningún día.
+      .gte("updated_at", medianocheChile().toISOString())
+      .order("updated_at", { ascending: false });
+
+    if (localIdRef.current !== localId) return;
+
+    setCerrados((data ?? []) as PedidoConItems[]);
+  }, [supabase, localId]);
+
   useEffect(() => {
     if (!localId) return;
 
+    // Carga inicial INMEDIATA, sin esperar al canal realtime. Antes el primer
+    // fetch colgaba del callback SUBSCRIBED: si el wifi del local bloquea
+    // WebSockets, la cocina se quedaba en "Cargando dashboard..." hasta que
+    // entraba el polling de respaldo, 30 segundos después.
+    // (El estado "conectando" es el inicial y lo repone handleLocalChange; no
+    //  se setea acá para no encadenar renders dentro del efecto.)
+    //
+    // La regla set-state-in-effect da un falso positivo acá: ambas funciones son
+    // async y su primer statement es un `await` a Supabase, así que ningún
+    // setState ocurre de forma síncrona durante el commit del efecto.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPedidos();
+    fetchCerrados();
+
+    // El topic incluye el local: `channel()` REUTILIZA el canal si el topic ya
+    // existe, y `removeChannel()` no lo da de baja hasta que el servidor
+    // responde el "leave". Con un topic fijo, cambiar de local devolvía el canal
+    // viejo en estado `leaving`, el `.subscribe()` era un no-op y el local nuevo
+    // se quedaba sin realtime (y el indicador clavado en "Sin conexión").
     const channel = supabase
-      .channel("dashboard-orders")
+      .channel(`dashboard-orders-${localId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "pedidos", filter: `local_id=eq.${localId}` }, (payload) => {
         if (payload.eventType === "INSERT") {
           playNotificationSound();
           if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
         }
         fetchPedidos();
+
+        // Un pedido cerrado desde OTRA tablet también tiene que aparecer acá:
+        // es justo el caso multi-tablet que motiva el panel.
+        const estadoNuevo = (payload.new as { estado?: string } | null)?.estado;
+        if (showCerradosRef.current || estadoNuevo === "entregado" || estadoNuevo === "cancelado") {
+          fetchCerrados();
+        }
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
-          // Cubre tanto la carga inicial como cada re-suscripción tras una
-          // reconexión.
+          // Además de la carga inicial, cubre cada re-suscripción tras una
+          // reconexión (puede haber pedidos perdidos en el hueco).
+          setConexion("en-vivo");
           fetchPedidos();
-        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setConexion("sin-conexion");
           console.warn(`[dashboard] realtime "${status}"; dependiendo del polling de respaldo`);
         }
       });
 
     // Polling de respaldo: cubre huecos de realtime (reconexiones lentas,
     // eventos perdidos, etc.).
-    const pollInterval = setInterval(() => fetchPedidos(), 30000);
+    function refrescar() {
+      fetchPedidos();
+      if (showCerradosRef.current) fetchCerrados();
+    }
+
+    const pollInterval = setInterval(refrescar, 30000);
 
     function handleVisibility() {
-      if (document.visibilityState === "visible") fetchPedidos();
+      if (document.visibilityState === "visible") refrescar();
     }
     function handleOnline() {
-      fetchPedidos();
+      refrescar();
     }
 
     document.addEventListener("visibilitychange", handleVisibility);
@@ -251,7 +343,7 @@ export default function DashboardPage() {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("online", handleOnline);
     };
-  }, [supabase, localId, fetchPedidos]);
+  }, [supabase, localId, fetchPedidos, fetchCerrados]);
 
   // Oculta el toast de error automáticamente.
   useEffect(() => {
@@ -259,6 +351,25 @@ export default function DashboardPage() {
     const timeout = setTimeout(() => setErrorMsg(null), 4000);
     return () => clearTimeout(timeout);
   }, [errorMsg]);
+
+  // La ventana para deshacer una entrega es generosa: en pleno servicio nadie
+  // reacciona en 3 segundos. Pasado el plazo, el pedido sigue recuperable desde
+  // el panel "Cerrados hoy".
+  useEffect(() => {
+    if (!undoPedido) return;
+    const timeout = setTimeout(() => setUndoPedido(null), 12000);
+    return () => clearTimeout(timeout);
+  }, [undoPedido]);
+
+  // El navegador puede suspender el AudioContext por su cuenta (cambio de
+  // pestaña, ahorro de energía). Se vigila para que el aviso de "sin sonido"
+  // refleje el estado real y no lo que creíamos al activarlo.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSoundEnabled(sharedAudioCtx?.state === "running");
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const nuevoCount = pedidos.filter((p) => p.estado === "nuevo").length;
@@ -270,9 +381,11 @@ export default function DashboardPage() {
 
   // Compare-and-set: solo aplica el update si el pedido sigue en
   // `currentStatus`, para no pisar cambios hechos desde otra tablet.
-  async function updateStatus(pedidoId: string, currentStatus: string, targetStatus?: string) {
+  async function updateStatus(
+    pedidoId: string, currentStatus: string, targetStatus?: string
+  ): Promise<boolean> {
     const nextStatus = targetStatus ?? NEXT_STATUS[currentStatus];
-    if (!nextStatus) return;
+    if (!nextStatus) return false;
 
     setUpdatingId(pedidoId);
     const { data, error } = await supabase
@@ -286,15 +399,41 @@ export default function DashboardPage() {
     if (error || !data || data.length === 0) {
       setErrorMsg("No se pudo actualizar el pedido; reintenta.");
       fetchPedidos();
-      return;
+      return false;
     }
 
     fetchPedidos();
+    // Solo cuando el movimiento afecta al panel: con `showCerrados` cerrado, un
+    // simple "Aceptar" no tiene por qué disparar una consulta con joins de todos
+    // los pedidos cerrados del día, en la pantalla más caliente del producto.
+    const tocaCerrados =
+      nextStatus === "entregado" || nextStatus === "cancelado" || currentStatus === "entregado";
+    if (tocaCerrados || showCerrados) fetchCerrados();
+    return true;
+  }
+
+  // Avance normal del Kanban. Marcar "Entregado" saca el pedido de la pantalla,
+  // así que ese paso deja un toast de deshacer: en cocina los toques
+  // accidentales existen y antes no había vuelta atrás.
+  async function handleAvanzar(pedido: PedidoConItems) {
+    const esEntrega = pedido.estado === "listo";
+    const ok = await updateStatus(pedido.id, pedido.estado);
+    if (ok && esEntrega) {
+      setUndoPedido({ id: pedido.id, numero: pedido.numero_pedido });
+    }
   }
 
   async function handleReject(pedidoId: string, currentStatus: string) {
     if (!window.confirm("¿Rechazar este pedido? El cliente será notificado.")) return;
     await updateStatus(pedidoId, currentStatus, "cancelado");
+  }
+
+  // Deshacer una entrega: devuelve el pedido a la columna "Listos".
+  // Requiere la transición entregado → listo (migración f5-1).
+  async function handleReabrir(pedidoId: string) {
+    setUndoPedido(null);
+    const ok = await updateStatus(pedidoId, "entregado", "listo");
+    if (!ok) setErrorMsg("No se pudo reabrir el pedido; puede que ya lo haya movido otra tablet.");
   }
 
   async function enableSound() {
@@ -394,6 +533,12 @@ export default function DashboardPage() {
               >
                 Identidad
               </Link>
+              <Link
+                href="/dashboard/reportes"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Reportes
+              </Link>
               {isPlatformAdmin && (
                 <Link
                   href="/dashboard/admin"
@@ -417,15 +562,46 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Sound unlock (autoplay policy: requiere gesto del usuario) */}
-            {!soundEnabled && (
-              <button
-                onClick={enableSound}
-                className="px-3 py-2 rounded-xl dash-bg-surface dash-text-secondary text-xs font-semibold hover:opacity-80 transition-opacity whitespace-nowrap"
-              >
-                🔔 Activar sonido
-              </button>
-            )}
+            {/* Estado de la conexión: distingue "no hay pedidos" de "no llegan". */}
+            <div
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap ${
+                conexion === "en-vivo"
+                  ? "text-green-400"
+                  : conexion === "sin-conexion"
+                    ? "bg-red-950/60 text-red-300 border border-red-900/60"
+                    : "dash-text-muted"
+              }`}
+              title={
+                conexion === "sin-conexion"
+                  ? "Sin conexión en vivo: los pedidos se actualizan cada 30 segundos"
+                  : undefined
+              }
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  conexion === "en-vivo"
+                    ? "bg-green-400 animate-pulse"
+                    : conexion === "sin-conexion"
+                      ? "bg-red-400"
+                      : "bg-stone-500"
+                }`}
+              />
+              {conexion === "en-vivo" ? "En vivo" : conexion === "sin-conexion" ? "Sin conexión" : "Conectando"}
+            </div>
+
+            {/* Cerrados hoy: red de seguridad ante una entrega marcada por error. */}
+            <button
+              onClick={() => { setShowCerrados((v) => !v); fetchCerrados(); }}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80 whitespace-nowrap ${
+                showCerrados ? "bg-stone-700 text-white" : "dash-bg-surface dash-text-secondary"
+              }`}
+            >
+              📦 Cerrados hoy{cerrados.length > 0 && ` (${cerrados.length})`}
+            </button>
+
+            {/* El desbloqueo de sonido vive ahora en la barra de aviso de abajo:
+                un botón discreto en el header pasaba desapercibido y la cocina
+                se quedaba muda sin enterarse. */}
 
             {/* Notification bell */}
             <div className="relative">
@@ -450,6 +626,21 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {/* ===== AVISO DE SONIDO =====
+          El navegador exige un gesto del usuario para reproducir audio, y el
+          permiso se pierde en cada recarga de la tablet. Antes eso dejaba la
+          cocina muda sin que nadie lo notara: ahora ocupa una barra entera y no
+          se puede ignorar. */}
+      {!soundEnabled && (
+        <button
+          onClick={enableSound}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-950/70 border-b border-red-900/70 text-red-200 text-sm font-semibold hover:bg-red-900/60 transition-colors"
+        >
+          <span className="text-base">🔕</span>
+          Los pedidos nuevos no van a sonar — toca aquí para activar el sonido
+        </button>
+      )}
+
       {/* ===== MOBILE STATS ===== */}
       <div className="sm:hidden flex items-center gap-4 px-4 py-3 border-b border-stone-800">
         <div className="flex-1 text-center">
@@ -463,9 +654,88 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ===== CERRADOS HOY =====
+          Antes, un pedido entregado desaparecía de la pantalla para siempre.
+          Este panel es la red de seguridad: permite revisarlos y devolver a la
+          cocina el que se marcó por error. */}
+      {showCerrados && (
+        <section className="border-b border-stone-800 bg-stone-950/40 px-3 md:px-5 py-4">
+          <div className="max-w-[1600px] mx-auto">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-bold dash-text-primary text-sm">
+                📦 Cerrados hoy <span className="dash-text-muted font-normal">({cerrados.length})</span>
+              </h2>
+              <button
+                onClick={() => setShowCerrados(false)}
+                className="text-xs dash-text-muted hover:opacity-70 transition-opacity"
+              >
+                Cerrar ✕
+              </button>
+            </div>
+
+            {cerrados.length === 0 ? (
+              <p className="dash-text-muted text-sm py-2">
+                Todavía no hay pedidos entregados ni rechazados hoy.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {cerrados.map((pedido) => (
+                  <div
+                    key={pedido.id}
+                    className="dash-card rounded-xl border p-3 flex flex-col gap-2 opacity-80"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-black dash-text-primary">
+                          {orderNumber(pedido.numero_pedido)}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                            pedido.estado === "cancelado"
+                              ? "bg-red-950/60 text-red-300"
+                              : "bg-green-950/60 text-green-300"
+                          }`}
+                        >
+                          {pedido.estado === "cancelado" ? "Rechazado" : "Entregado"}
+                        </span>
+                      </div>
+                      <span className="text-[11px] dash-text-muted tabular-nums">
+                        {formatPrice(pedido.total)}
+                      </span>
+                    </div>
+
+                    <p className="text-[12px] dash-text-secondary truncate">
+                      {pedido.nombre_cliente}
+                      {pedido.mesa && <span className="dash-text-muted"> · {pedido.mesa}</span>}
+                    </p>
+
+                    <p className="text-[11px] dash-text-muted truncate">
+                      {pedido.pedido_items.map((i) => `${i.cantidad}x ${i.producto?.nombre ?? "Producto"}`).join(", ")}
+                    </p>
+
+                    {pedido.estado === "entregado" && (
+                      <button
+                        onClick={() => handleReabrir(pedido.id)}
+                        disabled={updatingId === pedido.id}
+                        className="mt-1 px-3 py-2 rounded-lg text-[12px] font-semibold dash-bg-surface dash-text-secondary hover:opacity-80 transition-opacity disabled:opacity-50"
+                      >
+                        ↩ Reabrir
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* ===== KANBAN BOARD ===== */}
       <main className="flex-1 p-3 md:p-5 overflow-x-auto">
-        <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 min-w-0">
+        {/* lg (1024px) y no xl (1280px): una tablet de 10-11" en horizontal ronda
+            los 1100-1180px y caía en 2 columnas, justo en el dispositivo para el
+            que está pensada esta pantalla. */}
+        <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0">
           {COLUMNS.map((col) => {
             const colPedidos = pedidos.filter((p) => p.estado === col.key);
 
@@ -556,7 +826,7 @@ export default function DashboardPage() {
                               </button>
                             )}
                             <button
-                              onClick={() => updateStatus(pedido.id, pedido.estado)}
+                              onClick={() => handleAvanzar(pedido)}
                               disabled={updatingId === pedido.id}
                               className={`px-4 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg bg-gradient-to-r disabled:opacity-60 disabled:hover:scale-100 ${
                                 COLUMNS.find(c => c.key === (NEXT_STATUS[pedido.estado] ?? pedido.estado))?.accent ?? "from-stone-600 to-stone-700"
@@ -576,12 +846,26 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Toast de error, discreto y auto-ocultable */}
-      {errorMsg && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
-          ⚠️ {errorMsg}
-        </div>
-      )}
+      {/* Toasts: se apilan para que el de deshacer no tape al de error. */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+        {undoPedido && (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-stone-800/95 border border-stone-600 text-stone-100 text-sm font-medium shadow-lg backdrop-blur-sm">
+            <span>Pedido {orderNumber(undoPedido.numero)} entregado</span>
+            <button
+              onClick={() => handleReabrir(undoPedido.id)}
+              className="px-3 py-1.5 rounded-lg bg-stone-700 hover:bg-stone-600 text-white text-[13px] font-bold transition-colors"
+            >
+              ↩ Deshacer
+            </button>
+          </div>
+        )}
+
+        {errorMsg && (
+          <div className="px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+            ⚠️ {errorMsg}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

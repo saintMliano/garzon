@@ -19,6 +19,8 @@ export interface Local {
     activo: boolean;
     created_at: string;
     mesas: string[] | null;
+    /** Tope de pedidos por minuto que aplica `crear_pedido`. Solo lo cambia el service-role. */
+    limite_pedidos_min: number;
 }
 
 export interface Categoria {

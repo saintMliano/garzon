@@ -130,28 +130,58 @@ describe("RPC crear_pedido", () => {
       .eq("id", fixtures.localB.id);
   });
 
-  test("Rate-limit: 16º pedido seguido al mismo local falla (T2: 15 pedidos/min)", async () => {
-    // Usamos local B que tiene la cuota limpia
-    let lastError: any = null;
+  test("Un local nuevo arranca con el límite por defecto de 40 pedidos/min (F5.2)", async () => {
+    const { data: local } = await adminClient
+      .from("locales")
+      .select("limite_pedidos_min")
+      .eq("id", fixtures.localA.id)
+      .single();
 
-    for (let i = 1; i <= 16; i++) {
-      const { error } = await anonClient.rpc("crear_pedido", {
-        p_local_id: fixtures.localB.id,
-        p_nombre: `Spammer ${i}`,
-        p_mesa: "Mesa 1",
-        p_notas: "",
-        p_items: [
-          { producto_id: fixtures.localB.prodAvailable.id, cantidad: 1, notas: "" },
-        ],
-      });
+    expect(local?.limite_pedidos_min).toBe(40);
+  });
 
-      if (error) {
-        lastError = error;
-        break;
+  test("Rate-limit: se respeta el límite configurado en el local (F5.2)", async () => {
+    // El tope ya no está fijo en la RPC: se lee de locales.limite_pedidos_min.
+    // Se baja a 5 en el local B para probarlo sin generar 40 pedidos.
+    const LIMITE = 5;
+    await adminClient
+      .from("locales")
+      .update({ limite_pedidos_min: LIMITE })
+      .eq("id", fixtures.localB.id);
+
+    let lastError: { message: string } | null = null;
+    let creados = 0;
+
+    try {
+      for (let i = 1; i <= LIMITE + 1; i++) {
+        const { error } = await anonClient.rpc("crear_pedido", {
+          p_local_id: fixtures.localB.id,
+          p_nombre: `Spammer ${i}`,
+          p_mesa: "Mesa 1",
+          p_notas: "",
+          p_items: [
+            { producto_id: fixtures.localB.prodAvailable.id, cantidad: 1, notas: "" },
+          ],
+        });
+
+        if (error) {
+          lastError = error;
+          break;
+        }
+        creados++;
       }
-    }
 
-    expect(lastError).not.toBeNull();
-    expect(lastError.message).toMatch(/Demasiados pedidos/i);
+      // Debe haber dejado pasar exactamente los del límite y cortar en el siguiente.
+      // (Asume que ningún test anterior creó pedidos en el local B.)
+      expect(creados).toBe(LIMITE);
+      expect(lastError).not.toBeNull();
+      expect(lastError!.message).toMatch(/Demasiados pedidos/i);
+    } finally {
+      // En `finally`: si un expect falla, el local igual queda restaurado.
+      await adminClient
+        .from("locales")
+        .update({ limite_pedidos_min: 40 })
+        .eq("id", fixtures.localB.id);
+    }
   });
 });
