@@ -315,6 +315,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_menu_publico: { Args: { p_slug: string }; Returns: Json }
       get_order_status: {
         Args: { p_order_id: string }
         Returns: {

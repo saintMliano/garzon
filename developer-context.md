@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-10):** auditoría 2 + Fase 5 "Turno autónomo" en curso (roadmap reordenado). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-11):** Fases 5, 6 y 7 completas (turno autónomo, cierre de caja, rendimiento). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -37,8 +37,8 @@ no había vuelta atrás. `cancelado` sigue siendo terminal: el cliente ya vio es
 distinguir "no hay pedidos" de "no me están llegando".
 
 ### Flujo del Cliente (móvil-primero)
-1. El cliente entra a `/local/[slug]` (idealmente por QR), navega el menú y arma su carrito.
-2. **El carrito persiste en `localStorage`** (clave `garzon:cart:<slug>`, TTL 2h): una recarga o el descarte de la pestaña en móvil ya no lo pierden.
+1. El cliente entra a `/local/[slug]` (idealmente por QR), navega el menú y arma su carrito. **El menú se renderiza en el servidor** (F7): la carta viaja dentro del HTML, sin esperar a que el celular ejecute JavaScript ni haga consultas.
+2. **El carrito persiste en `localStorage`** (clave `garzon:cart:<slug>`, TTL 2h): una recarga o el descarte de la pestaña en móvil ya no lo pierden. Al cargar el menú se **reconcilia** contra los precios vigentes y se avisa al cliente de cualquier cambio (F7).
 3. Al confirmar, el checkout crea el pedido de forma atómica y muestra una pantalla de **seguimiento en vivo** con barra de progreso.
 4. **El pedido activo también persiste** (`garzon:order:<slug>`, TTL 3h): si el cliente recarga, se restaura la pantalla de seguimiento; cuando el pedido pasa a `entregado`, se limpia solo y vuelve al menú.
 
@@ -63,7 +63,7 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 
 **Tablas:**
 - **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40).
-- **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). Lectura pública (el menú es público).
+- **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). **Lectura pública revocada (F7):** el menú se sirve por `get_menu_publico(slug)`; el staff lee las suyas por RLS.
 - **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas y estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`). **Acceso público revocado** (ver Seguridad).
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
 - **`local_staff` (nueva):** Vincula usuarios de `auth.users` con `locales` (`user_id`, `local_id`). Determina qué local ve/gestiona cada cuenta de cocina. Se administra por SQL/rol de servicio.
@@ -72,10 +72,11 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 **Integridad:** las FK `local_id` (categorias/productos/pedidos) y `pedido_id` (pedido_items) son `NOT NULL`. Hay `CHECK` en `precio > 0`, `total > 0`, `cantidad > 0` y `precio_unitario >= 0`.
 
 ### Funciones RPC (contrato del cliente anónimo)
-El cliente anónimo **no** toca la tabla `pedidos` directamente; opera vía dos funciones `SECURITY DEFINER`:
+El cliente anónimo **no** toca las tablas directamente; opera vía funciones `SECURITY DEFINER`:
 - **`crear_pedido(p_local_id, p_nombre, p_mesa, p_notas, p_items jsonb) → uuid`**: crea el pedido y sus ítems en una sola transacción, **calcula el total en el servidor** leyendo el precio real de `productos` **una sola vez** (ignora cualquier total enviado por el cliente), valida que el local esté activo y que cada producto exista y esté `disponible`. **Endurecida (T2):** topes de tamaño (cantidad ≤ 99, ≤ 50 productos, monto ≤ $10M) y `bigint` para evitar overflow. **Rate-limit configurable (F5.2):** el tope por local por minuto se lee de `locales.limite_pedidos_min` (default 40; antes era fijo en 15, que un peak legítimo reventaba). Devuelve el id del pedido.
   > **Limitación conocida:** el rate-limit protege de ráfagas accidentales, no de un atacante decidido — que igual satura y de paso deja fuera a los clientes buenos. La defensa real es un desafío/token de sesión en el checkout (Fase 8).
 - **`get_order_status(p_order_id) → (estado, numero_pedido, created_at)`**: expone solo campos no sensibles del pedido cuyo UUID conoce el cliente (para el seguimiento).
+- **`get_menu_publico(p_slug) → jsonb`** (F7): devuelve local + categorías + productos disponibles en **una sola consulta**, con **lista blanca** de columnas. Es lo que permitió cerrar la lectura pública de esas tablas: para ver un menú hay que saber el slug. La usa el Server Component del menú.
 
 **Actualización de pedidos:** el staff solo puede cambiar la columna `estado` (privilegios de columna), y un trigger valida las transiciones del Kanban en el servidor (`nuevo→aceptado/cancelado`, `aceptado→preparando/cancelado`, `preparando→listo/cancelado`, `listo→entregado`, y `entregado→listo` para deshacer una entrega marcada por error). Las columnas `slug`/`activo`/`limite_pedidos_min` de `locales` y el `total` de `pedidos` no son actualizables por el staff (quedan al service-role).
 > **Efecto secundario de la reapertura:** el ciclo `entregado → listo → entregado` reescribe `updated_at` vía el trigger `set_updated_at`, así que esa columna **no** es una base confiable para analíticas de tiempos. La auditoría de cambios de estado que la reemplaza va en la Fase 8.
@@ -89,7 +90,12 @@ El cliente anónimo **no** toca la tabla `pedidos` directamente; opera vía dos 
 - `src/app/dashboard/config/page.tsx`: identidad visual del local (nombre, slogan, colores, logo).
 - `src/app/dashboard/admin/page.tsx`: alta de locales (solo super-admin; el link se oculta a quien no lo es).
 - `src/app/api/admin/onboard/route.ts`: endpoint server-only de onboarding (usa el cliente admin / service-role).
-- `src/app/local/[slug]/`: Ruta dinámica del cliente. `page.tsx` (menú + persistencia), `checkout-modal.tsx` (llama `crear_pedido`), `order-status.tsx` (seguimiento vía `get_order_status` + **polling cada 4s**, 15s al llegar a `listo`, hasta `entregado`/`cancelado`), `cart-sheet.tsx`, `layout.tsx` (envuelve con `CartProvider`).
+- `src/app/local/[slug]/`: Ruta dinámica del cliente.
+  - `page.tsx` — **Server Component** (F7): trae el menú con `get_menu_publico`, expone `generateMetadata` por local, lee `?mesa=` del QR y devuelve **404 real** si el slug no existe.
+  - `menu-cliente.tsx` — toda la interactividad (búsqueda, pills, carrito, reconciliación de precios).
+  - `error.tsx` / `not-found.tsx` — fallo de carga (con reintento) y local inexistente.
+  - `checkout-modal.tsx` (llama `crear_pedido`), `order-status.tsx` (seguimiento vía `get_order_status` + **polling cada 4s**, 15s al llegar a `listo`, hasta `entregado`/`cancelado`), `cart-sheet.tsx`, `layout.tsx` (envuelve con `CartProvider`).
+- `src/lib/menu-publico.ts`: lectura del menú en el servidor, envuelta en `cache()` para que la página y `generateMetadata` compartan un solo viaje a la base.
 - `src/lib/cart-context.tsx`: Contexto del carrito, **persistido en `localStorage`** por slug.
 - `src/lib/supabase.ts` / `src/lib/supabase/{client,server}.ts` / `src/lib/supabase/admin.ts`: clientes anónimo, autenticados y admin (ver arriba).
 - `supabase/migrations/`: **migraciones versionadas (desde el 2026-08-11).** Se aplican con
@@ -112,7 +118,9 @@ El principio rector tras la auditoría: **el servidor decide, el navegador no.**
 - **Aislamiento multi-tenant (RLS):** las políticas públicas de `pedidos` y `pedido_items` fueron **eliminadas**. Ahora:
   - Solo el **staff autenticado** puede leer/actualizar los pedidos **de su propio local** (RLS que verifica `auth.uid()` contra `local_staff`).
   - El **cliente anónimo** solo puede crear pedidos y consultar el estado del suyo, a través de las RPCs. No puede leer pedidos ajenos, modificarlos ni insertarlos directamente.
-  - `locales`, `categorias` y `productos` mantienen lectura pública (el menú es público).
+  - `locales`, `categorias` y `productos` **ya no tienen lectura pública (F7, hallazgo M1)**: con la
+    anon key se podía enumerar la cartera completa de clientes. El menú se sirve por
+    `get_menu_publico(slug)`, que exige saber el slug; el staff lee lo suyo con políticas propias.
 - **Precio a prueba de manipulación:** `crear_pedido` recalcula el total en el servidor; un cliente no puede enviar un pedido con total falso.
 - **Realtime:** el dashboard (autenticado) mantiene realtime filtrado por `local_id`. El seguimiento del **cliente** usa polling porque, al cerrar la lectura pública, el anónimo ya no recibe eventos `postgres_changes` de `pedidos`.
 - **Endurecimiento (consolidación T2-T4):** `crear_pedido` con rate-limit por local y topes de tamaño/monto; el staff solo puede cambiar la columna `estado` de sus pedidos (transiciones validadas por trigger en el servidor), no el `total`; no puede cambiar `slug`/`activo` de su local; el bucket `menu` limita tamaño (3 MB) y tipos (solo imágenes).
@@ -152,7 +160,7 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 |---|---|---|
 | **F5 — Turno autónomo** | Que un local opere un turno completo sin el fundador: cuentas reales, deshacer entrega, historial del día, carga sin realtime, aviso de sonido, rate-limit configurable. [Plan](plan/F5-TURNO-AUTONOMO.md) | **Completa** |
 | **F6 — Cierre de caja** | `/dashboard/reportes`: pedidos, venta, ticket promedio, top productos, ventas por día y export CSV. [Plan](plan/F6-CIERRE-DE-CAJA.md) | **Completa** |
-| F7 — Rendimiento percibido | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito | Pendiente |
+| **F7 — Rendimiento percibido** | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito. [Plan](plan/F7-RENDIMIENTO.md) | **Completa** |
 | F8 — Confianza | Idempotencia de `crear_pedido` (`client_request_id`), auditoría de cambios de estado, defensa anti-abuso en el checkout | Pendiente |
 | F9 — Marca completa | Terminar el white-label (`order-status.tsx` sigue naranja fijo), validar contraste en el editor de identidad | Pendiente |
 | F10 — Negocio | Propina sugerida, planes/suscripción, pago en línea | Pendiente |
@@ -182,6 +190,36 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-11 — Fase 7: rendimiento percibido (menú a Server Component)
+
+Resuelve la deuda de rendimiento medida en la auditoría, más **A3** (precios congelados en el
+carrito) y **M1** (enumeración pública). Plan y números en
+[`plan/F7-RENDIMIENTO.md`](plan/F7-RENDIMIENTO.md).
+
+- **`get_menu_publico(slug)`** (migración `20260811181119`): local + categorías + productos
+  disponibles en **una** consulta, contra las dos oleadas secuenciales anteriores. Medido en la
+  misma corrida: **385 ms → 185 ms** p50.
+- **El menú es un Server Component.** `page.tsx` trae los datos en el servidor y
+  `menu-cliente.tsx` se queda con la interactividad. Verificado sobre el HTML crudo: los nombres y
+  precios están ahí **sin ejecutar JavaScript**. Antes eran 3-6 s en 4G hasta ver la carta.
+- **Efectos secundarios gratis:** la mesa del QR se lee en el servidor (sin parpadeo, sin depender
+  de la hidratación), un slug inexistente devuelve **404 real** en vez de 200, y `generateMetadata`
+  pone nombre, slogan y logo del local al compartir el link por WhatsApp o Instagram.
+- **El carrito ya no miente (A3):** al cargar el menú se reconcilia contra los productos vigentes —
+  actualiza precios, saca lo agotado y **avisa al cliente qué cambió**, con nombre y monto, en vez
+  de ajustarlo en silencio. El menú se refresca al volver a la pestaña.
+- **Enumeración cerrada (M1):** revocada la lectura pública de `locales`, `categorias` y
+  `productos`. **Cuidado para quien toque esto:** el dashboard leía esas tablas apoyándose en las
+  *mismas* políticas públicas (nunca hubo SELECT para `authenticated`), así que la migración agrega
+  las políticas de staff **antes** de quitar las públicas, en una transacción. Hay tests que fijan
+  la invariante.
+- **Lista blanca en vez de negra:** el JSON del menú enumera explícitamente las columnas públicas.
+  Con la lista negra anterior, cualquier columna nueva de `locales` se publicaba por omisión — ya
+  estaba pasando con `limite_pedidos_min`.
+- **Verificación:** `npm test` **45/45**, `tsc`/`eslint`/`build` limpios, `src/app/local/` sin
+  errores de lint (se arregló de paso un ref escrito durante el render en `order-status.tsx`).
+- **Pendiente:** la medición con un celular real sobre 4G, que es el número que de verdad importa.
 
 ### 2026-08-11 — Fase 6: cierre de caja (`/dashboard/reportes`)
 
