@@ -12,7 +12,9 @@
 import { spawnSync } from "child_process";
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local" });
+// quiet: el banner de dotenv iría a stdout y se colaría dentro de los
+// archivos generados por redirección (p. ej. `db:types > supabase.ts`).
+dotenv.config({ path: ".env.local", quiet: true });
 
 // El CLI de Supabase espera SUPABASE_DB_PASSWORD; en .env.local la variable se
 // llama DATABASE_PASSWORD. Se mapea acá para no duplicar el secreto.

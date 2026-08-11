@@ -26,7 +26,9 @@ import { createClient } from "@supabase/supabase-js";
 import { mkdirSync, existsSync, writeFileSync, statSync } from "fs";
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local" });
+// quiet: el banner de dotenv iría a stdout y se colaría dentro de los
+// archivos generados por redirección (p. ej. `db:types > supabase.ts`).
+dotenv.config({ path: ".env.local", quiet: true });
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

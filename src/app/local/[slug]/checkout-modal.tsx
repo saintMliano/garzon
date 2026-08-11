@@ -37,8 +37,13 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
       const { data, error: rpcError } = await supabase.rpc("crear_pedido", {
         p_local_id: localId,
         p_nombre: nombre.trim(),
-        p_mesa: mesa.trim() || null,
-        p_notas: notas.trim() || null,
+        // Cadena vacía en vez de null: `crear_pedido` hace NULLIF(trim(...), '')
+        // sobre estos argumentos, así que "" se guarda como NULL igual. Los tipos
+        // generados por Supabase declaran los argumentos `text` como no-nulos —
+        // Postgres no expone la nulabilidad de los parámetros de una función—, y
+        // así se respeta el contrato generado sin castear ni cambiar la conducta.
+        p_mesa: mesa.trim(),
+        p_notas: notas.trim(),
         p_items: items.map((item) => ({
           producto_id: item.producto.id,
           cantidad: item.cantidad,

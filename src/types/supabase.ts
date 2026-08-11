@@ -7,28 +7,58 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       categorias: {
         Row: {
+          icono: string | null
           id: string
           local_id: string
           nombre: string
-          icono: string | null
           orden: number | null
         }
         Insert: {
+          icono?: string | null
           id?: string
           local_id: string
           nombre: string
-          icono?: string | null
           orden?: number | null
         }
         Update: {
+          icono?: string | null
           id?: string
           local_id?: string
           nombre?: string
-          icono?: string | null
           orden?: number | null
         }
         Relationships: [
@@ -38,24 +68,24 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "locales"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       local_staff: {
         Row: {
-          user_id: string
+          created_at: string | null
           local_id: string
-          created_at: string
+          user_id: string
         }
         Insert: {
-          user_id: string
+          created_at?: string | null
           local_id: string
-          created_at?: string
+          user_id: string
         }
         Update: {
-          user_id?: string
+          created_at?: string | null
           local_id?: string
-          created_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -64,81 +94,81 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "locales"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       locales: {
         Row: {
-          id: string
-          nombre: string
-          slug: string
-          direccion: string | null
-          telefono: string | null
-          logo_url: string | null
-          color_primario: string | null
-          color_acento: string | null
-          slogan: string | null
           activo: boolean | null
+          color_acento: string | null
+          color_primario: string | null
           created_at: string | null
-          mesas: string[] | null
+          direccion: string | null
+          id: string
           limite_pedidos_min: number
+          logo_url: string | null
+          mesas: string[] | null
+          nombre: string
+          slogan: string | null
+          slug: string
+          telefono: string | null
         }
         Insert: {
-          id?: string
-          nombre: string
-          slug: string
-          direccion?: string | null
-          telefono?: string | null
-          logo_url?: string | null
-          color_primario?: string | null
-          color_acento?: string | null
-          slogan?: string | null
           activo?: boolean | null
+          color_acento?: string | null
+          color_primario?: string | null
           created_at?: string | null
-          mesas?: string[] | null
+          direccion?: string | null
+          id?: string
           limite_pedidos_min?: number
+          logo_url?: string | null
+          mesas?: string[] | null
+          nombre: string
+          slogan?: string | null
+          slug: string
+          telefono?: string | null
         }
         Update: {
-          id?: string
-          nombre?: string
-          slug?: string
-          direccion?: string | null
-          telefono?: string | null
-          logo_url?: string | null
-          color_primario?: string | null
-          color_acento?: string | null
-          slogan?: string | null
           activo?: boolean | null
+          color_acento?: string | null
+          color_primario?: string | null
           created_at?: string | null
-          mesas?: string[] | null
+          direccion?: string | null
+          id?: string
           limite_pedidos_min?: number
+          logo_url?: string | null
+          mesas?: string[] | null
+          nombre?: string
+          slogan?: string | null
+          slug?: string
+          telefono?: string | null
         }
         Relationships: []
       }
       pedido_items: {
         Row: {
-          id: string
-          pedido_id: string
-          producto_id: string | null
           cantidad: number
-          precio_unitario: number
+          id: string
           notas: string | null
+          pedido_id: string
+          precio_unitario: number
+          producto_id: string | null
         }
         Insert: {
-          id?: string
-          pedido_id: string
-          producto_id?: string | null
           cantidad?: number
-          precio_unitario: number
+          id?: string
           notas?: string | null
+          pedido_id: string
+          precio_unitario: number
+          producto_id?: string | null
         }
         Update: {
-          id?: string
-          pedido_id?: string
-          producto_id?: string | null
           cantidad?: number
-          precio_unitario?: number
+          id?: string
           notas?: string | null
+          pedido_id?: string
+          precio_unitario?: number
+          producto_id?: string | null
         }
         Relationships: [
           {
@@ -154,44 +184,44 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "productos"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       pedidos: {
         Row: {
+          created_at: string | null
+          estado: string | null
           id: string
           local_id: string
-          numero_pedido: number
-          estado: string | null
-          nombre_cliente: string
           mesa: string | null
-          total: number
+          nombre_cliente: string
           notas: string | null
-          created_at: string | null
+          numero_pedido: number
+          total: number
           updated_at: string | null
         }
         Insert: {
+          created_at?: string | null
+          estado?: string | null
           id?: string
           local_id: string
-          numero_pedido: number
-          estado?: string | null
-          nombre_cliente: string
           mesa?: string | null
-          total: number
+          nombre_cliente: string
           notas?: string | null
-          created_at?: string | null
+          numero_pedido: number
+          total: number
           updated_at?: string | null
         }
         Update: {
+          created_at?: string | null
+          estado?: string | null
           id?: string
           local_id?: string
-          numero_pedido?: number
-          estado?: string | null
-          nombre_cliente?: string
           mesa?: string | null
-          total?: number
+          nombre_cliente?: string
           notas?: string | null
-          created_at?: string | null
+          numero_pedido?: number
+          total?: number
           updated_at?: string | null
         }
         Relationships: [
@@ -201,57 +231,57 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "locales"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       platform_admins: {
         Row: {
+          created_at: string | null
           user_id: string
-          created_at: string
         }
         Insert: {
+          created_at?: string | null
           user_id: string
-          created_at?: string
         }
         Update: {
+          created_at?: string | null
           user_id?: string
-          created_at?: string
         }
         Relationships: []
       }
       productos: {
         Row: {
-          id: string
-          local_id: string
           categoria_id: string | null
-          nombre: string
           descripcion: string | null
-          precio: number
-          imagen_url: string | null
           disponible: boolean | null
+          id: string
+          imagen_url: string | null
+          local_id: string
+          nombre: string
           orden: number | null
+          precio: number
         }
         Insert: {
-          id?: string
-          local_id: string
           categoria_id?: string | null
-          nombre: string
           descripcion?: string | null
-          precio: number
-          imagen_url?: string | null
           disponible?: boolean | null
+          id?: string
+          imagen_url?: string | null
+          local_id: string
+          nombre: string
           orden?: number | null
+          precio: number
         }
         Update: {
-          id?: string
-          local_id?: string
           categoria_id?: string | null
-          nombre?: string
           descripcion?: string | null
-          precio?: number
-          imagen_url?: string | null
           disponible?: boolean | null
+          id?: string
+          imagen_url?: string | null
+          local_id?: string
+          nombre?: string
           orden?: number | null
+          precio?: number
         }
         Relationships: [
           {
@@ -267,7 +297,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "locales"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
     }
@@ -277,22 +307,54 @@ export type Database = {
     Functions: {
       crear_pedido: {
         Args: {
-          p_local_id: string
-          p_nombre: string
-          p_mesa: string | null
-          p_notas: string | null
           p_items: Json
+          p_local_id: string
+          p_mesa: string
+          p_nombre: string
+          p_notas: string
         }
         Returns: string
       }
       get_order_status: {
-        Args: {
-          p_order_id: string
-        }
+        Args: { p_order_id: string }
         Returns: {
+          created_at: string
           estado: string
           numero_pedido: number
-          created_at: string
+        }[]
+      }
+      reporte_top_productos: {
+        Args: {
+          p_desde: string
+          p_hasta: string
+          p_limite?: number
+          p_local_id: string
+        }
+        Returns: {
+          nombre: string
+          producto_id: string
+          unidades: number
+          venta: number
+        }[]
+      }
+      reporte_ventas: {
+        Args: { p_desde: string; p_hasta: string; p_local_id: string }
+        Returns: {
+          pedidos_cancelados: number
+          pedidos_entregados: number
+          pedidos_pendientes: number
+          pedidos_total: number
+          ticket_promedio: number
+          venta_entregada: number
+          venta_total: number
+        }[]
+      }
+      reporte_ventas_por_dia: {
+        Args: { p_desde: string; p_hasta: string; p_local_id: string }
+        Returns: {
+          dia: string
+          pedidos: number
+          venta: number
         }[]
       }
     }
@@ -304,3 +366,129 @@ export type Database = {
     }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const

@@ -150,8 +150,8 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 
 | Fase | Contenido | Estado |
 |---|---|---|
-| **F5 — Turno autónomo** | Que un local opere un turno completo sin el fundador: cuentas reales, deshacer entrega, historial del día, carga sin realtime, aviso de sonido, rate-limit configurable. [Plan](plan/F5-TURNO-AUTONOMO.md) | En curso |
-| F6 — Cierre de caja | `/dashboard/reportes`: pedidos, venta, ticket promedio, top productos | Pendiente |
+| **F5 — Turno autónomo** | Que un local opere un turno completo sin el fundador: cuentas reales, deshacer entrega, historial del día, carga sin realtime, aviso de sonido, rate-limit configurable. [Plan](plan/F5-TURNO-AUTONOMO.md) | **Completa** |
+| **F6 — Cierre de caja** | `/dashboard/reportes`: pedidos, venta, ticket promedio, top productos, ventas por día y export CSV. [Plan](plan/F6-CIERRE-DE-CAJA.md) | **Completa** |
 | F7 — Rendimiento percibido | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito | Pendiente |
 | F8 — Confianza | Idempotencia de `crear_pedido` (`client_request_id`), auditoría de cambios de estado, defensa anti-abuso en el checkout | Pendiente |
 | F9 — Marca completa | Terminar el white-label (`order-status.tsx` sigue naranja fijo), validar contraste en el editor de identidad | Pendiente |
@@ -182,6 +182,41 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-11 — Fase 6: cierre de caja (`/dashboard/reportes`)
+
+Resuelve el hallazgo **A5**: el plan comercial le promete al dueño "este mes procesaste X pedidos" y
+ese dato no se podía obtener sin abrir una consola SQL. Plan y decisiones en
+[`plan/F6-CIERRE-DE-CAJA.md`](plan/F6-CIERRE-DE-CAJA.md).
+
+- **Tres RPCs de agregación** (`reporte_ventas`, `reporte_ventas_por_dia`, `reporte_top_productos`),
+  migración `20260811173951_f6_reportes_ventas.sql`. La agregación vive en Postgres, no en el
+  navegador: bajar un mes de pedidos a una tablet para producir seis números escala mal.
+- **`SECURITY INVOKER`, al revés que `crear_pedido`.** Esa es `DEFINER` porque *tiene* que serlo (el
+  anónimo no tiene permisos sobre `pedidos`). Acá quien llama es staff autenticado que ya puede leer
+  lo suyo, así que dejándolas INVOKER **la RLS hace el aislamiento sola**: consultar el `local_id` de
+  otro devuelve ceros, no datos. No hay privilegio extra que se pueda escapar ni verificación de
+  membresía propia que mantener correcta. `anon` no tiene EXECUTE.
+- **Página `/dashboard/reportes`:** rangos (hoy / ayer / 7 días / este mes / mes pasado /
+  personalizado), tarjetas de venta-pedidos-ticket, desglose entregados vs pendientes vs rechazados,
+  ventas por día y top 10 de productos. Sin librería de gráficos: barras en CSS. Link agregado a la
+  nav de las 4 páginas del dashboard.
+- **Exportación a CSV** del detalle del período (`;` + BOM para Excel en español), paginada y con
+  aviso si se topa el límite: un CSV recortado en silencio se lee como completo y con eso el dueño
+  concilia una caja a la que le faltan datos.
+- **Todo en hora de Chile**, incluido el manejo del cambio de horario: verificado que el 4 de abril
+  de 2026 dura 25 h y el 6 de septiembre 23 h — ese día la medianoche no existe y se resuelve hacia
+  adelante, igual que Postgres, para que el CSV y las RPCs cubran exactamente la misma ventana.
+- **Tipos regenerados desde la base** (`npm run db:types`) en vez de mantenerlos a mano. Destapó dos
+  cosas: el banner de `dotenv` se colaba por stdout dentro del archivo generado (silenciado con
+  `quiet: true` en los cuatro scripts), y el checkout le pasaba `null` a `p_mesa`/`p_notas` de
+  `crear_pedido`, cuyos argumentos `text` el generador declara no-nulos. Ahora manda cadena vacía: la
+  RPC ya hace `NULLIF(trim(...), '')`, así que se guarda `NULL` igual.
+- **Verificación:** `npm test` **34/34** (22 + 12 nuevos), build y `tsc` limpios, 0 huérfanos. El
+  aislamiento se probó contra la base real *antes* de escribir la UI: la cuenta de Catire consultando
+  El Lalo recibe ceros mientras el service-role ve $67.900 en ese local. Hay un test que lo fija.
+- **Pendiente:** la revisión visual de la página con datos reales. Requiere iniciar sesión en el
+  dashboard, cosa que no puedo hacer yo.
 
 ### 2026-08-10 — Auditoría 2 + Fase 5 "Turno autónomo" (roadmap reordenado)
 

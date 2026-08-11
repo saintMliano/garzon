@@ -411,6 +411,12 @@ export default function MenuPage() {
               >
                 Identidad
               </Link>
+              <Link
+                href="/dashboard/reportes"
+                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+              >
+                Reportes
+              </Link>
               {isPlatformAdmin && (
                 <Link
                   href="/dashboard/admin"
