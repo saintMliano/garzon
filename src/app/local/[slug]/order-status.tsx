@@ -23,8 +23,15 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
   const [status, setStatus] = useState<OrderStatusType>("nuevo");
   const [orderNum, setOrderNum] = useState(0);
   const [createdAt, setCreatedAt] = useState("");
+  // El ref se sincroniza en un efecto y no durante el render: escribirlo en el
+  // cuerpo del componente es un efecto secundario en render, que con el
+  // renderizado concurrente de React puede ejecutarse más de una vez o
+  // descartarse. El sondeo lee `.current` recién cuando el pedido llega a
+  // `entregado`, mucho después de que este efecto haya corrido.
   const onDeliveredRef = useRef(onDelivered);
-  onDeliveredRef.current = onDelivered;
+  useEffect(() => {
+    onDeliveredRef.current = onDelivered;
+  }, [onDelivered]);
 
   useEffect(() => {
     let cancelled = false;
