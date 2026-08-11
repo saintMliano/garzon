@@ -211,35 +211,73 @@ export async function cleanupTestFixtures(fixtures: TestFixtures) {
   const localIds = [fixtures.localA.id, fixtures.localB.id];
   const userIds = [fixtures.staffA.id, fixtures.staffB.id];
 
-  try {
-    // 1. Borrar pedidos e ítems asociados
-    const { data: pedidos } = await adminClient
-      .from("pedidos")
-      .select("id")
-      .in("local_id", localIds);
+  // Los fallos NO se tragan: si la limpieza falla en silencio, los locales de
+  // prueba quedan vivos y visibles en la base real (ya pasó: 10 huérfanos el
+  // 2026-08-10). Se acumulan los errores y se verifica el resultado al final.
+  const fallos: string[] = [];
 
-    if (pedidos && pedidos.length > 0) {
-      const orderIds = pedidos.map((p) => p.id);
-      await adminClient.from("pedido_items").delete().in("pedido_id", orderIds);
-      await adminClient.from("pedidos").delete().in("id", orderIds);
+  // PromiseLike y no Promise: los builders de postgrest-js son thenables, no
+  // promesas completas.
+  async function paso(nombre: string, fn: () => PromiseLike<{ error: unknown } | void>) {
+    try {
+      const res = await fn();
+      const error = res && typeof res === "object" && "error" in res ? res.error : null;
+      if (error) fallos.push(`${nombre}: ${JSON.stringify(error)}`);
+    } catch (err) {
+      fallos.push(`${nombre}: ${err instanceof Error ? err.message : String(err)}`);
     }
+  }
 
-    // 2. Borrar productos y categorías
-    await adminClient.from("productos").delete().in("local_id", localIds);
-    await adminClient.from("categorias").delete().in("local_id", localIds);
+  // 1. Borrar pedidos e ítems asociados
+  const { data: pedidos } = await adminClient
+    .from("pedidos")
+    .select("id")
+    .in("local_id", localIds);
 
-    // 3. Borrar local_staff
-    await adminClient.from("local_staff").delete().in("local_id", localIds);
+  if (pedidos && pedidos.length > 0) {
+    const orderIds = pedidos.map((p) => p.id);
+    await paso("pedido_items", () =>
+      adminClient.from("pedido_items").delete().in("pedido_id", orderIds)
+    );
+    await paso("pedidos", () => adminClient.from("pedidos").delete().in("id", orderIds));
+  }
 
-    // 4. Borrar locales
-    await adminClient.from("locales").delete().in("id", localIds);
+  // 2. Borrar productos y categorías
+  await paso("productos", () => adminClient.from("productos").delete().in("local_id", localIds));
+  await paso("categorias", () => adminClient.from("categorias").delete().in("local_id", localIds));
 
-    // 5. Borrar usuarios de Auth
-    for (const uid of userIds) {
-      await adminClient.auth.admin.deleteUser(uid);
-    }
-  } catch (err) {
-    console.error("[setupTestFixtures] Error durante la limpieza:", err);
+  // 3. Borrar local_staff
+  await paso("local_staff", () => adminClient.from("local_staff").delete().in("local_id", localIds));
+
+  // 4. Borrar locales
+  await paso("locales", () => adminClient.from("locales").delete().in("id", localIds));
+
+  // 5. Borrar usuarios de Auth.
+  //    Se devuelve el resultado (no `await` a secas dentro del callback): de lo
+  //    contrario `paso` recibe `void` y el `{ error }` de deleteUser se pierde,
+  //    que es exactamente el fallo silencioso que este refactor viene a matar.
+  for (const uid of userIds) {
+    await paso(`usuario ${uid}`, () => adminClient.auth.admin.deleteUser(uid));
+  }
+
+  // 6. Verificar que de verdad no quedó nada, ni locales ni cuentas.
+  const { data: restantes } = await adminClient.from("locales").select("slug").in("id", localIds);
+  if (restantes && restantes.length > 0) {
+    fallos.push(`quedaron locales sin borrar: ${restantes.map((l) => l.slug).join(", ")}`);
+  }
+
+  const { data: usuariosRestantes } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+  const huerfanos = (usuariosRestantes?.users ?? []).filter((u) => userIds.includes(u.id));
+  if (huerfanos.length > 0) {
+    fallos.push(`quedaron usuarios sin borrar: ${huerfanos.map((u) => u.email).join(", ")}`);
+  }
+
+  if (fallos.length > 0) {
+    throw new Error(
+      "[cleanupTestFixtures] La limpieza dejó datos huérfanos en la base:\n  - " +
+        fallos.join("\n  - ") +
+        "\n  Corré `node scripts/limpiar-datos-test.mjs --borrar` para limpiar."
+    );
   }
 }
 

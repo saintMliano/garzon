@@ -81,6 +81,7 @@ export type Database = {
           activo: boolean | null
           created_at: string | null
           mesas: string[] | null
+          limite_pedidos_min: number
         }
         Insert: {
           id?: string
@@ -95,6 +96,7 @@ export type Database = {
           activo?: boolean | null
           created_at?: string | null
           mesas?: string[] | null
+          limite_pedidos_min?: number
         }
         Update: {
           id?: string
@@ -109,6 +111,7 @@ export type Database = {
           activo?: boolean | null
           created_at?: string | null
           mesas?: string[] | null
+          limite_pedidos_min?: number
         }
         Relationships: []
       }

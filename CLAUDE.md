@@ -27,11 +27,14 @@ El cliente escanea un QR en la mesa y pide desde `/local/[slug]` (menú público
 4. **Decisiones del usuario.** Cuando una decisión sea del dueño del producto (negocio, UX, alcance), pregunta con una recomendación clara; no la asumas.
 5. **Convenciones:** UI en español, sentence case; dashboard en tema oscuro; migraciones SQL idempotentes en `migrations/`; código quirúrgico y consistente con lo existente.
 
-## Estado actual (2026-07-10)
+## Estado actual (2026-08-10)
 - **Fases 0-4 completas y en `main`:** seguridad (auth + RLS + RPCs), integridad/persistencia, robustez de cocina, y "El Estudio del Local" (menú, imágenes, identidad/white-label, onboarding, pulido).
-- **Pendiente:** Fase 5 (dominios propios), Fase 6 (calidad/SEO/Server Components), Fase 7 (marca profunda, con cliente real).
-- **Menores diferidos:** el staff puede editar `slug`/`activo` de su propio local; no hay trigger de máquina de estados de pedidos; el onboard no tiene rate-limit.
-- **Deuda de seguridad pre-producción:** la service-role key, la contraseña de la base y la del super-admin fueron expuestas durante el desarrollo — deben **rotarse** antes de producción. No hay tests automatizados todavía.
+- **Consolidación T1-T8 completa:** secretos rotados, `crear_pedido` endurecida, máquina de estados, columnas protegidas, tipos reales y 19 tests de integración (`npm test`).
+- **Fase actual: F5 — Turno autónomo** (`plan/F5-TURNO-AUTONOMO.md`). Criterio de aceptación: **que un local opere un turno completo, solo, sin el fundador presente.** El roadmap se reordenó el 2026-08-10 (`plan/AUDITORIA-2026-08-10.md`): "dominios propios" pasó al final; siguen F6 cierre de caja, F7 rendimiento/Server Components, F8 confianza, F9 marca, F10 negocio.
+- **Contexto comercial:** hay un cliente cargado (Catire Kaffe, 59 productos, **0 fotos**, cuenta demo con credencial genérica por rotar) y pilotos por instalar (`plan/PLAN_COMERCIAL.md`). La base tiene ~8 pedidos históricos: **nada está probado bajo carga real.**
+- **Deuda conocida:** sin idempotencia en `crear_pedido` (reintento en 4G → pedido duplicado, F8); precios congelados en el carrito y menú que no se refresca (F7); `locales` enumerable por anónimos (F7); white-label incompleto en `order-status.tsx` (F9); `updated_at` dejó de ser confiable para analíticas por la reapertura de pedidos (F8).
+- **Migraciones versionadas (desde 2026-08-11):** las nuevas van en `supabase/migrations/` y se aplican con `npm run db:push` (CLI de Supabase, proyecto vinculado). La carpeta `migrations/` es historial previo aplicado a mano y **no** se re-aplica. **Antes de todo `db:push`, correr `npm run db:backup`**: el plan es gratis y no hay Point-in-Time Recovery.
+- **Sin Docker en esta máquina:** `db push` y `migration new` funcionan, pero `db dump`, `db diff` y `db pull` no (necesitan una shadow database). Por eso el respaldo es un volcado de datos en JSON vía service-role, que **no** cubre esquema, contraseñas ni archivos de Storage.
 
 ## Guardrails
 No expongas secretos. No hagas cambios destructivos en la base sin verificar. No mergees a `main` sin que el usuario lo pida.

@@ -100,6 +100,42 @@ describe("Máquina de Estados de Pedidos (T3)", () => {
     expect(error).not.toBeNull();
   });
 
+  test("Reapertura: entregado -> listo debe permitirse (F5.1, deshacer entrega)", async () => {
+    const orderId = await crearPedidoHelper();
+
+    // Avanzar hasta entregado
+    await clientStaffA.from("pedidos").update({ estado: "aceptado" }).eq("id", orderId);
+    await clientStaffA.from("pedidos").update({ estado: "preparando" }).eq("id", orderId);
+    await clientStaffA.from("pedidos").update({ estado: "listo" }).eq("id", orderId);
+    await clientStaffA.from("pedidos").update({ estado: "entregado" }).eq("id", orderId);
+
+    // Deshacer la entrega
+    const { data, error } = await clientStaffA
+      .from("pedidos")
+      .update({ estado: "listo" })
+      .eq("id", orderId)
+      .select();
+
+    expect(error).toBeNull();
+    expect(data?.[0].estado).toBe("listo");
+  });
+
+  test("Reapertura acotada: entregado -> preparando sigue siendo inválida (F5.1)", async () => {
+    const orderId = await crearPedidoHelper();
+
+    await clientStaffA.from("pedidos").update({ estado: "aceptado" }).eq("id", orderId);
+    await clientStaffA.from("pedidos").update({ estado: "preparando" }).eq("id", orderId);
+    await clientStaffA.from("pedidos").update({ estado: "listo" }).eq("id", orderId);
+    await clientStaffA.from("pedidos").update({ estado: "entregado" }).eq("id", orderId);
+
+    const { error } = await clientStaffA
+      .from("pedidos")
+      .update({ estado: "preparando" })
+      .eq("id", orderId);
+
+    expect(error).not.toBeNull();
+  });
+
   test("Transición inválida: listo -> cancelado (cancelar un pedido ya listo) debe ser rechazada", async () => {
     const orderId = await crearPedidoHelper();
 

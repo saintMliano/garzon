@@ -44,3 +44,6 @@ next-env.d.ts
 
 # fotos de clientes local
 fotos/
+
+# respaldos de la base: contienen datos reales de clientes, jamás al repo
+backups/

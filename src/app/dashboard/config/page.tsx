@@ -55,26 +55,23 @@ export default function ConfigPage() {
 
       const { data: adminRow } = await supabase
         .from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
-      const isAdmin = !!adminRow;
-      setIsPlatformAdmin(isAdmin);
+      // Solo controla la visibilidad del link "Alta de local", no el acceso a datos.
+      setIsPlatformAdmin(!!adminRow);
+
+      // Los locales gestionables salen SIEMPRE de local_staff: la RLS exige esa fila
+      // para leer/escribir datos, así que ser super-admin no basta por sí solo.
+      const { data: staffRows, error: staffError } = await supabase
+        .from("local_staff")
+        .select("local_id, locales(id, nombre, slug)")
+        .eq("user_id", user.id);
 
       let availableLocales: { id: string; nombre: string; slug: string }[] = [];
 
-      if (isAdmin) {
-        const { data: all } = await supabase
-          .from("locales")
-          .select("id, nombre, slug")
-          .order("nombre");
-        availableLocales = all ?? [];
-      } else {
-        const { data: staffRows } = await supabase
-          .from("local_staff")
-          .select("local_id, locales(id, nombre, slug)")
-          .eq("user_id", user.id);
-
+      if (!staffError) {
         availableLocales = (staffRows ?? [])
-          .map((s: any) => s.locales)
-          .filter((l: any): l is { id: string; nombre: string; slug: string } => Boolean(l && l.id));
+          .map((s) => s.locales)
+          .filter((l): l is { id: string; nombre: string; slug: string } => Boolean(l && l.id))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
       }
 
       if (availableLocales.length === 0) {

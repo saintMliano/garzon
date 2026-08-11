@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:backup": "node scripts/respaldo-db.mjs",
+    "db:push": "node scripts/con-env.mjs npx supabase db push",
+    "db:diff": "node scripts/con-env.mjs npx supabase db diff --linked",
+    "db:types": "node scripts/con-env.mjs npx supabase gen types typescript --linked > src/types/supabase.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
@@ -24,6 +28,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.0",
+    "supabase": "^2.113.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"

@@ -1,5 +1,10 @@
 # Plan de consolidación (pre-Fase 5)
 
+> **Estado (2026-08-10): las 8 tareas están completas.** El plan vigente ahora es
+> [**Fase 5 — Turno autónomo**](F5-TURNO-AUTONOMO.md), producto de la
+> [segunda auditoría](AUDITORIA-2026-08-10.md). Esta página queda como registro histórico; el
+> "Protocolo del ejecutor" de abajo **sigue vigente** para toda tarea nueva.
+
 Este directorio es el **plan ejecutable** de consolidación de Garzón Digital, producido por la
 revisión de consolidación del 2026-07-10 (ver [`AUDITORIA.md`](AUDITORIA.md)). Las tareas están
 diseñadas para que **cualquier modelo/desarrollador las ejecute sin re-decidir la arquitectura**:
@@ -40,9 +45,11 @@ paralelo (ramas separadas). T8 (tests) va al final porque debe cubrir las reglas
 | T7 | [Tipos reales de la base (`Database`)](tareas/T7-tipos-generados.md) | P3 | TypeScript | [x] |
 | T8 | [Suite mínima de tests de integración](tareas/T8-tests-integracion.md) | P3 | Tests | [x] |
 
-Después de T1–T8 el proyecto queda listo para retomar el roadmap normal:
-[Fase 5 — dominios propios](backlog/F5-dominios-propios.md) y
-[Fase 6 — calidad/SEO/Server Components](backlog/F6-calidad-seo.md).
+Con T1–T8 completas, el roadmap se **reordenó** tras la auditoría del 2026-08-10: la fase actual es
+[Fase 5 — Turno autónomo](F5-TURNO-AUTONOMO.md), y los dos esbozos de `backlog/`
+([dominios propios](backlog/F5-dominios-propios.md),
+[calidad/SEO](backlog/F6-calidad-seo.md)) pasaron a F11 y F7 respectivamente. Ver la tabla de fases
+en `developer-context.md`.
 
 ## Reglas de arquitectura que ninguna tarea puede romper
 
