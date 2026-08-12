@@ -91,13 +91,13 @@ describe("RLS y Aislamiento Multi-tenant", () => {
   test("Staff A NO puede UPDATE slug ni activo de su propio local (T4)", async () => {
     const { error: errorSlug } = await clientStaffA
       .from("locales")
-      .update({ slug: "hacked-slug" as any })
+      .update({ slug: "hacked-slug" })
       .eq("id", fixtures.localA.id);
     expect(errorSlug).not.toBeNull();
 
     const { error: errorActivo } = await clientStaffA
       .from("locales")
-      .update({ activo: false as any })
+      .update({ activo: false })
       .eq("id", fixtures.localA.id);
     expect(errorActivo).not.toBeNull();
   });
@@ -105,7 +105,7 @@ describe("RLS y Aislamiento Multi-tenant", () => {
   test("Staff A NO puede UPDATE el total de un pedido (T3)", async () => {
     const { error } = await clientStaffA
       .from("pedidos")
-      .update({ total: 0 as any })
+      .update({ total: 0 })
       .eq("id", orderIdA);
     expect(error).not.toBeNull();
   });

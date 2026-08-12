@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-12):** Fases 5 a 8 completas (turno autónomo, cierre de caja, rendimiento, confianza). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-12):** Fases 5 a 9 completas. Queda F10 (negocio) y F11 (dominios propios). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -163,7 +163,7 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F6 — Cierre de caja** | `/dashboard/reportes`: pedidos, venta, ticket promedio, top productos, ventas por día y export CSV. [Plan](plan/F6-CIERRE-DE-CAJA.md) | **Completa** |
 | **F7 — Rendimiento percibido** | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito. [Plan](plan/F7-RENDIMIENTO.md) | **Completa** |
 | **F8 — Confianza** | Idempotencia de `crear_pedido`, auditoría de cambios de estado y tiempos reales de cocina. [Plan](plan/F8-CONFIANZA.md) · *anti-abuso: decisión pendiente del dueño* | **Completa** |
-| F9 — Marca completa | Terminar el white-label (`order-status.tsx` sigue naranja fijo), validar contraste en el editor de identidad | Pendiente |
+| **F9 — Marca completa** | White-label completo del flujo del cliente y validación de contraste WCAG en el editor de identidad. [Plan](plan/F9-MARCA.md) | **Completa** |
 | F10 — Negocio | Propina sugerida, planes/suscripción, pago en línea | Pendiente |
 | F11 — Dominios propios | Cuando un cliente lo pida **y lo pague** | Pendiente |
 
@@ -191,6 +191,38 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-12 — Fase 9: marca completa (white-label y contraste)
+
+Resuelve **M2** (white-label a medias) y **M3** (el editor de identidad no validaba contraste). Plan
+y decisiones en [`plan/F9-MARCA.md`](plan/F9-MARCA.md).
+
+- **Hardcodes de naranja en el flujo del cliente: de 33 a 5**, y usos de las variables de marca de 11
+  a 36. Los 5 que quedan son el aviso ámbar de cambios en el carrito.
+- **El color semántico NO es marca.** El verde de "listo" y el rojo de "cancelado" quedaron intactos a
+  propósito: son significado. Un local con marca roja no puede hacer que "listo" se vea como
+  "rechazado".
+- **Nueva utilidad `src/lib/color.ts`** con las fórmulas de contraste de la WCAG 2.1. El problema real
+  no era el color sino el contraste: cambiar naranja por `var(--brand)` a secas habría dejado botones
+  con texto blanco invisible en un local amarillo. De ahí salen dos variables derivadas:
+  - **`--brand-texto`**: blanco o casi negro, el que se lea encima de la marca.
+  - **`--accent-legible`**: el acento oscurecido lo justo para leerse sobre blanco, conservando el tono
+    (para los precios no sirve elegir entre blanco y negro).
+- **La pantalla de seguimiento no podía pintarse ni queriendo:** se renderiza con un `return` temprano
+  **antes** del div que definía las variables. Se movieron al Server Component, envolviendo todo el
+  flujo con `display: contents` — heredan por el árbol sin agregar una caja que altere el layout.
+- **`/dashboard/config` muestra el contraste real** y una vista previa del botón y los precios. **No
+  bloquea el guardado**: la marca es del dueño. El aviso es informativo y no una alerta ámbar, porque
+  el naranja por defecto contrasta 2,8:1 y una alerta que sale siempre es una alerta que nadie lee.
+- **Bug encontrado por la revisión adversarial, en mi propio código:** afirmé que el texto elegido
+  siempre superaba AA y el test lo "confirmaba" con 8 colores. Un barrido del cubo RGB completo
+  encontró el peor caso, **`#8c5aff` con 4,18:1**. Causa: el texto oscuro es `#1c1917`, no negro puro.
+  Ahora `textoSobre` escala a los extremos cuando la pareja suave no alcanza, y el test **barre el
+  cubo entero** (140.000+ colores) en vez de una muestra elegida a dedo.
+- **Verificación:** `npm test` **65/65**, `tsc`/`build` limpios, y **`npm run lint` sin errores en todo
+  el repo por primera vez**. Los tests de color son los primeros puros del proyecto: ~400 ms contra el
+  minuto de los de integración.
+- **Pendiente:** que alguien vea estas pantallas con un color que no sea naranja.
 
 ### 2026-08-12 — Fase 8: confianza (idempotencia + auditoría de estados)
 

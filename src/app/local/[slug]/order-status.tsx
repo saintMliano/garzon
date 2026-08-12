@@ -1,9 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { supabase } from "@/lib/supabase";
 import { statusLabel, timeAgo, orderNumber } from "@/lib/utils";
 import type { OrderStatus as OrderStatusType } from "@/types/database";
+
+// --- Paleta de marca del local ---------------------------------------------
+// Los tintes se calculan con color-mix sobre `var(--brand)` en vez de aplicar
+// opacidad: así el tinte no deja ver lo que haya debajo y sigue siendo un color
+// sólido, sea cual sea la marca que eligió el dueño.
+
+// Segundo tono del degradado: el diseño original jugaba con dos colores
+// emparentados (naranja → ámbar); acá esos dos tonos salen de la marca y el
+// acento del propio local.
+const MARCA_TONO_2 = "color-mix(in srgb, var(--brand) 65%, var(--accent))";
+// La marca puede ser clara (un amarillo, por ejemplo) y este color se usa como
+// texto sobre fondo blanco: se oscurece lo justo para que se lea.
+const MARCA_LEGIBLE = "color-mix(in srgb, var(--brand) 72%, black)";
 
 interface OrderStatusProps {
   orderId: string;
@@ -80,20 +93,43 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
   const isCancelled = status === "cancelado";
   const progressPercent = isComplete ? 100 : (currentStepIndex / (STEPS.length - 1)) * 100;
 
+  // Solo el estado "en proceso" se pinta con la marca. "Listo" (verde) y
+  // "cancelado" (rojo) son semánticos: significan lo mismo en todos los locales
+  // y no pueden cambiar de color, o un local de marca roja haría que "listo" se
+  // leyera como "cancelado".
+  const enProcesoBadgeStyle: CSSProperties | undefined =
+    isCancelled || isComplete
+      ? undefined
+      : {
+          background: `linear-gradient(135deg, var(--brand), ${MARCA_TONO_2})`,
+          boxShadow: `0 20px 25px -5px color-mix(in srgb, var(--brand) 30%, transparent)`,
+        };
+
+  const pasoActivoStyle: CSSProperties = {
+    backgroundColor: "color-mix(in srgb, var(--brand) 10%, white)",
+    borderColor: "color-mix(in srgb, var(--brand) 35%, white)",
+    color: MARCA_LEGIBLE,
+    // El halo reemplaza al `ring` de Tailwind para poder teñirlo con la marca.
+    boxShadow: `0 0 0 4px color-mix(in srgb, var(--brand) 8%, white), 0 1px 2px 0 rgb(0 0 0 / 0.05)`,
+  };
+
   return (
     <div className="flex flex-col min-h-full items-center justify-center px-6 py-12" style={{
-      background: "linear-gradient(180deg, #fff7ed 0%, #ffffff 40%, #fafaf9 100%)",
+      background: "linear-gradient(180deg, color-mix(in srgb, var(--brand) 8%, white) 0%, #ffffff 40%, #fafaf9 100%)",
     }}>
       <div className="w-full max-w-sm animate-fade-in">
         {/* Header badge */}
         <div className="text-center mb-8">
-          <div className={`w-24 h-24 mx-auto rounded-[28px] flex items-center justify-center text-5xl mb-6 shadow-xl transition-all duration-700 ${
-            isCancelled
-              ? "bg-gradient-to-br from-red-300 to-red-400 shadow-red-100/50"
-              : isComplete
-                ? "bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-200/50"
-                : "bg-gradient-to-br from-orange-400 to-amber-500 shadow-orange-200/50"
-          }`}>
+          <div
+            className={`w-24 h-24 mx-auto rounded-[28px] flex items-center justify-center text-5xl mb-6 shadow-xl transition-all duration-700 ${
+              isCancelled
+                ? "bg-gradient-to-br from-red-300 to-red-400 shadow-red-100/50"
+                : isComplete
+                  ? "bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-200/50"
+                  : ""
+            }`}
+            style={enProcesoBadgeStyle}
+          >
             {isCancelled ? "❌" : isComplete ? "🎉" : "⏳"}
           </div>
           <h1 className="text-2xl font-black text-stone-900 leading-tight">
@@ -127,9 +163,10 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
                     width: `${progressPercent}%`,
+                    // El verde de "completado" es semántico y no se tiñe con la marca.
                     background: isComplete
                       ? "linear-gradient(90deg, #22c55e, #10b981)"
-                      : "linear-gradient(90deg, #f97316, #f59e0b)",
+                      : `linear-gradient(90deg, var(--brand), ${MARCA_TONO_2})`,
                   }}
                 />
               </div>
@@ -144,13 +181,16 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                 return (
                   <div key={step.key} className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition-all duration-500 ${
-                        isDone
-                          ? "bg-green-50 text-green-600 border border-green-100"
-                          : isActive
-                            ? "bg-orange-50 text-orange-600 border border-orange-200 ring-4 ring-orange-50 shadow-sm"
-                            : "bg-stone-50 text-stone-300 border border-stone-100"
-                      }`}>
+                      <div
+                        className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg border transition-all duration-500 ${
+                          isDone
+                            ? "bg-green-50 text-green-600 border-green-100"
+                            : isActive
+                              ? ""
+                              : "bg-stone-50 text-stone-300 border-stone-100"
+                        }`}
+                        style={isDone || !isActive ? undefined : pasoActivoStyle}
+                      >
                         {isDone ? "✓" : isActive ? step.activeIcon : step.icon}
                       </div>
                       {i < STEPS.length - 1 && (
@@ -161,14 +201,20 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                     </div>
 
                     <div className="pt-2.5">
-                      <p className={`font-semibold text-[14px] transition-colors ${
-                        isDone ? "text-green-600" : isActive ? "text-orange-600" : "text-stone-300"
-                      }`}>
+                      <p
+                        className={`font-semibold text-[14px] transition-colors ${
+                          isDone ? "text-green-600" : isActive ? "" : "text-stone-300"
+                        }`}
+                        style={isDone || !isActive ? undefined : { color: MARCA_LEGIBLE }}
+                      >
                         {step.label}
                       </p>
                       {isActive && !isComplete && (
                         <div className="flex items-center gap-1.5 mt-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                          <div
+                            className="w-1.5 h-1.5 rounded-full animate-pulse"
+                            style={{ backgroundColor: "var(--brand)" }}
+                          />
                           <p className="text-[11px] text-stone-400">{statusLabel(status)}...</p>
                         </div>
                       )}
@@ -191,7 +237,14 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
         ) : isComplete ? (
           <button
             onClick={onNewOrder}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-xl shadow-orange-200/40 hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
+            className="w-full h-14 rounded-2xl font-bold text-[15px] hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
+            style={{
+              background: `linear-gradient(90deg, var(--brand), ${MARCA_TONO_2})`,
+              // `--brand-texto` ya viene calculado para leerse sobre la marca:
+              // un blanco fijo desaparecería si el local eligió un color claro.
+              color: "var(--brand-texto)",
+              boxShadow: `0 20px 25px -5px color-mix(in srgb, var(--brand) 25%, transparent)`,
+            }}
           >
             Hacer otro pedido 🍔
           </button>

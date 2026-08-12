@@ -214,10 +214,7 @@ export default function MenuCliente({
   }
 
   return (
-    <div
-      className="flex flex-col min-h-full bg-stone-50"
-      style={{ ["--brand" as string]: local.color_primario, ["--accent" as string]: local.color_acento } as React.CSSProperties}
-    >
+    <div className="flex flex-col min-h-full bg-stone-50">
       {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-30 glass border-b border-stone-200/50">
         <div className="max-w-lg mx-auto px-4 pt-3 pb-2">
@@ -258,13 +255,16 @@ export default function MenuCliente({
             {itemCount > 0 && (
               <button
                 onClick={() => setShowCart(true)}
-                className="relative w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-md shadow-orange-200 active:scale-90 transition-transform"
-                style={{ background: "var(--brand)" }}
+                className="relative w-11 h-11 rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-transform"
+                style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8l-1.35-6.73M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
                 </svg>
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-orange-600 text-[10px] font-black rounded-full flex items-center justify-center shadow-sm animate-pop">
+                <span
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[10px] font-black rounded-full flex items-center justify-center shadow-sm animate-pop"
+                  style={{ color: "var(--accent-legible)" }}
+                >
                   {itemCount}
                 </span>
               </button>
@@ -281,7 +281,7 @@ export default function MenuCliente({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar en el menú..."
-              className="w-full h-10 pl-9 pr-4 rounded-xl bg-stone-100/80 border border-stone-200/60 text-sm text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-300 focus:bg-white transition-all"
+              className="w-full h-10 pl-9 pr-4 rounded-xl bg-stone-100/80 border border-stone-200/60 text-sm text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] focus:bg-white transition-all"
             />
             {search && (
               <button
@@ -304,7 +304,7 @@ export default function MenuCliente({
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 ${
                     activeCategory === cat.id
                       ? ""
-                      : "bg-white text-stone-600 border border-stone-200/80 hover:border-orange-200 hover:text-orange-600"
+                      : "bg-white text-stone-600 border border-stone-200/80 hover:border-[var(--brand)] hover:text-[var(--brand)]"
                   }`}
                   style={
                     activeCategory === cat.id
@@ -427,8 +427,8 @@ export default function MenuCliente({
         <div className="fixed bottom-0 left-0 right-0 z-40 p-4 safe-bottom animate-slide-up">
           <button
             onClick={() => setShowCart(true)}
-            className="w-full max-w-lg mx-auto flex items-center justify-between h-[58px] px-5 rounded-2xl text-white font-semibold shadow-xl shadow-orange-300/30 hover:shadow-2xl active:scale-[0.98] transition-all"
-            style={{ background: "var(--brand)" }}
+            className="w-full max-w-lg mx-auto flex items-center justify-between h-[58px] px-5 rounded-2xl font-semibold shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all"
+            style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
           >
             <div className="flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm font-black">
@@ -480,11 +480,14 @@ function ProductCard({
   return (
     <div
       className={`stagger-card flex items-center gap-3 bg-white rounded-2xl p-3 border transition-all group ${
-        inCart
-          ? "border-orange-200/80 shadow-sm shadow-orange-100/50"
-          : "border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200"
+        inCart ? "shadow-sm" : "border-stone-100 shadow-sm hover:shadow-md hover:border-stone-200"
       } ${flashed ? "flash-added" : ""}`}
-      style={{ animationDelay: `${delay}ms` }}
+      style={{
+        animationDelay: `${delay}ms`,
+        // Tinte de la marca en vez de un naranja fijo: `color-mix` conserva el
+        // tono del local y lo aclara, sea cual sea el color que eligió.
+        ...(inCart ? { borderColor: "color-mix(in srgb, var(--brand) 35%, white)" } : {}),
+      }}
     >
       {/* Product thumbnail */}
       {imgSrc ? (
@@ -498,9 +501,10 @@ function ProductCard({
           />
         </div>
       ) : (
-        <div className={`w-[60px] h-[60px] rounded-xl flex items-center justify-center text-[26px] flex-shrink-0 transition-transform group-hover:scale-105 ${
-          inCart ? "bg-orange-50" : "bg-gradient-to-br from-stone-50 to-stone-100/80"
-        }`}>
+        <div
+          className="w-[60px] h-[60px] rounded-xl flex items-center justify-center text-[26px] flex-shrink-0 transition-transform group-hover:scale-105 bg-gradient-to-br from-stone-50 to-stone-100/80"
+          style={inCart ? { background: "color-mix(in srgb, var(--brand) 12%, white)" } : undefined}
+        >
           {icon}
         </div>
       )}
@@ -511,27 +515,35 @@ function ProductCard({
         {prod.descripcion && (
           <p className="text-[11px] text-stone-400 mt-0.5 line-clamp-1 leading-snug">{prod.descripcion}</p>
         )}
-        <p className="text-[14px] font-bold mt-1" style={{ color: "var(--accent)" }}>{formatPrice(prod.precio)}</p>
+        <p className="text-[14px] font-bold mt-1" style={{ color: "var(--accent-legible)" }}>{formatPrice(prod.precio)}</p>
       </div>
 
       {/* Add / Qty control */}
       {inCart ? (
-        <div className="flex items-center gap-1 bg-orange-50 rounded-xl p-1 border border-orange-100 animate-fade-in-fast">
+        <div
+          className="flex items-center gap-1 rounded-xl p-1 border animate-fade-in-fast"
+          style={{
+            background: "color-mix(in srgb, var(--brand) 10%, white)",
+            borderColor: "color-mix(in srgb, var(--brand) 25%, white)",
+          }}
+        >
           <button
             onClick={() => onUpdateQty(qty - 1)}
-            className="w-8 h-8 rounded-lg bg-white hover:bg-orange-100 flex items-center justify-center text-orange-600 font-bold transition-colors text-sm shadow-sm"
+            className="w-8 h-8 rounded-lg bg-white flex items-center justify-center font-bold transition-colors text-sm shadow-sm"
+            style={{ color: "var(--accent-legible)" }}
           >−</button>
-          <span className="w-7 text-center font-bold text-sm text-orange-700">{qty}</span>
+          <span className="w-7 text-center font-bold text-sm" style={{ color: "var(--accent-legible)" }}>{qty}</span>
           <button
             onClick={() => onUpdateQty(qty + 1)}
-            className="w-8 h-8 rounded-lg bg-orange-500 hover:bg-orange-600 flex items-center justify-center text-white font-bold transition-colors text-sm shadow-sm"
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors text-sm shadow-sm"
+            style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
           >+</button>
         </div>
       ) : (
         <button
           onClick={onAdd}
-          className="w-10 h-10 rounded-xl active:scale-90 text-white flex items-center justify-center transition-all shadow-sm shadow-orange-200/60"
-          style={{ background: "var(--brand)" }}
+          className="w-10 h-10 rounded-xl active:scale-90 flex items-center justify-center transition-all shadow-sm"
+          style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />

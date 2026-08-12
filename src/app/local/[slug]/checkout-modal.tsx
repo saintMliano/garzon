@@ -164,7 +164,10 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Header */}
           <div className="text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-2xl shadow-lg shadow-orange-200 mb-3">
+            <div
+              className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-lg mb-3"
+              style={{ background: "linear-gradient(135deg, var(--brand), var(--accent))" }}
+            >
               📋
             </div>
             <h2 className="text-xl font-bold text-stone-900">Confirmar Pedido</h2>
@@ -198,7 +201,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Juan"
               autoFocus
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400 transition-all text-[15px]"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all text-[15px]"
             />
           </div>
 
@@ -206,9 +209,15 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           <div>
             <label className="block text-sm font-semibold text-stone-700 mb-2">¿Dónde estás?</label>
             {mesaBloqueada ? (
-              <div className="flex flex-col items-start gap-1 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
-                <span className="font-bold text-orange-700 text-sm">📍 {mesa}</span>
-                <span className="text-[11px] text-orange-400">Detectada por el código QR</span>
+              <div
+                className="flex flex-col items-start gap-1 border rounded-xl px-4 py-3"
+                style={{
+                  background: "color-mix(in srgb, var(--brand) 10%, white)",
+                  borderColor: "color-mix(in srgb, var(--brand) 25%, white)",
+                }}
+              >
+                <span className="font-bold text-sm" style={{ color: "var(--accent-legible)" }}>📍 {mesa}</span>
+                <span className="text-[11px] text-stone-400">Detectada por el código QR</span>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-2">
@@ -219,10 +228,10 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                     onClick={() => setMesa(mesa === opt ? "" : opt)}
                     className={`py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
                       mesa === opt
-                        ? "text-white shadow-sm shadow-orange-200"
+                        ? "shadow-sm"
                         : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                     }`}
-                    style={mesa === opt ? { background: "var(--brand)" } : undefined}
+                    style={mesa === opt ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
                   >
                     {opt}
                   </button>
@@ -239,7 +248,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               onChange={(e) => setNotas(e.target.value)}
               placeholder="Indicaciones especiales..."
               rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400 transition-all resize-none text-[14px]"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all resize-none text-[14px]"
             />
           </div>
 
@@ -263,8 +272,8 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
             <button
               type="submit"
               disabled={submitting}
-              className="flex-[2] h-[50px] rounded-xl text-white font-bold shadow-lg shadow-orange-200/50 hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
-              style={{ background: "var(--brand)" }}
+              className="flex-[2] h-[50px] rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+              style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
             >
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">
