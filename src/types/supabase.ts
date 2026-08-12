@@ -145,6 +145,51 @@ export type Database = {
         }
         Relationships: []
       }
+      pedido_eventos: {
+        Row: {
+          actor: string | null
+          created_at: string
+          estado_anterior: string | null
+          estado_nuevo: string
+          id: string
+          local_id: string
+          pedido_id: string
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          estado_anterior?: string | null
+          estado_nuevo: string
+          id?: string
+          local_id: string
+          pedido_id: string
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          estado_anterior?: string | null
+          estado_nuevo?: string
+          id?: string
+          local_id?: string
+          pedido_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_eventos_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_eventos_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedido_items: {
         Row: {
           cantidad: number
@@ -189,6 +234,7 @@ export type Database = {
       }
       pedidos: {
         Row: {
+          client_request_id: string | null
           created_at: string | null
           estado: string | null
           id: string
@@ -201,6 +247,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          client_request_id?: string | null
           created_at?: string | null
           estado?: string | null
           id?: string
@@ -213,6 +260,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          client_request_id?: string | null
           created_at?: string | null
           estado?: string | null
           id?: string
@@ -307,6 +355,7 @@ export type Database = {
     Functions: {
       crear_pedido: {
         Args: {
+          p_client_request_id?: string
           p_items: Json
           p_local_id: string
           p_mesa: string
@@ -322,6 +371,15 @@ export type Database = {
           created_at: string
           estado: string
           numero_pedido: number
+        }[]
+      }
+      reporte_tiempos: {
+        Args: { p_desde: string; p_hasta: string; p_local_id: string }
+        Returns: {
+          pedidos_medidos: number
+          seg_hasta_aceptado: number
+          seg_hasta_entregado: number
+          seg_hasta_listo: number
         }[]
       }
       reporte_top_productos: {

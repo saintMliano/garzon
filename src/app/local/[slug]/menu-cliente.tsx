@@ -448,6 +448,9 @@ export default function MenuCliente({
       {showCheckout && local && (
         <CheckoutModal
           localId={local.id}
+          // El slug identifica el intento de checkout guardado en localStorage,
+          // para que un reintento tras recargar reuse el mismo id y no duplique.
+          slug={slug}
           mesas={local.mesas ?? undefined}
           initialMesa={mesaDelQR}
           onClose={() => setShowCheckout(false)}
