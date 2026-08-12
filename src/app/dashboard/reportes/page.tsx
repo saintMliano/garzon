@@ -39,6 +39,18 @@ type TopProducto = {
 };
 
 /**
+ * Tiempos reales de cocina (F8), calculados desde la bitácora `pedido_eventos`.
+ * Son **medianas** en segundos: un pedido olvidado media hora en la pantalla
+ * distorsiona un promedio y vuelve inservible la métrica.
+ */
+type TiemposCocina = {
+  pedidos_medidos: number;
+  seg_hasta_aceptado: number;
+  seg_hasta_listo: number;
+  seg_hasta_entregado: number;
+};
+
+/**
  * Resultado del reporte, etiquetado con la `clave` (local + rango) que lo produjo.
  * Comparar esa clave contra la actual es lo que define si hay que mostrar el
  * spinner, sin necesidad de un `setLoading(true)` sincrónico dentro del efecto.
@@ -48,6 +60,7 @@ type DatosReporte = {
   resumen: ResumenVentas | null;
   porDia: VentaPorDia[];
   topProductos: TopProducto[];
+  tiempos: TiemposCocina | null;
 };
 
 type PedidoExport = {
@@ -210,6 +223,17 @@ const ETIQUETA_ESTADO: Record<OrderStatus, string> = {
 /** Tope de días que se dibujan en el gráfico; más que eso es ilegible igual. */
 const MAX_DIAS_GRAFICO = 180;
 
+/** 95 → "1 min 35 s". Para tiempos de cocina, los segundos sueltos no dicen nada. */
+function duracion(segundos: number): string {
+  if (segundos <= 0) return "—";
+  const min = Math.floor(segundos / 60);
+  const seg = Math.round(segundos % 60);
+  if (min === 0) return `${seg} s`;
+  if (min < 60) return seg > 0 ? `${min} min ${seg} s` : `${min} min`;
+  const horas = Math.floor(min / 60);
+  return `${horas} h ${min % 60} min`;
+}
+
 // ============================================================
 // CSV
 // ============================================================
@@ -250,6 +274,7 @@ export default function ReportesPage() {
   const resumen = datosVigentes?.resumen ?? null;
   const porDia = useMemo(() => datosVigentes?.porDia ?? [], [datosVigentes]);
   const topProductos = useMemo(() => datosVigentes?.topProductos ?? [], [datosVigentes]);
+  const tiempos = datosVigentes?.tiempos ?? null;
 
   // ===== Resolución de local (mismo patrón que /dashboard/menu) =====
   useEffect(() => {
@@ -323,15 +348,16 @@ export default function ReportesPage() {
     async function correr(currentLocalId: string, claveActual: string) {
       const args = { p_local_id: currentLocalId, p_desde: desde, p_hasta: hasta };
 
-      const [resResumen, resDias, resTop] = await Promise.all([
+      const [resResumen, resDias, resTop, resTiempos] = await Promise.all([
         supabase.rpc("reporte_ventas", args),
         supabase.rpc("reporte_ventas_por_dia", args),
         supabase.rpc("reporte_top_productos", { ...args, p_limite: 10 }),
+        supabase.rpc("reporte_tiempos", args),
       ]);
 
       if (!vigente) return; // el usuario ya cambió de rango o de local
 
-      if (resResumen.error || resDias.error || resTop.error) {
+      if (resResumen.error || resDias.error || resTop.error || resTiempos.error) {
         setErrorCarga({ clave: claveActual, msg: "No se pudo cargar el reporte; reintenta en unos segundos." });
         return;
       }
@@ -342,6 +368,7 @@ export default function ReportesPage() {
         resumen: filas[0] ?? null,
         porDia: (resDias.data as VentaPorDia[] | null) ?? [],
         topProductos: (resTop.data as TopProducto[] | null) ?? [],
+        tiempos: ((resTiempos.data as TiemposCocina[] | null) ?? [])[0] ?? null,
       });
     }
 
@@ -735,6 +762,40 @@ export default function ReportesPage() {
                   </div>
                 </div>
               </div>
+
+              {/* ===== TIEMPOS DE COCINA (F8) =====
+                  Sale de la bitácora `pedido_eventos`, no de `updated_at` — que
+                  dejó de ser confiable cuando se habilitó reabrir una entrega.
+                  Solo se muestra si hay pedidos medidos: los históricos anteriores
+                  a F8 no tienen eventos y darían ceros engañosos. */}
+              {tiempos && tiempos.pedidos_medidos > 0 && (
+                <div className="dash-card rounded-2xl border-2 p-4">
+                  <div className="flex items-baseline justify-between mb-4">
+                    <h2 className="font-bold dash-text-primary text-sm">Tiempos de cocina</h2>
+                    <span className="text-[11px] dash-text-muted">
+                      mediana de {tiempos.pedidos_medidos} pedido{tiempos.pedidos_medidos !== 1 && "s"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { etiqueta: "Hasta aceptar", seg: tiempos.seg_hasta_aceptado, detalle: "cuánto espera el cliente a que le tomen el pedido" },
+                      { etiqueta: "Hasta estar listo", seg: tiempos.seg_hasta_listo, detalle: "desde que entra hasta que sale de cocina" },
+                      { etiqueta: "Hasta entregar", seg: tiempos.seg_hasta_entregado, detalle: "el ciclo completo" },
+                    ].map((t) => (
+                      <div key={t.etiqueta} className="dash-bg-surface rounded-xl p-3">
+                        <p className="text-[11px] dash-text-muted uppercase tracking-wide font-medium">
+                          {t.etiqueta}
+                        </p>
+                        <p className="text-xl font-bold dash-text-primary tabular-nums mt-0.5">
+                          {duracion(t.seg)}
+                        </p>
+                        <p className="text-[11px] dash-text-muted mt-1 leading-snug">{t.detalle}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* ===== VENTAS POR DÍA ===== */}
               {!rangoEsUnDia && serieDiaria.length > 1 && (

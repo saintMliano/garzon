@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-11):** Fases 5, 6 y 7 completas (turno autónomo, cierre de caja, rendimiento). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-12):** Fases 5 a 8 completas (turno autónomo, cierre de caja, rendimiento, confianza). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -64,8 +64,9 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 **Tablas:**
 - **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40).
 - **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). **Lectura pública revocada (F7):** el menú se sirve por `get_menu_publico(slug)`; el staff lee las suyas por RLS.
-- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas y estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`). **Acceso público revocado** (ver Seguridad).
+- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`) y `client_request_id` (idempotencia, F8). **Acceso público revocado** (ver Seguridad).
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
+- **`pedido_eventos` (F8):** bitácora de cambios de estado (`estado_anterior`, `estado_nuevo`, `actor`, `created_at`). La escribe un trigger; por RLS es **solo lectura** y solo del propio local. Base de los tiempos reales de cocina, en reemplazo de `updated_at`.
 - **`local_staff` (nueva):** Vincula usuarios de `auth.users` con `locales` (`user_id`, `local_id`). Determina qué local ve/gestiona cada cuenta de cocina. Se administra por SQL/rol de servicio.
 - **`platform_admins`:** marca qué usuarios son super-admins de la plataforma (pueden dar de alta locales vía `/api/admin/onboard`). RLS: cada quien lee solo su fila; se administra por service-role.
 
@@ -161,7 +162,7 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F5 — Turno autónomo** | Que un local opere un turno completo sin el fundador: cuentas reales, deshacer entrega, historial del día, carga sin realtime, aviso de sonido, rate-limit configurable. [Plan](plan/F5-TURNO-AUTONOMO.md) | **Completa** |
 | **F6 — Cierre de caja** | `/dashboard/reportes`: pedidos, venta, ticket promedio, top productos, ventas por día y export CSV. [Plan](plan/F6-CIERRE-DE-CAJA.md) | **Completa** |
 | **F7 — Rendimiento percibido** | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito. [Plan](plan/F7-RENDIMIENTO.md) | **Completa** |
-| F8 — Confianza | Idempotencia de `crear_pedido` (`client_request_id`), auditoría de cambios de estado, defensa anti-abuso en el checkout | Pendiente |
+| **F8 — Confianza** | Idempotencia de `crear_pedido`, auditoría de cambios de estado y tiempos reales de cocina. [Plan](plan/F8-CONFIANZA.md) · *anti-abuso: decisión pendiente del dueño* | **Completa** |
 | F9 — Marca completa | Terminar el white-label (`order-status.tsx` sigue naranja fijo), validar contraste en el editor de identidad | Pendiente |
 | F10 — Negocio | Propina sugerida, planes/suscripción, pago en línea | Pendiente |
 | F11 — Dominios propios | Cuando un cliente lo pida **y lo pague** | Pendiente |
@@ -190,6 +191,42 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-12 — Fase 8: confianza (idempotencia + auditoría de estados)
+
+Resuelve **A2** (pedidos duplicados por reintento) y la deuda que dejó F5: `updated_at` dejó de ser
+confiable para analíticas al habilitarse la reapertura de entregas. Plan y decisiones en
+[`plan/F8-CONFIANZA.md`](plan/F8-CONFIANZA.md).
+
+- **Idempotencia de `crear_pedido`** (migración `20260812130411`): el navegador manda un
+  `client_request_id` por intento de checkout; si ya existe un pedido con ese id, la RPC devuelve
+  **ese** en vez de crear otro. Tres capas, porque el doble toque en el botón es real: chequeo al
+  entrar, re-chequeo **dentro del advisory lock**, y manejador de `unique_violation`. Verificado
+  contra la base con **tres reintentos simultáneos**: mismo id, un solo pedido.
+  - El id **sobrevive a una recarga** (`localStorage`, TTL 2 h) y se persiste **antes** de llamar a
+    la RPC: guardarlo después del `await` no cubriría nada, porque el caso es la respuesta que nunca
+    llega.
+  - Se **borró la versión de 5 argumentos** de la función: dejar las dos vivas permitiría seguir
+    llamando la variante sin protección. El parámetro nuevo tiene `DEFAULT NULL`, así que un front
+    no actualizado sigue funcionando.
+  - **Limitación aceptada:** si el pedido entró, la respuesta se perdió y el cliente **cambia el
+    carrito** antes de reintentar, recibe el pedido original con los ítems viejos. La alternativa
+    (regenerar el id al cambiar el carrito) produce el duplicado que veníamos a evitar, que es peor:
+    un ítem faltante lo resuelve el garzón; dos pedidos cocinados los paga el local.
+- **`pedido_eventos`** (migración `20260812130413`): cada transición con su autor y su momento,
+  alimentada por trigger. **Solo lectura por RLS**; escribe únicamente el trigger vía
+  `SECURITY DEFINER`. Responde además "¿quién canceló este pedido?".
+  > Ojo: sin política, un INSERT del staff falla con `42501`, pero UPDATE y DELETE devuelven **200
+  > con 0 filas** — protegido igual, pero con éxito aparente. Los tests lo verifican con
+  > service-role, no por el código de respuesta.
+- **`reporte_tiempos` + tarjeta en `/dashboard/reportes`:** cuánto tarda el local en aceptar, dejar
+  listo y entregar. **Medianas y no promedios**: un pedido olvidado media hora en pantalla arruina un
+  promedio justo cuando más se mira la métrica. Solo aparece si hay pedidos medidos.
+- **Anti-abuso: decisión pendiente del dueño, no un olvido.** El rate-limit por local frena ráfagas
+  accidentales pero no a alguien decidido. Turnstile es la respuesta estándar (dependencia externa +
+  claves); el límite por IP es **activamente malo** acá porque todos los comensales comparten el wifi
+  del local. Recomendación registrada: no hacer nada hasta un incidente o ~20 locales.
+- **Verificación:** `npm test` **58/58** (45 + 13), `tsc`/`eslint`/`build` limpios, 0 huérfanos.
 
 ### 2026-08-11 — Fase 7: rendimiento percibido (menú a Server Component)
 

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
 
 interface CheckoutModalProps {
   localId: string;
+  slug: string;
   mesas?: string[];
   initialMesa?: string | null;
   onClose: () => void;
@@ -15,7 +16,26 @@ interface CheckoutModalProps {
 
 const DEFAULT_MESA_OPTIONS = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6", "Barra", "Para llevar"];
 
-export default function CheckoutModal({ localId, mesas, initialMesa, onClose, onConfirmed }: CheckoutModalProps) {
+/** Mismo criterio que el carrito: un intento de checkout caduca a las 2 horas. */
+const CHECKOUT_TTL_MS = 2 * 60 * 60 * 1000;
+
+const MENSAJE_GENERICO =
+  "No se pudo confirmar el envío. Puedes intentar de nuevo: si el pedido ya entró, no se duplicará.";
+
+/**
+ * `crypto.randomUUID` no existe en contextos no seguros (http en la LAN del
+ * local, por ejemplo). El id solo tiene que ser único, no criptográfico.
+ */
+function nuevoUuid(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  const hex = (n: number) => Math.floor(Math.random() * 16 ** n).toString(16).padStart(n, "0");
+  const variante = (8 + Math.floor(Math.random() * 4)).toString(16);
+  return `${hex(8)}-${hex(4)}-4${hex(3)}-${variante}${hex(3)}-${hex(12)}`;
+}
+
+export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClose, onConfirmed }: CheckoutModalProps) {
   const { items, total, clearCart } = useCart();
   const mesaOptions = mesas && mesas.length > 0 ? mesas : DEFAULT_MESA_OPTIONS;
   const mesaBloqueada = !!initialMesa;
@@ -25,6 +45,56 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Id de idempotencia del intento de checkout en curso: viaja igual en todos
+  // los reintentos, así `crear_pedido` devuelve el pedido ya creado en vez de
+  // uno nuevo. Se genera perezosamente porque `crypto` no existe durante el
+  // render en el servidor.
+  const checkoutIdRef = useRef("");
+  const storageKey = `garzon:checkout:${slug}`;
+
+  function obtenerCheckoutId(): string {
+    if (checkoutIdRef.current) return checkoutIdRef.current;
+
+    // El caso real: el cliente toca "Enviar", se queda sin señal y recarga la
+    // página. El reintento tiene que llevar el MISMO id que el envío perdido.
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const guardado = JSON.parse(raw) as { id?: unknown; ts?: unknown };
+        const vigente = typeof guardado.ts === "number" && Date.now() - guardado.ts <= CHECKOUT_TTL_MS;
+        if (typeof guardado.id === "string" && guardado.id && vigente) {
+          checkoutIdRef.current = guardado.id;
+          return guardado.id;
+        }
+        localStorage.removeItem(storageKey);
+      }
+    } catch {
+      // localStorage inaccesible o entrada corrupta: se sigue sin idempotencia
+      // entre recargas, pero sí dentro de esta sesión del modal.
+    }
+
+    const id = nuevoUuid();
+    checkoutIdRef.current = id;
+    try {
+      // Se persiste ANTES de llamar a la RPC: si la respuesta se pierde, el id
+      // ya sobrevivió a la recarga.
+      localStorage.setItem(storageKey, JSON.stringify({ id, ts: Date.now() }));
+    } catch {
+      // Sin almacenamiento el id vive solo en memoria; el checkout sigue igual.
+    }
+    return id;
+  }
+
+  /** El pedido entró: el próximo checkout tiene que arrancar con un id nuevo. */
+  function olvidarCheckoutId() {
+    checkoutIdRef.current = "";
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // Nada que limpiar si el almacenamiento no está disponible.
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nombre.trim()) { setError("Ingresa tu nombre"); return; }
@@ -32,6 +102,8 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
 
     setSubmitting(true);
     setError("");
+
+    const clientRequestId = obtenerCheckoutId();
 
     try {
       const { data, error: rpcError } = await supabase.rpc("crear_pedido", {
@@ -49,22 +121,32 @@ export default function CheckoutModal({ localId, mesas, initialMesa, onClose, on
           cantidad: item.cantidad,
           notas: item.notas || null,
         })),
+        p_client_request_id: clientRequestId,
       });
 
-      if (rpcError) throw new Error(rpcError.message || "No se pudo enviar el pedido, intenta de nuevo");
+      if (rpcError) throw new Error(rpcError.message || "");
 
+      olvidarCheckoutId();
       clearCart();
       onConfirmed(data as string);
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
-      if (message.includes("no disponible")) {
+      // "Local no disponible" va ANTES que la de producto: ambas contienen "no
+      // disponible" y acá reintentar no sirve de nada — el local cerró.
+      if (message.includes("Local no disponible")) {
+        setError("Este local dejó de recibir pedidos por ahora. Consulta con el personal.");
+      } else if (message.includes("no disponible")) {
         setError("Uno de los productos ya no está disponible. Vuelve al menú y revísalo.");
+      } else if (message.includes("excede el monto máximo")) {
+        setError("El pedido es demasiado grande para enviarlo de una vez. Divídelo en dos.");
       } else if (message.includes("Cantidad inválida")) {
         setError(message);
       } else if (message.includes("Demasiados pedidos")) {
         setError("El local está recibiendo muchos pedidos; espera un minuto e intenta de nuevo.");
       } else {
-        setError(message || "No se pudo enviar el pedido, intenta de nuevo");
+        // Incluye la respuesta perdida en la red ("Failed to fetch"): el pedido
+        // pudo haber entrado igual, y el reintento no lo va a duplicar.
+        setError(MENSAJE_GENERICO);
       }
       setSubmitting(false);
     }
