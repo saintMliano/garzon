@@ -19,6 +19,15 @@ const DEFAULT_MESA_OPTIONS = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", 
 /** Mismo criterio que el carrito: un intento de checkout caduca a las 2 horas. */
 const CHECKOUT_TTL_MS = 2 * 60 * 60 * 1000;
 
+/** Atajos de propina. El 0 va primero para que bajarla sea un solo toque. */
+const PROPINA_PRESETS = [0, 5, 10, 15, 20] as const;
+
+/** Referencia habitual en Chile: se propone, no se impone. */
+const PROPINA_PCT_DEFAULT = 10;
+
+/** Tope de la barra. Más arriba que el preset más alto, para dejar margen. */
+const PROPINA_PCT_MAX = 30;
+
 const MENSAJE_GENERICO =
   "No se pudo confirmar el envío. Puedes intentar de nuevo: si el pedido ya entró, no se duplicará.";
 
@@ -42,8 +51,15 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
   const [nombre, setNombre] = useState("");
   const [mesa, setMesa] = useState(initialMesa || "");
   const [notas, setNotas] = useState("");
+  const [propinaPct, setPropinaPct] = useState<number>(PROPINA_PCT_DEFAULT);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // Solo para mostrar: el monto que vale es el que calcula `crear_pedido` sobre
+  // su propio total. Mismo redondeo que el servidor para que no haya diferencia
+  // visible entre lo que se ve acá y lo que sale en la comanda.
+  const propinaMonto = Math.round((total * propinaPct) / 100);
+  const totalAPagar = total + propinaMonto;
 
   // Id de idempotencia del intento de checkout en curso: viaja igual en todos
   // los reintentos, así `crear_pedido` devuelve el pedido ya creado en vez de
@@ -122,6 +138,9 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           notas: item.notas || null,
         })),
         p_client_request_id: clientRequestId,
+        // Va el PORCENTAJE, no el monto: el servidor lo aplica sobre su propio
+        // total y acota fuera de rango.
+        p_propina_pct: propinaPct,
       });
 
       if (rpcError) throw new Error(rpcError.message || "");
@@ -190,6 +209,75 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               <span className="font-bold text-stone-800 text-sm">Total</span>
               <span className="font-black" style={{ color: "var(--accent)" }}>{formatPrice(total)}</span>
             </div>
+          </div>
+
+          {/* Propina sugerida */}
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-2">¿Quieres dejar propina?</label>
+
+            {/* Los botones y la barra escriben el mismo estado: tocar un botón
+                mueve la barra, y mover la barra apaga o enciende el botón que
+                coincide con el valor. */}
+            <div className="grid grid-cols-5 gap-1.5">
+              {PROPINA_PRESETS.map((pct) => {
+                const activo = propinaPct === pct;
+                return (
+                  <button
+                    key={pct}
+                    type="button"
+                    aria-pressed={activo}
+                    onClick={() => setPropinaPct(pct)}
+                    className={`py-2.5 px-1 rounded-xl text-[11px] font-semibold leading-tight transition-all active:scale-95 ${
+                      activo ? "shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                    }`}
+                    style={activo ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
+                  >
+                    {pct === 0 ? "Sin propina" : `${pct}%`}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3">
+              <input
+                type="range"
+                min={0}
+                max={PROPINA_PCT_MAX}
+                step={1}
+                value={propinaPct}
+                onChange={(e) => setPropinaPct(Number(e.target.value))}
+                aria-label="Porcentaje de propina"
+                aria-valuetext={`${propinaPct}%`}
+                className="w-full cursor-pointer"
+                style={{ accentColor: "var(--brand)" }}
+              />
+              <div className="flex items-center justify-between text-[11px] text-stone-400 -mt-0.5">
+                <span>0%</span>
+                <span className="font-bold" style={{ color: "var(--accent-legible)" }}>{propinaPct}%</span>
+                <span>{PROPINA_PCT_MAX}%</span>
+              </div>
+            </div>
+
+            <div
+              className="mt-3 rounded-xl px-3 py-2.5 border space-y-1"
+              style={{
+                background: "color-mix(in srgb, var(--brand) 12%, white)",
+                borderColor: "color-mix(in srgb, var(--brand) 25%, white)",
+              }}
+            >
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-stone-600">Propina ({propinaPct}%)</span>
+                <span className="font-semibold text-stone-800">{formatPrice(propinaMonto)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-bold text-stone-800">Total a pagar</span>
+                <span className="font-black text-base" style={{ color: "var(--accent-legible)" }}>{formatPrice(totalAPagar)}</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-stone-400 mt-1.5 leading-snug">
+              La propina es opcional. No se paga nada por la app: el local la cobra en caja, junto con la cuenta.
+            </p>
           </div>
 
           {/* Name */}

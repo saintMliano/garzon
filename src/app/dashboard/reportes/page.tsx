@@ -19,10 +19,18 @@ type ResumenVentas = {
   venta_entregada: number;
   venta_total: number;
   ticket_promedio: number;
+  /** Va aparte de la venta a propósito: la propina es del personal, no del local. */
+  propinas_total: number;
 };
 
 type VentaPorDia = {
   dia: string; // YYYY-MM-DD
+  pedidos: number;
+  venta: number;
+};
+
+type VentaPorMes = {
+  mes: string; // YYYY-MM-DD (primer día del mes)
   pedidos: number;
   venta: number;
 };
@@ -59,6 +67,7 @@ type DatosReporte = {
   clave: string;
   resumen: ResumenVentas | null;
   porDia: VentaPorDia[];
+  porMes: VentaPorMes[];
   topProductos: TopProducto[];
   tiempos: TiemposCocina | null;
 };
@@ -180,7 +189,7 @@ function fechaLarga(fecha: string): string {
 // Rangos
 // ============================================================
 
-type PresetRango = "hoy" | "ayer" | "7dias" | "mes" | "mes_pasado" | "personalizado";
+type PresetRango = "hoy" | "ayer" | "7dias" | "mes" | "mes_pasado" | "anio" | "anio_pasado" | "personalizado";
 
 const PRESETS: { id: PresetRango; label: string }[] = [
   { id: "hoy", label: "Hoy" },
@@ -188,6 +197,8 @@ const PRESETS: { id: PresetRango; label: string }[] = [
   { id: "7dias", label: "Últimos 7 días" },
   { id: "mes", label: "Este mes" },
   { id: "mes_pasado", label: "Mes pasado" },
+  { id: "anio", label: "Este año" },
+  { id: "anio_pasado", label: "Año pasado" },
   { id: "personalizado", label: "Personalizado" },
 ];
 
@@ -208,6 +219,12 @@ function rangoDePreset(preset: Exclude<PresetRango, "personalizado">): { desde: 
       const finMesPasado = sumarDias(primerDiaMes(hoy), -1);
       return { desde: primerDiaMes(finMesPasado), hasta: finMesPasado };
     }
+    case "anio":
+      return { desde: `${hoy.slice(0, 4)}-01-01`, hasta: hoy };
+    case "anio_pasado": {
+      const anioPasado = Number(hoy.slice(0, 4)) - 1;
+      return { desde: `${anioPasado}-01-01`, hasta: `${anioPasado}-12-31` };
+    }
   }
 }
 
@@ -222,6 +239,35 @@ const ETIQUETA_ESTADO: Record<OrderStatus, string> = {
 
 /** Tope de días que se dibujan en el gráfico; más que eso es ilegible igual. */
 const MAX_DIAS_GRAFICO = 180;
+
+/**
+ * A partir de este largo de rango el gráfico pasa de días a meses. Dos meses de
+ * barras diarias ya son ilegibles en una pantalla, y un año es imposible.
+ */
+const DIAS_PARA_AGRUPAR_POR_MES = 62;
+
+/** Días entre dos fechas YYYY-MM-DD, ambas inclusive. */
+function diasEntre(desde: string, hasta: string): number {
+  const a = new Date(`${desde}T12:00:00Z`).getTime();
+  const b = new Date(`${hasta}T12:00:00Z`).getTime();
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+/** Primer día del mes siguiente al de `fecha` (YYYY-MM-DD). */
+function mesSiguiente(fecha: string): string {
+  const anio = Number(fecha.slice(0, 4));
+  const mes = Number(fecha.slice(5, 7));
+  return mes === 12 ? `${anio + 1}-01-01` : `${anio}-${String(mes + 1).padStart(2, "0")}-01`;
+}
+
+/** "2026-03-01" → "mar 2026" */
+function etiquetaMes(fecha: string): string {
+  return new Date(`${fecha}T12:00:00Z`).toLocaleDateString("es-CL", {
+    timeZone: "UTC",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 /** 95 → "1 min 35 s". Para tiempos de cocina, los segundos sueltos no dicen nada. */
 function duracion(segundos: number): string {
@@ -273,6 +319,7 @@ export default function ReportesPage() {
 
   const resumen = datosVigentes?.resumen ?? null;
   const porDia = useMemo(() => datosVigentes?.porDia ?? [], [datosVigentes]);
+  const porMes = useMemo(() => datosVigentes?.porMes ?? [], [datosVigentes]);
   const topProductos = useMemo(() => datosVigentes?.topProductos ?? [], [datosVigentes]);
   const tiempos = datosVigentes?.tiempos ?? null;
 
@@ -348,16 +395,17 @@ export default function ReportesPage() {
     async function correr(currentLocalId: string, claveActual: string) {
       const args = { p_local_id: currentLocalId, p_desde: desde, p_hasta: hasta };
 
-      const [resResumen, resDias, resTop, resTiempos] = await Promise.all([
+      const [resResumen, resDias, resMeses, resTop, resTiempos] = await Promise.all([
         supabase.rpc("reporte_ventas", args),
         supabase.rpc("reporte_ventas_por_dia", args),
+        supabase.rpc("reporte_ventas_por_mes", args),
         supabase.rpc("reporte_top_productos", { ...args, p_limite: 10 }),
         supabase.rpc("reporte_tiempos", args),
       ]);
 
       if (!vigente) return; // el usuario ya cambió de rango o de local
 
-      if (resResumen.error || resDias.error || resTop.error || resTiempos.error) {
+      if (resResumen.error || resDias.error || resMeses.error || resTop.error || resTiempos.error) {
         setErrorCarga({ clave: claveActual, msg: "No se pudo cargar el reporte; reintenta en unos segundos." });
         return;
       }
@@ -367,6 +415,7 @@ export default function ReportesPage() {
         clave: claveActual,
         resumen: filas[0] ?? null,
         porDia: (resDias.data as VentaPorDia[] | null) ?? [],
+        porMes: (resMeses.data as VentaPorMes[] | null) ?? [],
         topProductos: (resTop.data as TopProducto[] | null) ?? [],
         tiempos: ((resTiempos.data as TiemposCocina[] | null) ?? [])[0] ?? null,
       });
@@ -395,24 +444,55 @@ export default function ReportesPage() {
     setHasta(rango.hasta);
   }
 
-  // ===== Serie diaria rellenada con ceros =====
-  // La RPC solo devuelve días CON pedidos: sin este relleno, un martes muerto
-  // desaparecería del gráfico en vez de mostrarse en cero.
-  const serieDiaria = useMemo<VentaPorDia[]>(() => {
-    if (!rangoValido) return [];
+  // ===== Serie del gráfico, rellenada con ceros =====
+  // Las RPC solo devuelven periodos CON pedidos: sin el relleno, un martes
+  // muerto desaparecería del gráfico en vez de mostrarse en cero — que es
+  // justamente el dato que el dueño necesita ver.
+  //
+  // Por días para rangos cortos y por meses para los largos: un año en barras
+  // diarias son 365 rayas ilegibles.
+  const agrupadoPorMes = rangoValido && diasEntre(desde, hasta) > DIAS_PARA_AGRUPAR_POR_MES;
+
+  const serieGrafico = useMemo(() => {
+    if (!rangoValido) return [] as { clave: string; etiqueta: string; pedidos: number; venta: number }[];
+
+    if (agrupadoPorMes) {
+      const porClave = new Map(porMes.map((m) => [m.mes, m]));
+      const serie: { clave: string; etiqueta: string; pedidos: number; venta: number }[] = [];
+      let cursor = primerDiaMes(desde);
+      const tope = primerDiaMes(hasta);
+      while (cursor <= tope) {
+        const m = porClave.get(cursor);
+        serie.push({
+          clave: cursor,
+          etiqueta: etiquetaMes(cursor),
+          pedidos: m?.pedidos ?? 0,
+          venta: m?.venta ?? 0,
+        });
+        cursor = mesSiguiente(cursor);
+      }
+      return serie;
+    }
+
     const porFecha = new Map(porDia.map((d) => [d.dia, d]));
-    const serie: VentaPorDia[] = [];
+    const serie: { clave: string; etiqueta: string; pedidos: number; venta: number }[] = [];
     let cursor = desde;
     while (cursor <= hasta && serie.length < MAX_DIAS_GRAFICO) {
-      serie.push(porFecha.get(cursor) ?? { dia: cursor, pedidos: 0, venta: 0 });
+      const d = porFecha.get(cursor);
+      serie.push({
+        clave: cursor,
+        etiqueta: etiquetaDia(cursor),
+        pedidos: d?.pedidos ?? 0,
+        venta: d?.venta ?? 0,
+      });
       cursor = sumarDias(cursor, 1);
     }
     return serie;
-  }, [porDia, desde, hasta, rangoValido]);
+  }, [agrupadoPorMes, porDia, porMes, desde, hasta, rangoValido]);
 
   const maxVentaDia = useMemo(
-    () => serieDiaria.reduce((max, d) => Math.max(max, d.venta), 0),
-    [serieDiaria]
+    () => serieGrafico.reduce((max, d) => Math.max(max, d.venta), 0),
+    [serieGrafico]
   );
   const maxUnidades = useMemo(
     () => topProductos.reduce((max, p) => Math.max(max, p.unidades), 0),
@@ -730,7 +810,7 @@ export default function ReportesPage() {
               <div className="dash-card rounded-2xl border-2 p-4">
                 <h2 className="font-bold dash-text-primary text-sm mb-3">Desglose del período</h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="rounded-xl dash-bg-surface px-4 py-3 border-l-4 border-green-500">
                     <p className="text-xs font-semibold dash-text-secondary">Entregados</p>
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
@@ -758,6 +838,19 @@ export default function ReportesPage() {
                     </p>
                     <p className="text-[11px] dash-text-muted mt-0.5">
                       No suman a la venta ni al ticket promedio
+                    </p>
+                  </div>
+
+                  {/* La propina va SEPARADA de la venta a propósito: no es plata del
+                      local, es del personal. Sumarla a "venta" inflaría el número con
+                      el que el dueño calcula su negocio. */}
+                  <div className="rounded-xl dash-bg-surface px-4 py-3 border-l-4 border-sky-500">
+                    <p className="text-xs font-semibold dash-text-secondary">Propinas</p>
+                    <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
+                      {formatPrice(resumen.propinas_total)}
+                    </p>
+                    <p className="text-[11px] dash-text-muted mt-0.5">
+                      Aparte de la venta · las cobra el local en caja y son del personal
                     </p>
                   </div>
                 </div>
@@ -798,15 +891,15 @@ export default function ReportesPage() {
               )}
 
               {/* ===== VENTAS POR DÍA ===== */}
-              {!rangoEsUnDia && serieDiaria.length > 1 && (
+              {!rangoEsUnDia && serieGrafico.length > 1 && (
                 <div className="dash-card rounded-2xl border-2 p-4">
                   <div className="flex items-baseline justify-between mb-4">
                     {/* "sin rechazados" explícito: el resumen de arriba cuenta TODOS los
                         pedidos y esta serie excluye los cancelados, así que sin la
-                        aclaración el dueño vería dos cifras distintas de "pedidos de hoy"
+                        aclaración el dueño vería dos cifras distintas de "pedidos"
                         en la misma pantalla y no sabría cuál creer. */}
                     <h2 className="font-bold dash-text-primary text-sm">
-                      Ventas por día{" "}
+                      Ventas por {agrupadoPorMes ? "mes" : "día"}{" "}
                       <span className="font-normal dash-text-muted text-[11px]">· sin rechazados</span>
                     </h2>
                     <span className="text-[11px] dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
@@ -814,13 +907,13 @@ export default function ReportesPage() {
 
                   <div className="overflow-x-auto">
                     <div className="flex items-end gap-1 md:gap-1.5 h-44 min-w-full">
-                      {serieDiaria.map((d) => {
+                      {serieGrafico.map((d) => {
                         const alturaPct = maxVentaDia > 0 ? (d.venta / maxVentaDia) * 100 : 0;
                         return (
                           <div
-                            key={d.dia}
+                            key={d.clave}
                             className="flex-1 min-w-[14px] h-full flex flex-col justify-end items-center group"
-                            title={`${etiquetaDia(d.dia)} · ${d.pedidos} pedido(s) · ${formatPrice(d.venta)}`}
+                            title={`${d.etiqueta} · ${d.pedidos} pedido(s) · ${formatPrice(d.venta)}`}
                           >
                             <span className="text-[10px] dash-text-muted tabular-nums opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                               {d.venta > 0 ? formatPrice(d.venta) : "—"}
@@ -839,14 +932,14 @@ export default function ReportesPage() {
                     </div>
 
                     <div className="flex gap-1 md:gap-1.5 mt-2 min-w-full">
-                      {serieDiaria.map((d, i) => {
-                        // Con rangos largos se etiquetan solo algunos días para que no se pisen.
-                        const paso = Math.ceil(serieDiaria.length / 15);
-                        const mostrar = i % paso === 0 || i === serieDiaria.length - 1;
+                      {serieGrafico.map((d, i) => {
+                        // Con rangos largos se etiquetan solo algunos para que no se pisen.
+                        const paso = Math.ceil(serieGrafico.length / (agrupadoPorMes ? 12 : 15));
+                        const mostrar = i % paso === 0 || i === serieGrafico.length - 1;
                         return (
-                          <div key={d.dia} className="flex-1 min-w-[14px] text-center">
-                            <span className="text-[10px] dash-text-muted tabular-nums">
-                              {mostrar ? d.dia.slice(8, 10) : ""}
+                          <div key={d.clave} className="flex-1 min-w-[14px] text-center">
+                            <span className="text-[10px] dash-text-muted tabular-nums whitespace-nowrap">
+                              {mostrar ? (agrupadoPorMes ? d.etiqueta.slice(0, 3) : d.clave.slice(8, 10)) : ""}
                             </span>
                           </div>
                         );
@@ -854,7 +947,7 @@ export default function ReportesPage() {
                     </div>
                   </div>
 
-                  {serieDiaria.length >= MAX_DIAS_GRAFICO && (
+                  {!agrupadoPorMes && serieGrafico.length >= MAX_DIAS_GRAFICO && (
                     <p className="text-[11px] dash-text-muted mt-2">
                       Se muestran los primeros {MAX_DIAS_GRAFICO} días del rango.
                     </p>

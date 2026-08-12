@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-12):** Fases 5 a 9 completas. Queda F10 (negocio) y F11 (dominios propios). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-12):** Fases 5 a 9 completas y F10 parcial (propina + base demo). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -64,7 +64,7 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 **Tablas:**
 - **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40).
 - **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). **Lectura pública revocada (F7):** el menú se sirve por `get_menu_publico(slug)`; el staff lee las suyas por RLS.
-- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`) y `client_request_id` (idempotencia, F8). **Acceso público revocado** (ver Seguridad).
+- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`), `client_request_id` (idempotencia, F8) y `propina`/`propina_pct` (F10). **`total` NO incluye la propina**: son plata distinta. **Acceso público revocado** (ver Seguridad).
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
 - **`pedido_eventos` (F8):** bitácora de cambios de estado (`estado_anterior`, `estado_nuevo`, `actor`, `created_at`). La escribe un trigger; por RLS es **solo lectura** y solo del propio local. Base de los tiempos reales de cocina, en reemplazo de `updated_at`.
 - **`local_staff` (nueva):** Vincula usuarios de `auth.users` con `locales` (`user_id`, `local_id`). Determina qué local ve/gestiona cada cuenta de cocina. Se administra por SQL/rol de servicio.
@@ -164,7 +164,7 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F7 — Rendimiento percibido** | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito. [Plan](plan/F7-RENDIMIENTO.md) | **Completa** |
 | **F8 — Confianza** | Idempotencia de `crear_pedido`, auditoría de cambios de estado y tiempos reales de cocina. [Plan](plan/F8-CONFIANZA.md) · *anti-abuso: decisión pendiente del dueño* | **Completa** |
 | **F9 — Marca completa** | White-label completo del flujo del cliente y validación de contraste WCAG en el editor de identidad. [Plan](plan/F9-MARCA.md) | **Completa** |
-| F10 — Negocio | Propina sugerida, planes/suscripción, pago en línea | Pendiente |
+| **F10 — Negocio** | Propina sugerida (hecha) + base demo con un año de datos. Planes/suscripción pendientes; **pago en línea descartado**: la plata no pasa por la plataforma. [Plan](plan/F10-PROPINA-Y-DEMO.md) | Parcial |
 | F11 — Dominios propios | Cuando un cliente lo pida **y lo pague** | Pendiente |
 
 **Fase 4 — "El Estudio del Local" (self-service, completa)** — que un dueño arme y personalice su local sin SQL:
@@ -191,6 +191,37 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-12 — Fase 10 (parcial): propina sugerida y base demo
+
+Primera parte de la fase de negocio, con **alcance acotado por decisión del dueño: la plata no pasa
+por la plataforma.** Sin pagos ni boletas. Plan en
+[`plan/F10-PROPINA-Y-DEMO.md`](plan/F10-PROPINA-Y-DEMO.md).
+
+- **Propina sugerida** (migración `20260812142023`): botones 5/10/15/20 % más barra deslizable hasta
+  30 %, por defecto 10 %. Dos decisiones que sostienen el resto:
+  - **No se suma a `total`**, va en columna propia. La propina es del personal, no venta del local:
+    mezclarla habría inflado la venta de todos los reportes de F6 con plata ajena.
+  - **El cliente manda el porcentaje, no el monto**; el servidor lo calcula sobre su propio total.
+    Un porcentaje fuera de rango se **acota** (500 → 100) en vez de tumbar el pedido: perder una
+    venta real por un valor raro sería peor que cobrar propina cero.
+- **`crear_pedido` v7**: se borró la versión de 6 argumentos, igual que en F8. El parámetro nuevo
+  tiene `DEFAULT 0`.
+- **Base demo en `el-lalo`** (`scripts/sembrar-demo.mjs`): **7.920 pedidos** de un año,
+  $95.482.200 de venta, ticket $12.650. Estacionalidad por día de semana, peaks de almuerzo y cena,
+  productos ponderados por precio y semilla fija (regenerar da la misma base). Marcado con prefijo
+  `de70de70-` en `client_request_id` y reversible con `--borrar`; por defecto es dry-run.
+  - Los eventos de auditoría se escriben con **fechas históricas**: el trigger los estampaba con
+    `now()` y el reporte de tiempos habría dado cualquier cosa. Medido sobre los 7.920: 1 min 45 s
+    hasta aceptar, 14 min hasta listo, 17 min hasta entregar.
+  - **Dos bugs que encontró la corrida de prueba de 5 días:** `client_request_id` es `uuid` y
+    Postgres no tiene `LIKE` para uuid, así que `--borrar` fallaba y los datos demo no se podían
+    eliminar (se resolvió con un rango de uuid, que además usa el índice); y la conversión de hora
+    chilena tenía el signo invertido, poniendo los pedidos a las 08:00 en vez de las 13:00.
+- **Reportes**: presets "Este año" y "Año pasado", el gráfico pasa de días a **meses** sobre 62 días
+  de rango, y tarjeta de **propinas separada de la venta**. Verificado: la suma diaria y la mensual
+  cuadran exactamente.
+- **Verificación:** `npm test` **75/75**, `tsc`/`eslint`/`build` limpios.
 
 ### 2026-08-12 — Fase 9: marca completa (white-label y contraste)
 
