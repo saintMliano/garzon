@@ -81,7 +81,8 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                         <span className="w-6 text-center font-bold text-[13px] text-stone-800">{item.cantidad}</span>
                         <button
                           onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
-                          className="w-7 h-7 rounded-lg hover:bg-orange-50 flex items-center justify-center text-orange-600 font-bold transition-colors text-sm"
+                          className="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition-colors text-sm"
+                          style={{ color: "var(--accent-legible)" }}
                         >+</button>
                       </div>
                     </div>
@@ -92,7 +93,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                       placeholder="Ej: sin mayo, extra queso..."
                       value={item.notas}
                       onChange={(e) => updateNotes(item.producto.id, e.target.value)}
-                      className="w-full mt-2.5 px-3 py-2 rounded-lg bg-white border border-stone-150 text-[12px] text-stone-700 placeholder:text-stone-300 focus:outline-none focus:ring-1 focus:ring-orange-200 focus:border-orange-300 transition-all"
+                      className="w-full mt-2.5 px-3 py-2 rounded-lg bg-white border border-stone-150 text-[12px] text-stone-700 placeholder:text-stone-300 focus:outline-none focus:ring-1 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all"
                     />
 
                     {/* Remove */}
@@ -121,8 +122,8 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
             </div>
             <button
               onClick={onCheckout}
-              className="w-full h-[52px] rounded-2xl text-white font-bold text-[15px] shadow-lg shadow-orange-200/50 hover:shadow-xl active:scale-[0.98] transition-all"
-              style={{ background: "var(--brand)" }}
+              className="w-full h-[52px] rounded-2xl font-bold text-[15px] shadow-lg hover:shadow-xl active:scale-[0.98] transition-all"
+              style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
             >
               Confirmar Pedido →
             </button>

@@ -1,6 +1,8 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getMenuPublico } from "@/lib/menu-publico";
+import { variablesDeMarca } from "@/lib/color";
 import MenuCliente from "./menu-cliente";
 
 /**
@@ -71,13 +73,24 @@ export default async function LocalPage({ params, searchParams }: Props) {
   // local se dio de baja, un buscador no debe indexar esa página como válida.
   if (!menu) notFound();
 
+  // Las variables de marca se calculan en el servidor y envuelven TODO el flujo.
+  // Antes vivían dentro del render del menú, así que la pantalla de seguimiento
+  // —que sale por un return temprano— quedaba fuera de su alcance y no había
+  // forma de pintarla con la marca del local.
+  //
+  // `contents` hace que este div no genere caja: las variables heredan por el
+  // árbol igual, pero el layout de los hijos queda exactamente como estaba.
+  const marca = variablesDeMarca(menu.local.color_primario, menu.local.color_acento) as CSSProperties;
+
   return (
-    <MenuCliente
-      slug={slug}
-      local={menu.local}
-      categorias={menu.categorias}
-      productos={menu.productos}
-      mesaDelQR={mesaDelQR}
-    />
+    <div className="contents" style={marca}>
+      <MenuCliente
+        slug={slug}
+        local={menu.local}
+        categorias={menu.categorias}
+        productos={menu.productos}
+        mesaDelQR={mesaDelQR}
+      />
+    </div>
   );
 }

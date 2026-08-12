@@ -5,6 +5,51 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import type { Local } from "@/types/database";
+import {
+  CONTRASTE_AA,
+  TEXTO_CLARO,
+  contraste,
+  legibleSobre,
+  parseHex,
+  textoSobre,
+} from "@/lib/color";
+
+/** El menú público se pinta sobre fondo blanco: es contra eso que hay que leerse. */
+const FONDO_MENU = "#ffffff";
+const COLOR_POR_DEFECTO = "#f97316";
+
+/** `input type="color"` solo acepta #rrggbb: un "#fff" guardado a mano lo dejaría en negro. */
+function aColorInput(color: string): string {
+  const rgb = parseHex(color);
+  if (!rgb) return COLOR_POR_DEFECTO;
+  const dos = (n: number) => n.toString(16).padStart(2, "0");
+  return `#${dos(rgb.r)}${dos(rgb.g)}${dos(rgb.b)}`;
+}
+
+/** Razón de contraste junto a cada selector: ✓ si pasa AA, ⚠ si no. */
+function ChipContraste({
+  razon,
+  detalle,
+  completo,
+}: {
+  razon: number;
+  detalle: string;
+  completo: boolean;
+}) {
+  if (!completo) {
+    return (
+      <p className="mt-1.5 text-[11px] dash-text-muted">
+        Escribe el color completo (#rgb o #rrggbb) para ver el contraste.
+      </p>
+    );
+  }
+  const pasa = razon >= CONTRASTE_AA;
+  return (
+    <p className={`mt-1.5 text-[11px] font-medium ${pasa ? "text-green-400" : "text-amber-400"}`}>
+      <span aria-hidden>{pasa ? "✓" : "⚠"}</span> {razon.toFixed(1)}:1 · {detalle}
+    </p>
+  );
+}
 
 export default function ConfigPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -19,8 +64,12 @@ export default function ConfigPage() {
   const [slogan, setSlogan] = useState("");
   const [direccion, setDireccion] = useState("");
   const [telefono, setTelefono] = useState("");
-  const [colorPrimario, setColorPrimario] = useState("#f97316");
-  const [colorAcento, setColorAcento] = useState("#f97316");
+  const [colorPrimario, setColorPrimario] = useState(COLOR_POR_DEFECTO);
+  const [colorAcento, setColorAcento] = useState(COLOR_POR_DEFECTO);
+  // Último color COMPLETO de cada campo: es lo que alimenta la vista previa, para
+  // que no parpadee mientras el dueño tipea el hex a mano ("#f", "#f9").
+  const [primarioVista, setPrimarioVista] = useState(COLOR_POR_DEFECTO);
+  const [acentoVista, setAcentoVista] = useState(COLOR_POR_DEFECTO);
   const [logoUrl, setLogoUrl] = useState("");
 
   const [subiendoLogo, setSubiendoLogo] = useState(false);
@@ -29,6 +78,18 @@ export default function ConfigPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [localesList, setLocalesList] = useState<{ id: string; nombre: string; slug: string }[]>([]);
+
+  // El campo hex se deja escribir libre (puede quedar a medio tipear); la vista
+  // previa solo avanza cuando el valor es un color completo.
+  function cambiarPrimario(valor: string) {
+    setColorPrimario(valor);
+    if (parseHex(valor)) setPrimarioVista(valor);
+  }
+
+  function cambiarAcento(valor: string) {
+    setColorAcento(valor);
+    if (parseHex(valor)) setAcentoVista(valor);
+  }
 
   async function fetchLocalConfig(targetLocalId: string) {
     const { data: local } = await supabase
@@ -42,8 +103,8 @@ export default function ConfigPage() {
       setSlogan(l.slogan ?? "");
       setDireccion(l.direccion ?? "");
       setTelefono(l.telefono ?? "");
-      setColorPrimario(l.color_primario ?? "#f97316");
-      setColorAcento(l.color_acento ?? "#f97316");
+      cambiarPrimario(l.color_primario ?? COLOR_POR_DEFECTO);
+      cambiarAcento(l.color_acento ?? COLOR_POR_DEFECTO);
       setLogoUrl(l.logo_url ?? "");
     }
   }
@@ -116,6 +177,20 @@ export default function ConfigPage() {
     const timeout = setTimeout(() => setSavedMsg(false), 3000);
     return () => clearTimeout(timeout);
   }, [savedMsg]);
+
+  // ===== Legibilidad de la marca, recalculada en vivo =====
+  // Los avisos solo se muestran con un hex completo; con el valor a medio escribir
+  // se sigue usando el último color válido para no alarmar por nada.
+  const primarioCompleto = parseHex(colorPrimario) !== null;
+  const acentoCompleto = parseHex(colorAcento) !== null;
+
+  // El primario es FONDO de los botones: el sistema le elige el texto que se lea.
+  const textoBoton = textoSobre(primarioVista);
+  const contrasteBoton = contraste(primarioVista, textoBoton);
+  // El acento es TEXTO (los precios) sobre el blanco del menú.
+  const contrasteAcento = contraste(acentoVista, FONDO_MENU);
+  const acentoLegible = legibleSobre(acentoVista, FONDO_MENU);
+  const acentoNecesitaAjuste = acentoCompleto && contrasteAcento < CONTRASTE_AA;
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -334,23 +409,30 @@ export default function ConfigPage() {
               <div className="flex items-center gap-3">
                 <input
                   type="color"
-                  value={colorPrimario}
-                  onChange={(e) => setColorPrimario(e.target.value)}
+                  value={aColorInput(primarioVista)}
+                  onChange={(e) => cambiarPrimario(e.target.value)}
                   className="w-11 h-10 rounded-lg dash-bg-surface cursor-pointer border-0 p-1"
                 />
                 <input
                   value={colorPrimario}
-                  onChange={(e) => setColorPrimario(e.target.value)}
+                  onChange={(e) => cambiarPrimario(e.target.value)}
                   className="flex-1 rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
                   placeholder="#f97316"
                   maxLength={7}
                 />
                 <div
                   className="w-10 h-10 rounded-lg shrink-0 border border-stone-700"
-                  style={{ backgroundColor: colorPrimario }}
+                  style={{ backgroundColor: primarioVista }}
                   title="Vista previa"
                 />
               </div>
+              <ChipContraste
+                razon={contrasteBoton}
+                completo={primarioCompleto}
+                detalle={`el texto de los botones se pinta ${
+                  textoBoton === TEXTO_CLARO ? "blanco" : "oscuro"
+                } automáticamente`}
+              />
             </div>
 
             <div>
@@ -358,23 +440,82 @@ export default function ConfigPage() {
               <div className="flex items-center gap-3">
                 <input
                   type="color"
-                  value={colorAcento}
-                  onChange={(e) => setColorAcento(e.target.value)}
+                  value={aColorInput(acentoVista)}
+                  onChange={(e) => cambiarAcento(e.target.value)}
                   className="w-11 h-10 rounded-lg dash-bg-surface cursor-pointer border-0 p-1"
                 />
                 <input
                   value={colorAcento}
-                  onChange={(e) => setColorAcento(e.target.value)}
+                  onChange={(e) => cambiarAcento(e.target.value)}
                   className="flex-1 rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
                   placeholder="#f97316"
                   maxLength={7}
                 />
                 <div
                   className="w-10 h-10 rounded-lg shrink-0 border border-stone-700"
-                  style={{ backgroundColor: colorAcento }}
+                  style={{ backgroundColor: acentoVista }}
                   title="Vista previa"
                 />
               </div>
+              <ChipContraste
+                razon={contrasteAcento}
+                completo={acentoCompleto}
+                detalle="contraste de los precios sobre el fondo blanco del menú"
+              />
+            </div>
+
+            {/* ===== Vista previa real: lo que va a ver el cliente ===== */}
+            <div className="rounded-xl border border-stone-800 bg-stone-950/40 p-4">
+              <p className="text-xs font-semibold dash-text-secondary">Vista previa del menú</p>
+              <p className="text-[11px] dash-text-muted mt-0.5">
+                Así se ven tus colores sobre el fondo claro que ve el cliente.
+              </p>
+
+              <div className="mt-3 rounded-xl bg-white p-4 space-y-4">
+                <div
+                  className="rounded-xl px-4 py-2.5 text-center text-sm font-bold"
+                  style={{ backgroundColor: primarioVista, color: textoBoton }}
+                >
+                  Ver pedido · $12.500
+                </div>
+
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                      Tu acento
+                    </p>
+                    <p className="text-lg font-bold" style={{ color: acentoVista }}>
+                      $12.500
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                      {acentoNecesitaAjuste ? "Corregido para el menú" : "En el menú"}
+                    </p>
+                    <p className="text-lg font-bold" style={{ color: acentoLegible }}>
+                      $12.500
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informativo y no una advertencia ámbar, a propósito: el sistema ya
+                  corrigió el color solo y el dueño no tiene nada que hacer. El
+                  naranja por defecto contrasta 2,8:1, así que un aviso alarmante
+                  aparecería en casi todos los locales sin que nadie haya tocado
+                  nada — y una alerta que sale siempre es una alerta que nadie lee. */}
+              {acentoNecesitaAjuste && (
+                <div className="mt-3 flex gap-2 rounded-xl dash-bg-surface px-3 py-2.5 dash-text-secondary">
+                  <span aria-hidden>ℹ</span>
+                  <p className="text-[11px] leading-relaxed">
+                    Tu color de acento contrasta {contrasteAcento.toFixed(1)}:1 sobre blanco y el
+                    mínimo para que un precio se lea es {CONTRASTE_AA}:1. En el menú los precios se
+                    van a pintar en{" "}
+                    <span className="font-mono font-semibold">{acentoLegible}</span>, el mismo tono
+                    un poco más oscuro. No hay nada que corregir: tu marca no cambia.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
