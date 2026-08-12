@@ -243,6 +243,8 @@ export type Database = {
           nombre_cliente: string
           notas: string | null
           numero_pedido: number
+          propina: number
+          propina_pct: number
           total: number
           updated_at: string | null
         }
@@ -256,6 +258,8 @@ export type Database = {
           nombre_cliente: string
           notas?: string | null
           numero_pedido: number
+          propina?: number
+          propina_pct?: number
           total: number
           updated_at?: string | null
         }
@@ -269,6 +273,8 @@ export type Database = {
           nombre_cliente?: string
           notas?: string | null
           numero_pedido?: number
+          propina?: number
+          propina_pct?: number
           total?: number
           updated_at?: string | null
         }
@@ -361,6 +367,7 @@ export type Database = {
           p_mesa: string
           p_nombre: string
           p_notas: string
+          p_propina_pct?: number
         }
         Returns: string
       }
@@ -403,6 +410,7 @@ export type Database = {
           pedidos_entregados: number
           pedidos_pendientes: number
           pedidos_total: number
+          propinas_total: number
           ticket_promedio: number
           venta_entregada: number
           venta_total: number
@@ -412,6 +420,14 @@ export type Database = {
         Args: { p_desde: string; p_hasta: string; p_local_id: string }
         Returns: {
           dia: string
+          pedidos: number
+          venta: number
+        }[]
+      }
+      reporte_ventas_por_mes: {
+        Args: { p_desde: string; p_hasta: string; p_local_id: string }
+        Returns: {
+          mes: string
           pedidos: number
           venta: number
         }[]
