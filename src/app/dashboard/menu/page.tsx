@@ -6,6 +6,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Categoria, Producto } from "@/types/database";
+import AvisoSuscripcion from "../aviso-suscripcion";
 
 type ProductoForm = {
   id: string | null;
@@ -437,6 +438,8 @@ export default function MenuPage() {
           </div>
         </div>
       </header>
+
+      <AvisoSuscripcion localId={localId} />
 
       {/* ===== PANEL DE MENÚ ===== */}
       <main className="flex-1 p-3 md:p-5 overflow-x-auto">

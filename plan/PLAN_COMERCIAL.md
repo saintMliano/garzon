@@ -1,5 +1,10 @@
 # Plan Comercial y Estrategia Go-To-Market (GTM) — Garzón Digital
 
+> **Actualizado 2026-08-12.** El dueño validó el precio: **un solo plan, $29.900/mes**, sin
+> comisión ni permanencia. La suscripción ya está implementada en el producto (F10): prueba de 30
+> días, 7 de gracia y corte de pedidos en el servidor. El material de venta para usar en terreno es
+> **[`PITCH-VENTAS.md`](PITCH-VENTAS.md)** — este documento es la estrategia; ese es el guion.
+
 Este documento establece la estrategia comercial táctica para conseguir los **primeros 5 a 10 clientes pagados (o pilotos activos)** para Garzón Digital en el mercado gastronómico chileno, antes de abordar la Fase 5 (Dominios Propios).
 
 ---
@@ -109,6 +114,9 @@ gantt
 
 Antes de iniciar la ejecución comercial, validemos los siguientes puntos:
 
-1. **Precio:** ¿Te parece adecuado el precio de **$29.900 CLP / mes** (tarifa plana sin comisiones) o prefieres explorar otro esquema (ej. $19.900 o planes por cantidad de mesas)?
+1. ~~**Precio**~~ — **resuelto el 2026-08-12:** un solo plan de $29.900/mes ($249.900/año), sin
+   comisión por venta ni permanencia. Ya está implementado en el producto.
 2. **Zona de Pilotaje:** ¿En qué comuna/zona geográfica tienes facilidad para hacer las primeras visitas presenciales?
 3. **Impresión de QRs:** ¿Gestionamos las primeras impresiones de QRs con un proveedor local de gráfica/imprenta?
+4. **Anti-abuso del checkout:** sigue pendiente desde F8 (ver [`F8-CONFIANZA.md`](F8-CONFIANZA.md)).
+   Con cinco pilotos no es un problema; conviene decidirlo antes de llegar a veinte locales.

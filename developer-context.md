@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-12):** Fases 5 a 9 completas y F10 parcial (propina + base demo). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-12):** Fases 5 a 10 completas (F10 cierra con suscripción por local y pitch de ventas). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -62,7 +62,7 @@ El proyecto usa **tres** clientes según el contexto:
 Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de endurecimiento en la carpeta [`migrations/`](migrations/).
 
 **Tablas:**
-- **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40).
+- **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40). **Suscripción (F10):** `plan`, `suscripcion_estado` (`prueba|activa|cortesia|cancelada`), `suscripcion_hasta` y `suscripcion_notas`. Esas cuatro columnas **no tienen GRANT UPDATE para `authenticated`**: solo se escriben por `/api/admin/suscripcion` con service-role.
 - **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). **Lectura pública revocada (F7):** el menú se sirve por `get_menu_publico(slug)`; el staff lee las suyas por RLS.
 - **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`), `client_request_id` (idempotencia, F8) y `propina`/`propina_pct` (F10). **`total` NO incluye la propina**: son plata distinta. **Acceso público revocado** (ver Seguridad).
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
@@ -77,7 +77,9 @@ El cliente anónimo **no** toca las tablas directamente; opera vía funciones `S
 - **`crear_pedido(p_local_id, p_nombre, p_mesa, p_notas, p_items jsonb) → uuid`**: crea el pedido y sus ítems en una sola transacción, **calcula el total en el servidor** leyendo el precio real de `productos` **una sola vez** (ignora cualquier total enviado por el cliente), valida que el local esté activo y que cada producto exista y esté `disponible`. **Endurecida (T2):** topes de tamaño (cantidad ≤ 99, ≤ 50 productos, monto ≤ $10M) y `bigint` para evitar overflow. **Rate-limit configurable (F5.2):** el tope por local por minuto se lee de `locales.limite_pedidos_min` (default 40; antes era fijo en 15, que un peak legítimo reventaba). Devuelve el id del pedido.
   > **Limitación conocida:** el rate-limit protege de ráfagas accidentales, no de un atacante decidido — que igual satura y de paso deja fuera a los clientes buenos. La defensa real es un desafío/token de sesión en el checkout (Fase 8).
 - **`get_order_status(p_order_id) → (estado, numero_pedido, created_at)`**: expone solo campos no sensibles del pedido cuyo UUID conoce el cliente (para el seguimiento).
-- **`get_menu_publico(p_slug) → jsonb`** (F7): devuelve local + categorías + productos disponibles en **una sola consulta**, con **lista blanca** de columnas. Es lo que permitió cerrar la lectura pública de esas tablas: para ver un menú hay que saber el slug. La usa el Server Component del menú.
+- **`get_menu_publico(p_slug) → jsonb`** (F7): devuelve local + categorías + productos disponibles en **una sola consulta**, con **lista blanca** de columnas. Es lo que permitió cerrar la lectura pública de esas tablas: para ver un menú hay que saber el slug. La usa el Server Component del menú. **F10:** agrega `pedidos_habilitados` (booleano); el estado de suscripción y su motivo **no** viajan al comensal.
+
+**Suscripción (F10):** `situacion_suscripcion(estado, hasta) → cortesia|al_dia|por_vencer|gracia|pausada` es la **fuente única de la regla**: la usan `crear_pedido` (que rechaza el pedido si está `pausada`), `get_menu_publico` y el dashboard. `estado_suscripcion(local_id)` es el envoltorio para el dueño, **SECURITY INVOKER** a propósito —igual que los `reporte_*`— para que la RLS aísle sola. Ambas revocadas de `PUBLIC, anon`.
 
 **Actualización de pedidos:** el staff solo puede cambiar la columna `estado` (privilegios de columna), y un trigger valida las transiciones del Kanban en el servidor (`nuevo→aceptado/cancelado`, `aceptado→preparando/cancelado`, `preparando→listo/cancelado`, `listo→entregado`, y `entregado→listo` para deshacer una entrega marcada por error). Las columnas `slug`/`activo`/`limite_pedidos_min` de `locales` y el `total` de `pedidos` no son actualizables por el staff (quedan al service-role).
 > **Efecto secundario de la reapertura:** el ciclo `entregado → listo → entregado` reescribe `updated_at` vía el trigger `set_updated_at`, así que esa columna **no** es una base confiable para analíticas de tiempos. La auditoría de cambios de estado que la reemplaza va en la Fase 8.
@@ -164,7 +166,7 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F7 — Rendimiento percibido** | Menú a Server Component, `generateMetadata`/SEO por local, refresco de menú y reconciliación de precios del carrito. [Plan](plan/F7-RENDIMIENTO.md) | **Completa** |
 | **F8 — Confianza** | Idempotencia de `crear_pedido`, auditoría de cambios de estado y tiempos reales de cocina. [Plan](plan/F8-CONFIANZA.md) · *anti-abuso: decisión pendiente del dueño* | **Completa** |
 | **F9 — Marca completa** | White-label completo del flujo del cliente y validación de contraste WCAG en el editor de identidad. [Plan](plan/F9-MARCA.md) | **Completa** |
-| **F10 — Negocio** | Propina sugerida (hecha) + base demo con un año de datos. Planes/suscripción pendientes; **pago en línea descartado**: la plata no pasa por la plataforma. [Plan](plan/F10-PROPINA-Y-DEMO.md) | Parcial |
+| **F10 — Negocio** | Propina sugerida + base demo de un año ([plan](plan/F10-PROPINA-Y-DEMO.md)), y suscripción por local con corte en el servidor + pitch de ventas ([plan](plan/F10-SUSCRIPCION.md)). **Pago en línea descartado**: la plata no pasa por la plataforma. | **Completa** |
 | F11 — Dominios propios | Cuando un cliente lo pida **y lo pague** | Pendiente |
 
 **Fase 4 — "El Estudio del Local" (self-service, completa)** — que un dueño arme y personalice su local sin SQL:
@@ -191,6 +193,46 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-12 — Fase 10 (cierre): suscripción por local y pitch de ventas
+
+Cierra la fase de negocio. Decisiones del dueño: **un solo plan** ($29.900/mes, $249.900/año, sin
+comisión ni permanencia) y **7 días de gracia** antes de cortar. Plan en
+[`plan/F10-SUSCRIPCION.md`](plan/F10-SUSCRIPCION.md).
+
+- **Modelo de suscripción** (migración `20260812200500`): `locales` gana `plan`,
+  `suscripcion_estado` (`prueba|activa|cortesia|cancelada`), `suscripcion_hasta` y
+  `suscripcion_notas`. La regla vive en **una sola función**, `situacion_suscripcion(estado, hasta)`,
+  que devuelve `cortesia | al_dia | por_vencer | gracia | pausada`; la consultan `crear_pedido`, el
+  menú público y el dashboard para que no puedan discrepar.
+- **Falla hacia abierto**: sin fecha registrada, el local se considera al día. Los dos locales que ya
+  existían quedaron en **cortesía** — una migración no puede empezar a contarle los días a un local
+  que ya está andando.
+- **`crear_pedido` v8**: el corte está en la RPC, no en el navegador. La firma no cambió respecto de
+  v7, así que se reemplazó en su lugar (sin DROP): nunca hubo dos versiones vivas.
+- **La carta se sigue viendo pausada**, con un aviso neutro. `get_menu_publico` expone solo
+  `pedidos_habilitados`; **el motivo no viaja al teléfono del comensal** y hay un test que verifica
+  que el mensaje de error no lo delate.
+- **El dashboard nunca se bloquea**: banner escalonado (por vencer → gracia → pausada), pero
+  historial y reportes siempre accesibles.
+- **`/api/admin/suscripcion`** (server-only, super-admin): cartera con la situación de cada local y
+  acciones (+1 mes, +1 año, prueba 30 días, cortesía, cancelar). Renovar extiende desde el
+  vencimiento anterior si todavía no pasó, y desde hoy si ya pasó. Las columnas de suscripción **no
+  tienen GRANT UPDATE para `authenticated`**: un local no puede prorrogarse solo (dos tests).
+- **Alta de local**: nace con prueba de 30 días contada en días de Chile, y la tarjeta de
+  credenciales lo informa.
+- **Migración `20260812202500`**: REVOKE de `PUBLIC, anon` sobre las dos funciones de suscripción.
+  Postgres otorga EXECUTE a `PUBLIC` por defecto, así que el `GRANT ... TO authenticated` no
+  restringía nada. Lo encontró un test.
+- **`npm run db:backup` estaba truncando el respaldo en 1000 filas** (tope de PostgREST, silencioso).
+  Ahora pagina, contrasta contra el conteo exacto de cada tabla y relee el archivo escrito para
+  verificarlo tabla por tabla. El respaldo pasó de 1.000 a 7.929 pedidos reales.
+- **Pitch de ventas** en [`plan/PITCH-VENTAS.md`](plan/PITCH-VENTAS.md), con una regla: cada promesa
+  se demuestra en vivo en tres minutos. Incluye lo que el software **no** hace y notas internas que
+  no van al cliente.
+- Verificado además **contra la aplicación corriendo**: con `el-lalo` pausado la carta se sirve igual
+  (HTTP 200, productos presentes), aparece el aviso y desaparecen los botones de agregar. Restaurado
+  a cortesía al terminar. `npm test` **89/89**.
 
 ### 2026-08-12 — Fase 10 (parcial): propina sugerida y base demo
 

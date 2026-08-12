@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { OrderStatus } from "@/types/database";
+import AvisoSuscripcion from "../aviso-suscripcion";
 
 // ============================================================
 // Tipos de las RPCs de reportes (F6).
@@ -682,6 +683,8 @@ export default function ReportesPage() {
           </div>
         </div>
       </header>
+
+      <AvisoSuscripcion localId={localId} />
 
       <main className="flex-1 p-3 md:p-5">
         <div className="max-w-[1600px] mx-auto space-y-4">

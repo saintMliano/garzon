@@ -47,3 +47,7 @@ fotos/
 
 # respaldos de la base: contienen datos reales de clientes, jamás al repo
 backups/
+
+# Claude Code: preferencias locales de la máquina (incluye comandos permitidos, que pueden llevar credenciales)
+.claude/settings.local.json
+.claude/.claude/

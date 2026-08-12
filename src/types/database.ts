@@ -23,6 +23,20 @@ export interface Local {
     limite_pedidos_min: number;
 }
 
+/**
+ * El local tal como lo ve el comensal: lo que devuelve `get_menu_publico`, que
+ * es una lista blanca de columnas y NO todo `Local`. Escribirlo aparte evita que
+ * el código del menú dé por sentado un campo que la RPC nunca envía.
+ *
+ * `pedidos_habilitados` resume la suscripción en un booleano. El motivo no viaja
+ * al teléfono del comensal: no tiene por qué enterarse de si el local pagó.
+ */
+export type LocalPublico = Pick<
+    Local,
+    | "id" | "nombre" | "slug" | "direccion" | "telefono" | "logo_url"
+    | "color_primario" | "color_acento" | "slogan" | "mesas"
+> & { pedidos_habilitados: boolean };
+
 export interface Categoria {
     id: string;
     local_id: string;

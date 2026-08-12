@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart, type CambiosCarrito } from "@/lib/cart-context";
 import { formatPrice, normalizar } from "@/lib/utils";
-import type { Local, Categoria, Producto } from "@/types/database";
+import type { LocalPublico, Categoria, Producto } from "@/types/database";
 import CartSheet from "./cart-sheet";
 import CheckoutModal from "./checkout-modal";
 import OrderStatus from "./order-status";
@@ -24,12 +24,17 @@ export default function MenuCliente({
   mesaDelQR,
 }: {
   slug: string;
-  local: Local;
+  local: LocalPublico;
   categorias: Categoria[];
   productos: Producto[];
   mesaDelQR: string | null;
 }) {
   const router = useRouter();
+
+  // Suscripción pausada (F10): la carta se sigue viendo —es la vitrina del
+  // local— pero no se puede pedir. Esto solo ordena la pantalla; el corte de
+  // verdad lo hace `crear_pedido` en el servidor.
+  const pedidosHabilitados = local.pedidos_habilitados;
   const [activeCategory, setActiveCategory] = useState<string | null>(categorias[0]?.id ?? null);
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -252,7 +257,7 @@ export default function MenuCliente({
               )}
             </div>
             {/* Cart icon in header */}
-            {itemCount > 0 && (
+            {pedidosHabilitados && itemCount > 0 && (
               <button
                 onClick={() => setShowCart(true)}
                 className="relative w-11 h-11 rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-transform"
@@ -320,6 +325,27 @@ export default function MenuCliente({
         )}
       </header>
 
+      {/* ===== PEDIDOS EN PAUSA =====
+          El comensal no tiene por qué saber por qué. Se le dice qué puede hacer
+          —llamar al garzón— en vez de dejarlo tocando un botón que no responde. */}
+      {!pedidosHabilitados && (
+        <div className="max-w-lg mx-auto w-full px-4 pt-3">
+          <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3">
+            <div className="flex items-start gap-2">
+              <span className="text-base leading-none mt-0.5">🕐</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold text-stone-800">
+                  Por ahora no se puede pedir desde acá
+                </p>
+                <p className="text-[12px] text-stone-500 mt-0.5">
+                  Podés mirar la carta y hacer tu pedido con el garzón.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===== AVISO DE CAMBIOS EN EL CARRITO =====
           El total lo calcula el servidor, así que un carrito con precios viejos
           terminaba en una sorpresa al pagar. Acá se dice qué cambió, con nombre y
@@ -377,6 +403,7 @@ export default function MenuCliente({
                   onAdd={() => handleAdd(prod)}
                   onUpdateQty={(q) => updateQuantity(prod.id, q)}
                   delay={i * 40}
+                  puedePedir={pedidosHabilitados}
                 />
               ))}
               {filteredProducts.length === 0 && (
@@ -413,6 +440,7 @@ export default function MenuCliente({
                       onAdd={() => handleAdd(prod)}
                       onUpdateQty={(q) => updateQuantity(prod.id, q)}
                       delay={i * 50}
+                      puedePedir={pedidosHabilitados}
                     />
                   ))}
                 </div>
@@ -423,7 +451,7 @@ export default function MenuCliente({
       </main>
 
       {/* ===== FLOATING CART BAR ===== */}
-      {itemCount > 0 && (
+      {pedidosHabilitados && itemCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-40 p-4 safe-bottom animate-slide-up">
           <button
             onClick={() => setShowCart(true)}
@@ -442,10 +470,10 @@ export default function MenuCliente({
       )}
 
       {/* Modals */}
-      {showCart && (
+      {pedidosHabilitados && showCart && (
         <CartSheet onClose={() => setShowCart(false)} onCheckout={() => { setShowCart(false); setShowCheckout(true); }} />
       )}
-      {showCheckout && local && (
+      {pedidosHabilitados && showCheckout && local && (
         <CheckoutModal
           localId={local.id}
           // El slug identifica el intento de checkout guardado en localStorage,
@@ -469,12 +497,15 @@ export default function MenuCliente({
 
 /* ===== PRODUCT CARD COMPONENT ===== */
 function ProductCard({
-  prod, icon, qty, flashed, onAdd, onUpdateQty, delay,
+  prod, icon, qty, flashed, onAdd, onUpdateQty, delay, puedePedir,
 }: {
   prod: Producto; icon: string; qty: number; flashed: boolean;
   onAdd: () => void; onUpdateQty: (q: number) => void; delay: number;
+  puedePedir: boolean;
 }) {
-  const inCart = qty > 0;
+  // Con los pedidos en pausa la tarjeta se muestra igual —precio incluido— pero
+  // sin controles: un botón que no hace nada se lee como que la app está rota.
+  const inCart = puedePedir && qty > 0;
   const imgSrc = prod.imagen_url;
 
   return (
@@ -519,7 +550,7 @@ function ProductCard({
       </div>
 
       {/* Add / Qty control */}
-      {inCart ? (
+      {!puedePedir ? null : inCart ? (
         <div
           className="flex items-center gap-1 rounded-xl p-1 border animate-fade-in-fast"
           style={{
