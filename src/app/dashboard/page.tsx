@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice, orderNumber } from "@/lib/utils";
 import type { OrderStatus, PedidoConItems } from "@/types/database";
+import AvisoSuscripcion from "./aviso-suscripcion";
 
 const COLUMNS: { key: OrderStatus; label: string; icon: string; accent: string }[] = [
   { key: "nuevo", label: "Nuevos", icon: "🆕", accent: "from-blue-500 to-blue-600" },
@@ -625,6 +626,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
+
+      <AvisoSuscripcion localId={localId} />
 
       {/* ===== AVISO DE SONIDO =====
           El navegador exige un gesto del usuario para reproducir audio, y el

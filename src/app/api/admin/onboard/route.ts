@@ -116,10 +116,26 @@ export async function POST(request: Request) {
   }
   const ownerId = created.user.id;
 
-  // 4c. Crear el local.
+  // 4c. Crear el local, con la prueba de 30 días ya corriendo (F10). Se fija
+  //     acá y no por default de la columna para que la fecha se cuente en días
+  //     de Chile, que es como se la vamos a contar al cliente.
+  const hoyChile = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
+  const finPrueba = (() => {
+    const [a, m, d] = hoyChile.split("-").map(Number);
+    const base = new Date(Date.UTC(a, m - 1, d));
+    base.setUTCDate(base.getUTCDate() + 30);
+    return base.toISOString().slice(0, 10);
+  })();
+
   const { data: local, error: localErr } = await admin
     .from("locales")
-    .insert({ nombre, slug, activo: true })
+    .insert({
+      nombre,
+      slug,
+      activo: true,
+      suscripcion_estado: "prueba",
+      suscripcion_hasta: finPrueba,
+    })
     .select()
     .single();
   if (localErr || !local) {
@@ -179,6 +195,7 @@ export async function POST(request: Request) {
     email,
     tempPassword,
     logoUrl,
+    pruebaHasta: finPrueba,
     menuUrl: `/local/${slug}`,
     dashboardUrl: "/dashboard",
   });

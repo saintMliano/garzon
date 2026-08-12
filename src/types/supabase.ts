@@ -109,8 +109,12 @@ export type Database = {
           logo_url: string | null
           mesas: string[] | null
           nombre: string
+          plan: string
           slogan: string | null
           slug: string
+          suscripcion_estado: string
+          suscripcion_hasta: string | null
+          suscripcion_notas: string | null
           telefono: string | null
         }
         Insert: {
@@ -124,8 +128,12 @@ export type Database = {
           logo_url?: string | null
           mesas?: string[] | null
           nombre: string
+          plan?: string
           slogan?: string | null
           slug: string
+          suscripcion_estado?: string
+          suscripcion_hasta?: string | null
+          suscripcion_notas?: string | null
           telefono?: string | null
         }
         Update: {
@@ -139,8 +147,12 @@ export type Database = {
           logo_url?: string | null
           mesas?: string[] | null
           nombre?: string
+          plan?: string
           slogan?: string | null
           slug?: string
+          suscripcion_estado?: string
+          suscripcion_hasta?: string | null
+          suscripcion_notas?: string | null
           telefono?: string | null
         }
         Relationships: []
@@ -371,6 +383,17 @@ export type Database = {
         }
         Returns: string
       }
+      estado_suscripcion: {
+        Args: { p_local_id: string }
+        Returns: {
+          dias_restantes: number
+          estado: string
+          hasta: string
+          pedidos_habilitados: boolean
+          plan: string
+          situacion: string
+        }[]
+      }
       get_menu_publico: { Args: { p_slug: string }; Returns: Json }
       get_order_status: {
         Args: { p_order_id: string }
@@ -431,6 +454,10 @@ export type Database = {
           pedidos: number
           venta: number
         }[]
+      }
+      situacion_suscripcion: {
+        Args: { p_estado: string; p_hasta: string }
+        Returns: string
       }
     }
     Enums: {

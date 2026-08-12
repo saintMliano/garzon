@@ -1,9 +1,9 @@
 import { cache } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Local, Categoria, Producto } from "@/types/database";
+import type { LocalPublico, Categoria, Producto } from "@/types/database";
 
 export type MenuPublico = {
-  local: Local;
+  local: LocalPublico;
   categorias: Categoria[];
   productos: Producto[];
 };
@@ -36,7 +36,13 @@ export const getMenuPublico = cache(async (slug: string): Promise<MenuPublico | 
   if (!menu.local?.id) return null;
 
   return {
-    local: menu.local,
+    local: {
+      ...menu.local,
+      // Si el campo faltara (una versión vieja de la RPC), se toma por
+      // habilitado. Un local que sí pagó y no puede vender por un dato ausente
+      // es mucho peor que uno moroso vendiendo un día de más.
+      pedidos_habilitados: menu.local.pedidos_habilitados !== false,
+    },
     categorias: menu.categorias ?? [],
     productos: menu.productos ?? [],
   };

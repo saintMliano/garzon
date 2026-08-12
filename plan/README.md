@@ -1,9 +1,13 @@
 # Plan de consolidación (pre-Fase 5)
 
-> **Estado (2026-08-10): las 8 tareas están completas.** El plan vigente ahora es
-> [**Fase 5 — Turno autónomo**](F5-TURNO-AUTONOMO.md), producto de la
-> [segunda auditoría](AUDITORIA-2026-08-10.md). Esta página queda como registro histórico; el
-> "Protocolo del ejecutor" de abajo **sigue vigente** para toda tarea nueva.
+> **Estado (2026-08-12): las 8 tareas de consolidación están completas, y también las fases 5 a 10.**
+> Quedan F11 (dominios propios, cuando un cliente lo pida y lo pague) y el material comercial:
+> [estrategia](PLAN_COMERCIAL.md) y [pitch de ventas](PITCH-VENTAS.md). Esta página queda como
+> registro histórico; el "Protocolo del ejecutor" de abajo **sigue vigente** para toda tarea nueva.
+>
+> Planes por fase: [F5](F5-TURNO-AUTONOMO.md) · [F6](F6-CIERRE-DE-CAJA.md) ·
+> [F7](F7-RENDIMIENTO.md) · [F8](F8-CONFIANZA.md) · [F9](F9-MARCA.md) ·
+> [F10a](F10-PROPINA-Y-DEMO.md) · [F10b](F10-SUSCRIPCION.md).
 
 Este directorio es el **plan ejecutable** de consolidación de Garzón Digital, producido por la
 revisión de consolidación del 2026-07-10 (ver [`AUDITORIA.md`](AUDITORIA.md)). Las tareas están

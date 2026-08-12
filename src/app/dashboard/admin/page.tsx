@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import CarteraSuscripciones from "./cartera-suscripciones";
 
 type OnboardResult = {
   localId: string;
@@ -12,6 +13,8 @@ type OnboardResult = {
   email: string;
   tempPassword: string;
   logoUrl: string | null;
+  /** Fin de la prueba de 30 días con que nace todo local nuevo (F10). */
+  pruebaHasta: string | null;
   menuUrl: string;
   dashboardUrl: string;
 };
@@ -301,6 +304,22 @@ export default function AdminOnboardPage() {
                 Entrégale estas credenciales al dueño. Debe cambiar la contraseña en su primer ingreso.
               </p>
 
+              {result.pruebaHasta && (
+                <p className="text-xs dash-text-muted">
+                  Prueba gratis de 30 días: recibe pedidos hasta el{" "}
+                  <strong className="dash-text-primary">
+                    {(() => {
+                      const [a, m, d] = result.pruebaHasta.split("-").map(Number);
+                      return new Date(a, m - 1, d).toLocaleDateString("es-CL", {
+                        day: "numeric",
+                        month: "long",
+                      });
+                    })()}
+                  </strong>
+                  , más 7 días de gracia.
+                </p>
+              )}
+
               <div className="flex flex-wrap gap-3">
                 <a
                   href={result.menuUrl}
@@ -403,6 +422,8 @@ export default function AdminOnboardPage() {
             </form>
           )}
         </div>
+
+        <CarteraSuscripciones onError={setErrorMsg} />
       </main>
 
       {/* Toast de error, discreto y auto-ocultable */}

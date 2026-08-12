@@ -13,6 +13,7 @@ import {
   parseHex,
   textoSobre,
 } from "@/lib/color";
+import AvisoSuscripcion from "../aviso-suscripcion";
 
 /** El menú público se pinta sobre fondo blanco: es contra eso que hay que leerse. */
 const FONDO_MENU = "#ffffff";
@@ -356,6 +357,8 @@ export default function ConfigPage() {
           </div>
         </div>
       </header>
+
+      <AvisoSuscripcion localId={localId} />
 
       {/* ===== PANEL DE IDENTIDAD ===== */}
       <main className="flex-1 p-3 md:p-5">
