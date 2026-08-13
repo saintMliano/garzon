@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-12):** Fases 5 a 10 completas (F10 cierra con suscripción por local y pitch de ventas). Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-13):** Fases 5 a 10 completas (F10 cierra con suscripción por local y pitch de ventas) y la landing reescrita con las promesas reales y el plan. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -193,6 +193,32 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-13 — Landing: promesas reales, plan y accesibilidad
+
+La página principal (`/`) prometía cosas que el producto no hace. Se reescribió sobre la misma regla
+del [pitch](plan/PITCH-VENTAS.md): **no se promete nada que no se pueda demostrar en vivo**.
+
+- **Tres promesas falsas eliminadas:** "el pedido llega a la cocina en menos de 1 segundo" (nunca se
+  midió), "PWA instalable" (el manifiesto apunta a `icon-192.png` e `icon-512.png`, que **no
+  existen** en `public/`) y "base de datos propia y control total" (la base es multi-tenant
+  compartida; lo cierto es que sus datos son suyos y se exportan a CSV).
+- **Precio en la página**, que antes no estaba: $29.900/mes, $249.900/año, 30 días de prueba, 7 de
+  gracia, sin comisión ni permanencia. Es la decisión de F10 hecha pública.
+- **Sección "Lo que todavía no hace"** con seis límites. Inusual en una landing y deliberado: un
+  local que descubre los límites solo se siente engañado; uno al que se le dijeron de entrada confía
+  en el resto.
+- **Más profesional:** barra superior fija con navegación, jerarquía tipográfica real, cifras con
+  `tabular-nums`, sentence case en todos los títulos (la página estaba en Title Case, contra la
+  convención del proyecto) y muchísimo menos emoji. Se sacó el "MVP v1.0" del pie: un prospecto que
+  lee "MVP" entiende "experimento".
+- **Accesibilidad (afecta a todo el sitio):** el `viewport` tenía `maximumScale: 1` y
+  `userScalable: false`, que **bloqueaban el zoom con dos dedos**. En una carta que se lee en un
+  celular, con letra chica y a veces con poca luz, eso deja fuera a quien no ve bien (WCAG 1.4.4).
+- Verificado en el navegador a 1280 y 375 px: sin desbordes horizontales, sin errores de consola, y
+  el `meta viewport` ya permite zoom.
+- **Pendiente menor:** el manifiesto sigue apuntando a dos iconos PNG inexistentes. Hasta que haya un
+  icono de marca de verdad, la instalación como app no funciona (y ya no se promete).
 
 ### 2026-08-12 — Fase 10 (cierre): suscripción por local y pitch de ventas
 

@@ -14,11 +14,13 @@ export const metadata: Metadata = {
   },
 };
 
+// `maximumScale: 1` + `userScalable: false` bloqueaban el zoom con dos dedos en
+// todo el sitio. En una carta que se lee en un celular, con letra chica y a
+// veces con poca luz, eso deja fuera a quien no ve bien (WCAG 1.4.4). El zoom
+// se permite.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: "#f97316",
 };
 
