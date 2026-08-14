@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { DIAS_GRACIA } from "@/lib/suscripcion";
 
 /**
  * Aviso de suscripción en el dashboard.
@@ -25,8 +26,6 @@ type Estado = {
   hasta: string | null;
   dias_restantes: number | null;
 };
-
-const DIAS_GRACIA = 7;
 
 function formatearFecha(iso: string): string {
   // `iso` es una fecha sin hora; partirla a mano evita que el navegador la

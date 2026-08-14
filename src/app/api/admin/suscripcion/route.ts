@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { DIAS_PRUEBA } from "@/lib/suscripcion";
 
 // ============================================================
 // /api/admin/suscripcion — cartera de suscripciones (solo super-admin).
@@ -18,7 +19,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 //      El único camino para escribir esas columnas es este archivo.
 // ============================================================
 
-type Accion = "renovar_mes" | "renovar_anio" | "prueba_30" | "cortesia" | "cancelar";
+type Accion = "renovar_mes" | "renovar_anio" | "prueba" | "cortesia" | "cancelar";
 
 /** Hoy en Chile, como 'YYYY-MM-DD'. La suscripción se cuenta en días locales. */
 function hoyChile(): string {
@@ -127,8 +128,8 @@ export async function POST(request: Request) {
     case "renovar_anio":
       cambios = { suscripcion_estado: "activa", suscripcion_hasta: sumarMeses(desde, 12) };
       break;
-    case "prueba_30":
-      cambios = { suscripcion_estado: "prueba", suscripcion_hasta: sumarDias(hoy, 30) };
+    case "prueba":
+      cambios = { suscripcion_estado: "prueba", suscripcion_hasta: sumarDias(hoy, DIAS_PRUEBA) };
       break;
     case "cortesia":
       // Sin vencimiento: el demo y los pilotos regalados no se pausan nunca.

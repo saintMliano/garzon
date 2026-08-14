@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 
 /**
  * Cartera de suscripciones (solo super-admin).
@@ -24,7 +25,7 @@ type LocalSuscripcion = {
   situacion: string;
 };
 
-type Accion = "renovar_mes" | "renovar_anio" | "prueba_30" | "cortesia" | "cancelar";
+type Accion = "renovar_mes" | "renovar_anio" | "prueba" | "cortesia" | "cancelar";
 
 const ETIQUETA: Record<string, { texto: string; clase: string }> = {
   cortesia: { texto: "Cortesía", clase: "bg-sky-500/15 text-sky-300 border-sky-500/30" },
@@ -105,8 +106,8 @@ export default function CarteraSuscripciones({
     <div className="max-w-2xl mx-auto dash-card rounded-2xl border-2 p-5 mt-4">
       <h2 className="font-bold dash-text-primary text-base">Suscripciones</h2>
       <p className="text-[11px] dash-text-muted mt-1">
-        El local paga por fuera; acá se registra hasta cuándo está al día. Tras vencer hay 7 días de
-        gracia antes de que se pausen los pedidos.
+        El local paga por fuera; acá se registra hasta cuándo está al día. Tras vencer hay{" "}
+        {DIAS_GRACIA} días de gracia antes de que se pausen los pedidos.
       </p>
 
       {locales === null ? (
@@ -149,7 +150,7 @@ export default function CarteraSuscripciones({
                     [
                       ["renovar_mes", "+1 mes"],
                       ["renovar_anio", "+1 año"],
-                      ["prueba_30", "Prueba 30 días"],
+                      ["prueba", `Prueba ${DIAS_PRUEBA} días`],
                       ["cortesia", "Cortesía"],
                       ["cancelar", "Cancelar"],
                     ] as [Accion, string][]

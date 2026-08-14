@@ -194,6 +194,25 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-08-13 — Prueba gratis de 7 días (bajada desde 30)
+
+Decisión del dueño: la prueba pasa de 30 a **7 días**. Con los 7 de gracia que ya existían, la
+exposición máxima sin cobrar queda en **14 días**. El razonamiento comercial es que una semana es un
+ciclo completo de un local de comida —incluye su fin de semana—, así que alcanza para decidir.
+
+- **`src/lib/suscripcion.ts` (nuevo):** `DIAS_PRUEBA` y `DIAS_GRACIA` en un solo lugar. La cifra
+  estaba escrita a mano en cinco archivos y `DIAS_GRACIA` vivía duplicada entre el aviso del
+  dashboard y la base. La **regla** sigue en Postgres (`situacion_suscripcion`), que es el único
+  lado que puede cortar un pedido; acá solo están los números que la UI necesita repetir.
+- La acción del panel de super-admin pasó de `prueba_30` a `prueba` — el nombre ya no lleva la cifra
+  adentro, así que cambiarla no vuelve a exigir tocar el contrato del endpoint.
+- **Dos tests nuevos.** Uno verifica contra la base que el último día de gracia todavía recibe
+  pedidos y el siguiente no, es decir que `DIAS_GRACIA` de TypeScript coincide con lo que aplica
+  Postgres: si se separan, el dashboard le promete al dueño un plazo que el servidor no respeta.
+  El otro fija la cifra de la prueba y la suma 7 + 7 = 14.
+- Actualizados los tres lugares donde se le promete al cliente: landing, pitch y plan comercial.
+  El pitch suma una objeción nueva ("¿una semana es muy poco?") con la respuesta del ciclo semanal.
+
 ### 2026-08-13 — Landing: promesas reales, plan y accesibilidad
 
 La página principal (`/`) prometía cosas que el producto no hace. Se reescribió sobre la misma regla
@@ -203,7 +222,7 @@ del [pitch](plan/PITCH-VENTAS.md): **no se promete nada que no se pueda demostra
   midió), "PWA instalable" (el manifiesto apunta a `icon-192.png` e `icon-512.png`, que **no
   existen** en `public/`) y "base de datos propia y control total" (la base es multi-tenant
   compartida; lo cierto es que sus datos son suyos y se exportan a CSV).
-- **Precio en la página**, que antes no estaba: $29.900/mes, $249.900/año, 30 días de prueba, 7 de
+- **Precio en la página**, que antes no estaba: $29.900/mes, $249.900/año, prueba gratis y 7 de
   gracia, sin comisión ni permanencia. Es la decisión de F10 hecha pública.
 - **Sección "Lo que todavía no hace"** con seis límites. Inusual en una landing y deliberado: un
   local que descubre los límites solo se siente engañado; uno al que se le dijeron de entrada confía
@@ -242,10 +261,10 @@ comisión ni permanencia) y **7 días de gracia** antes de cortar. Plan en
 - **El dashboard nunca se bloquea**: banner escalonado (por vencer → gracia → pausada), pero
   historial y reportes siempre accesibles.
 - **`/api/admin/suscripcion`** (server-only, super-admin): cartera con la situación de cada local y
-  acciones (+1 mes, +1 año, prueba 30 días, cortesía, cancelar). Renovar extiende desde el
+  acciones (+1 mes, +1 año, prueba gratis, cortesía, cancelar). Renovar extiende desde el
   vencimiento anterior si todavía no pasó, y desde hoy si ya pasó. Las columnas de suscripción **no
   tienen GRANT UPDATE para `authenticated`**: un local no puede prorrogarse solo (dos tests).
-- **Alta de local**: nace con prueba de 30 días contada en días de Chile, y la tarjeta de
+- **Alta de local**: nace con la prueba gratis contada en días de Chile, y la tarjeta de
   credenciales lo informa.
 - **Migración `20260812202500`**: REVOKE de `PUBLIC, anon` sobre las dos funciones de suscripción.
   Postgres otorga EXECUTE a `PUBLIC` por defecto, así que el `GRANT ... TO authenticated` no

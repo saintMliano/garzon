@@ -1,8 +1,9 @@
 # Plan Comercial y Estrategia Go-To-Market (GTM) — Garzón Digital
 
-> **Actualizado 2026-08-12.** El dueño validó el precio: **un solo plan, $29.900/mes**, sin
-> comisión ni permanencia. La suscripción ya está implementada en el producto (F10): prueba de 30
-> días, 7 de gracia y corte de pedidos en el servidor. El material de venta para usar en terreno es
+> **Actualizado 2026-08-13.** El dueño validó el precio: **un solo plan, $29.900/mes**, sin
+> comisión ni permanencia. La suscripción ya está implementada en el producto (F10): prueba de **7
+> días** (bajada desde 30 el 2026-08-13), 7 de gracia y corte de pedidos en el servidor. El material
+> de venta para usar en terreno es
 > **[`PITCH-VENTAS.md`](PITCH-VENTAS.md)** — este documento es la estrategia; ese es el guion.
 
 Este documento establece la estrategia comercial táctica para conseguir los **primeros 5 a 10 clientes pagados (o pilotos activos)** para Garzón Digital en el mercado gastronómico chileno, antes de abordar la Fase 5 (Dominios Propios).
@@ -47,11 +48,11 @@ En gastronomía, los dueños/administradores están en el local temprano (10:30 
 **El Pitch "Demo en 60 Segundos":**
 1. **Llegada:** *"Hola, soy [Nombre], creador de Garzón Digital. Desarrollé un sistema chileno para que los clientes pidan desde la mesa con su teléfono sin esperar garzón y la orden suene al instante en tu cocina."*
 2. **Demo en vivo:** Llevas un sticker QR de prueba en tu teléfono/tarjeta y una tablet o tu celular en modo Dashboard Cocina. Le pides al dueño que escanee el QR con su propio teléfono, haga un pedido de prueba, y le muestras cómo suena y parpadea la pantalla de cocina en 3 segundos.
-3. **Gancho:** *"Te lo dejo instalado hoy mismo con 30 días 100% gratis. Si en un mes ves que la cocina saca los pedidos más rápido y no se pierde ninguna comanda, seguimos por $29.900 al mes. Si no te sirve, te retiras sin pagar ni un peso."*
+3. **Gancho:** *"Te lo dejo instalado hoy mismo y lo probás una semana completa, gratis, con tu fin de semana adentro. Si ves que la cocina saca los pedidos más rápido y no se pierde ninguna comanda, seguimos por $29.900 al mes. Si no te sirve, te retiras sin pagar ni un peso."*
 
 ### Canal #2: Programa "Clientes Faro" (Lighthouse Clients - 5 Pilotos Exclusivos)
 Ofrecer a los primeros 5 locales una alianza estratégica:
-- **Beneficios para el local:** 30 días de prueba gratuita + Kit de QRs impresos de regalo + acompañamiento presencial el primer día de uso.
+- **Beneficios para el local:** 7 días de prueba gratuita (una semana completa, con su fin de semana) + Kit de QRs impresos de regalo + acompañamiento presencial el primer día de uso.
 - **Requisito a cambio:** Permitirnos tomar fotos/videos del local usando el sistema, dar un testimonio breve de 30 segundos en video y darnos feedback semanal de uso.
 
 ### Canal #3: Outreach Directo & Redes Sociales
@@ -96,7 +97,7 @@ gantt
 
 ### Semana 2: Campaña de Prospección y Pilotos
 - Visitar 20 locales en horarios de bajo flujo (10:30-11:30 y 16:00-17:30).
-- Cerrar **5 locales piloto** con 30 días gratis y configuración de carta incluida.
+- Cerrar **5 locales piloto** con 7 días gratis y configuración de carta incluida.
 
 ### Semana 3: Operación & Soporte Intensivo
 - Acompañar a los locales en su primera jornada de uso.
