@@ -8,6 +8,7 @@ import {
   createAuthenticatedClient,
   type TestFixtures,
 } from "./setup";
+import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 
 /**
  * F10 — suscripción por local.
@@ -214,6 +215,37 @@ describe("Suscripción y corte de pedidos (F10)", () => {
 
     expect(error).toBeNull();
     expect(data).toEqual([]);
+  });
+
+  test("La gracia que promete la app es exactamente la que aplica la base", async () => {
+    // `DIAS_GRACIA` vive en TypeScript porque el dashboard tiene que decirle al
+    // dueño cuántos días le quedan; la regla que corta vive en Postgres. Si las
+    // dos se separan, la pantalla promete un plazo que el servidor no respeta.
+    const ultimoDiaDeGracia = await adminClient.rpc("situacion_suscripcion", {
+      p_estado: "activa",
+      p_hasta: fechaRelativa(-DIAS_GRACIA),
+    });
+    const primerDiaPausado = await adminClient.rpc("situacion_suscripcion", {
+      p_estado: "activa",
+      p_hasta: fechaRelativa(-DIAS_GRACIA - 1),
+    });
+
+    expect(ultimoDiaDeGracia.data).toBe("gracia");
+    expect(primerDiaPausado.data).toBe("pausada");
+  });
+
+  test("Un local nuevo queda con la prueba que promete el material de venta", async () => {
+    // No se llama al endpoint de alta (necesita sesión de super-admin), pero sí
+    // se fija la cifra: la exposición máxima sin cobrar es prueba + gracia.
+    expect(DIAS_PRUEBA).toBe(7);
+    expect(DIAS_PRUEBA + DIAS_GRACIA).toBe(14);
+
+    await ponerSuscripcion("prueba", fechaRelativa(DIAS_PRUEBA));
+    const { data } = await clientStaffA.rpc("estado_suscripcion", {
+      p_local_id: fixtures.localA.id,
+    });
+    expect(data![0].situacion).toBe("por_vencer");
+    expect(data![0].pedidos_habilitados).toBe(true);
   });
 
   test("El anónimo no puede consultar el estado de suscripción de nadie", async () => {

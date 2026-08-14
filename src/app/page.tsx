@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 
 /**
  * Landing de la plataforma. A diferencia del resto del sitio, acá el lector no
@@ -172,7 +173,8 @@ export default function Home() {
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> 0 % de comisión por venta
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> 30 días de prueba
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> {DIAS_PRUEBA} días de
+                prueba
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Sin contrato de permanencia
@@ -251,8 +253,9 @@ export default function Home() {
             </Link>
 
             <p className="mt-4 text-[12.5px] text-stone-500 leading-relaxed">
-              Los primeros 30 días son gratis. Si un pago se atrasa, tienes 7 días más antes de que se
-              pausen los pedidos: el servicio nunca se corta en medio de un turno.
+              La primera semana es gratis, con su fin de semana incluido. Si un pago se atrasa,
+              tienes {DIAS_GRACIA} días más antes de que se pausen los pedidos: el servicio nunca se
+              corta en medio de un turno.
             </p>
           </div>
 
@@ -313,8 +316,8 @@ export default function Home() {
             Estamos eligiendo los primeros locales
           </h2>
           <p className="mt-3 text-[14.5px] text-stone-600 max-w-lg mx-auto leading-relaxed">
-            Instalación acompañada, carta cargada por nosotros y los QR de las mesas incluidos. Si en
-            un mes no te sirve, no pagas nada.
+            Instalación acompañada, carta cargada por nosotros y los QR de las mesas incluidos.
+            Pruébalo una semana completa, con su fin de semana. Si no te sirve, no pagas nada.
           </p>
           <Link
             href={`/local/${demoSlug}`}

@@ -14,7 +14,7 @@ hace, que es tan importante como la otra.
 
 **Nadie lo está usando todavía.** Cero locales en operación real. No hay que esconderlo ni
 inventar clientes: hay que convertirlo en la oferta. *"Estoy eligiendo cinco locales para arrancar;
-te instalo todo gratis 30 días y trabajo con vos esa primera semana."* Un dueño de fuente de soda
+te lo instalo y lo probás una semana completa, gratis, conmigo al lado."* Un dueño de fuente de soda
 prefiere ser el primero y que lo atiendan bien, antes que ser el número 400 de un sistema donde
 nadie le contesta el teléfono.
 
@@ -118,8 +118,9 @@ más confianza que un "sí, claro" que se descubre en la segunda semana.
 
 - **$249.900 al año** — dos meses gratis.
 - **Sin contrato de permanencia.** Se cancela cuando quiera.
-- **30 días de prueba gratis**, y si después se atrasa un pago hay **7 días más** antes de que se
-  pausen los pedidos: nunca se corta el servicio en medio de un servicio.
+- **Una semana de prueba gratis** — siete días, con su fin de semana adentro. Y si después se
+  atrasa un pago hay **7 días más** antes de que se pausen los pedidos: nunca se corta el servicio
+  en medio de un servicio.
 - **Kit de inicio $15.000** (carta cargada por nosotros + 10 a 15 QR para las mesas). **Gratis con
   el plan anual.**
 
@@ -144,6 +145,11 @@ la miren.
 **"¿Quién más lo usa?"**
 Nadie todavía; estoy eligiendo los primeros cinco locales. Por eso la prueba es gratis y por eso te
 acompaño la primera semana en persona. Cuando tenga cien clientes ya no voy a poder hacer eso.
+
+**"¿Una semana es muy poco para probarlo?"**
+Una semana es un ciclo completo de tu local: tu lunes flojo y tu sábado lleno. Si en siete días con
+tu fin de semana adentro no viste la diferencia, un mes no te la iba a mostrar tampoco. Y si
+necesitás unos días más porque justo tuviste una semana rara, me decís y te los doy.
 
 **"¿Y si quiero irme?"**
 Te vas. No hay permanencia y tus datos son tuyos: los reportes se exportan a CSV cuando quieras,

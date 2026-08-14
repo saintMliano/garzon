@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import CarteraSuscripciones from "./cartera-suscripciones";
+import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 
 type OnboardResult = {
   localId: string;
@@ -13,7 +14,7 @@ type OnboardResult = {
   email: string;
   tempPassword: string;
   logoUrl: string | null;
-  /** Fin de la prueba de 30 días con que nace todo local nuevo (F10). */
+  /** Fin de la prueba gratis con que nace todo local nuevo (F10). */
   pruebaHasta: string | null;
   menuUrl: string;
   dashboardUrl: string;
@@ -306,7 +307,7 @@ export default function AdminOnboardPage() {
 
               {result.pruebaHasta && (
                 <p className="text-xs dash-text-muted">
-                  Prueba gratis de 30 días: recibe pedidos hasta el{" "}
+                  Prueba gratis de {DIAS_PRUEBA} días: recibe pedidos hasta el{" "}
                   <strong className="dash-text-primary">
                     {(() => {
                       const [a, m, d] = result.pruebaHasta.split("-").map(Number);
@@ -316,7 +317,7 @@ export default function AdminOnboardPage() {
                       });
                     })()}
                   </strong>
-                  , más 7 días de gracia.
+                  , más {DIAS_GRACIA} días de gracia.
                 </p>
               )}
 

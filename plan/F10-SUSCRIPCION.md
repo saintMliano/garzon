@@ -10,6 +10,7 @@ por transferencia y acá solo se registra hasta cuándo está al día.
 |---|---|
 | Empaquetado | **Un solo plan.** $29.900/mes o $249.900/año, sin comisión por venta, sin permanencia. |
 | Impago | **7 días de gracia**, después se pausan los pedidos nuevos. |
+| Prueba gratis | **7 días** (bajada desde 30 el 2026-08-13). Con la gracia, la exposición máxima sin cobrar es de **14 días**. |
 
 Un solo plan porque una venta puerta a puerta no aguanta una tabla comparativa, y porque inventar
 un plan barato obligaría a apagar funciones que ya están construidas —empezando por los reportes,
@@ -23,7 +24,7 @@ que es justo lo que más le sirve a quien menos sabe leer su negocio.
 | F10.7 | Corte de pedidos en el servidor | [x] |
 | F10.8 | Aviso de vencimiento en el dashboard | [x] |
 | F10.9 | Cartera de suscripciones del super-admin | [x] |
-| F10.10 | Prueba de 30 días al dar de alta | [x] |
+| F10.10 | Prueba gratis al dar de alta | [x] |
 | F10.11 | Tests | [x] |
 | F10.12 | Pitch de ventas | [x] |
 

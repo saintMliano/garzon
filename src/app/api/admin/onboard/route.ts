@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes, randomUUID } from "crypto";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { DIAS_PRUEBA } from "@/lib/suscripcion";
 
 const MIME_EXT: Record<string, string> = {
   "image/png": "png",
@@ -116,14 +117,18 @@ export async function POST(request: Request) {
   }
   const ownerId = created.user.id;
 
-  // 4c. Crear el local, con la prueba de 30 días ya corriendo (F10). Se fija
-  //     acá y no por default de la columna para que la fecha se cuente en días
-  //     de Chile, que es como se la vamos a contar al cliente.
+  // 4c. Crear el local, con la prueba ya corriendo (F10). Se fija acá y no por
+  //     default de la columna para que la fecha se cuente en días de Chile, que
+  //     es como se la vamos a contar al cliente.
+  //
+  //     Siete días: una semana completa, con su fin de semana, que es el ciclo
+  //     real de un local de comida. Sumados los 7 de gracia, la exposición
+  //     máxima sin cobrar es de 14 días.
   const hoyChile = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
   const finPrueba = (() => {
     const [a, m, d] = hoyChile.split("-").map(Number);
     const base = new Date(Date.UTC(a, m - 1, d));
-    base.setUTCDate(base.getUTCDate() + 30);
+    base.setUTCDate(base.getUTCDate() + DIAS_PRUEBA);
     return base.toISOString().slice(0, 10);
   })();
 
