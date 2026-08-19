@@ -257,6 +257,8 @@ export type Database = {
           numero_pedido: number
           propina: number
           propina_pct: number
+          telefono: string | null
+          tipo_entrega: string
           total: number
           updated_at: string | null
         }
@@ -272,6 +274,8 @@ export type Database = {
           numero_pedido: number
           propina?: number
           propina_pct?: number
+          telefono?: string | null
+          tipo_entrega?: string
           total: number
           updated_at?: string | null
         }
@@ -287,6 +291,8 @@ export type Database = {
           numero_pedido?: number
           propina?: number
           propina_pct?: number
+          telefono?: string | null
+          tipo_entrega?: string
           total?: number
           updated_at?: string | null
         }
@@ -371,6 +377,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      borrar_telefonos_antiguos: { Args: { p_dias?: number }; Returns: number }
       crear_pedido: {
         Args: {
           p_client_request_id?: string
@@ -380,6 +387,8 @@ export type Database = {
           p_nombre: string
           p_notas: string
           p_propina_pct?: number
+          p_telefono?: string
+          p_tipo_entrega?: string
         }
         Returns: string
       }

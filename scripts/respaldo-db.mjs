@@ -23,7 +23,7 @@
  *   npm run db:backup
  */
 import { createClient } from "@supabase/supabase-js";
-import { mkdirSync, existsSync, writeFileSync, readFileSync, statSync } from "fs";
+import { mkdirSync, existsSync, writeFileSync, readFileSync, statSync, readdirSync, unlinkSync } from "fs";
 import dotenv from "dotenv";
 
 // quiet: el banner de dotenv iría a stdout y se colaría dentro de los
@@ -51,6 +51,12 @@ const TABLAS = [
   { nombre: "local_staff", clave: ["local_id", "user_id"] },
   { nombre: "platform_admins", clave: ["user_id"] },
 ];
+
+/**
+ * Cuantos respaldos se conservan. Tres alcanzan para volver atras de un error
+ * reciente; mas alla de eso solo son copias de datos personales acumulandose.
+ */
+const RESPALDOS_A_CONSERVAR = 3;
 
 const DIR = "backups";
 if (!existsSync(DIR)) mkdirSync(DIR, { recursive: true });
@@ -133,7 +139,26 @@ async function main() {
   }
   const bytes = statSync(destino).size;
 
+  // Rotacion. Desde que el respaldo puede contener telefonos de comensales, cada
+  // archivo viejo es una copia mas de datos personales viviendo en el disco sin
+  // que nadie la mire. Se conservan los ultimos RESPALDOS_A_CONSERVAR.
+  const previos = readdirSync(DIR)
+    .filter((f) => f.endsWith("-datos.json"))
+    .sort()
+    .reverse();
+  const sobrantes = previos.slice(RESPALDOS_A_CONSERVAR);
+  for (const viejo of sobrantes) {
+    try {
+      unlinkSync(`${DIR}/${viejo}`);
+    } catch {
+      // Si no se puede borrar uno, no vale la pena tumbar el respaldo recien hecho.
+    }
+  }
+
   console.log(`✓ ${destino} (${(bytes / 1024).toFixed(1)} KB)`);
+  if (sobrantes.length) {
+    console.log(`  Rotacion: ${sobrantes.length} respaldo(s) antiguo(s) eliminado(s).`);
+  }
   console.log(`  ${resumen.join(" · ")}`);
   console.log("\n⚠️  No incluye contraseñas, archivos de Storage ni el esquema.");
   console.log("✅ Respaldo listo. Ahora sí podés correr `npm run db:push`.");

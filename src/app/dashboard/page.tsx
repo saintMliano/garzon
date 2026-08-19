@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice, orderNumber } from "@/lib/utils";
+import { formatearTelefonoChileno } from "@/lib/telefono";
 import type { OrderStatus, PedidoConItems } from "@/types/database";
 import AvisoSuscripcion from "./aviso-suscripcion";
 
@@ -132,6 +133,12 @@ export default function DashboardPage() {
   // Toast de deshacer tras marcar un pedido como entregado.
   const [undoPedido, setUndoPedido] = useState<{ id: string; numero: number } | null>(null);
 
+  // Pedido cuyo teléfono está a la vista. Es UNO solo, no un conjunto: la
+  // pantalla de la cocina está a la vista del público (y a veces del comensal
+  // que espera), así que el número se muestra a pedido, de a uno y sin
+  // persistirse — al recargar o cambiar de local vuelve a estar oculto.
+  const [telefonoVisibleId, setTelefonoVisibleId] = useState<string | null>(null);
+
   // Espejos en ref de "lo vigente ahora". `localIdRef` deja descartar respuestas
   // en vuelo del local anterior; `showCerradosRef` deja que el handler de
   // realtime consulte el panel sin entrar en las dependencias del efecto (si
@@ -203,6 +210,9 @@ export default function DashboardPage() {
     // Sin esto, "Deshacer" seguía visible tras cambiar de local: reabría el
     // pedido del local anterior y en pantalla no pasaba nada.
     setUndoPedido(null);
+    // Un teléfono revelado no puede sobrevivir al cambio de local: es el dato
+    // de un cliente de otra cocina.
+    setTelefonoVisibleId(null);
     if (typeof window !== "undefined") {
       localStorage.setItem("garzon_selected_local_id", chosen.id);
     }
@@ -775,6 +785,16 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between mb-2.5">
                           <div className="flex items-center gap-2">
                             <span className="text-base font-black dash-text-primary">{orderNumber(pedido.numero_pedido)}</span>
+                            {/* Un retiro no tiene mesa: si no se distingue de un
+                                golpe de vista, el plato termina esperando en un
+                                mesón que nadie atiende. Ámbar, el mismo semántico
+                                que ya usan las notas y el temporizador para decir
+                                "ojo con esto"; nunca el color de marca del local. */}
+                            {pedido.tipo_entrega === "retiro" && (
+                              <span className="px-2 py-0.5 rounded-lg bg-amber-950/60 text-amber-300 text-[11px] font-bold">
+                                🛍 Retiro
+                              </span>
+                            )}
                             {pedido.mesa && (
                               <span className="px-2 py-0.5 rounded-lg dash-bg-surface text-[11px] font-semibold dash-text-secondary">
                                 {pedido.mesa}
@@ -789,6 +809,57 @@ export default function DashboardPage() {
                           <span className="w-6 h-6 rounded-full dash-bg-surface flex items-center justify-center text-[11px]">👤</span>
                           {pedido.nombre_cliente}
                         </p>
+
+                        {/* Contacto de quien viene a retirar.
+                            El número NO se pinta junto al nombre: la pantalla de
+                            cocina está encendida todo el turno y a la vista del
+                            público, así que tener teléfonos de clientes expuestos
+                            de forma permanente no corresponde. Hay que pedirlo.
+                            Va acá arriba y no en la fila de acciones de abajo
+                            porque esa fila decide el estado del pedido: mezclar un
+                            "llamar" con "Rechazar"/"Entregar" invita al toque
+                            equivocado en pleno servicio. */}
+                        {pedido.tipo_entrega === "retiro" && pedido.telefono && (
+                          <div className="mb-2.5">
+                            <button
+                              onClick={() =>
+                                setTelefonoVisibleId((actual) => (actual === pedido.id ? null : pedido.id))
+                              }
+                              className="px-2.5 py-1.5 rounded-lg dash-bg-surface text-[11px] font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+                            >
+                              {telefonoVisibleId === pedido.id ? "Ocultar contacto" : "📞 Contactar"}
+                            </button>
+
+                            {telefonoVisibleId === pedido.id && (
+                              <div className="mt-2 dash-bg-surface rounded-xl px-3 py-2 flex flex-wrap items-center gap-2">
+                                <span className="text-[12px] font-semibold dash-text-primary tabular-nums">
+                                  {formatearTelefonoChileno(pedido.telefono)}
+                                </span>
+                                <div className="flex items-center gap-1.5 ml-auto">
+                                  <a
+                                    href={`tel:${pedido.telefono}`}
+                                    className="px-2.5 py-1.5 rounded-lg bg-stone-700 text-white text-[11px] font-bold hover:opacity-80 transition-opacity"
+                                  >
+                                    📞 Llamar
+                                  </a>
+                                  {/* `wa.me` quiere el número SIN el `+`, al revés
+                                      que `tel:`, que lo necesita para no depender
+                                      del prefijo local de la tablet. */}
+                                  <a
+                                    href={`https://wa.me/${pedido.telefono.replace(/^\+/, "")}?text=${encodeURIComponent(
+                                      `Hola ${pedido.nombre_cliente} 👋 Tu pedido ${orderNumber(pedido.numero_pedido)} de ${localNombre} ya está listo para retirar.`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2.5 py-1.5 rounded-lg bg-green-700 text-white text-[11px] font-bold hover:opacity-80 transition-opacity"
+                                  >
+                                    💬 WhatsApp
+                                  </a>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Items */}
                         <div className="space-y-1.5 mb-3">

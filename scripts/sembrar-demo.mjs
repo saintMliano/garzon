@@ -222,6 +222,11 @@ async function sembrarDemo() {
           client_request_id: `${PREFIJO}-${String(n).padStart(4, "0")}-4000-8000-${String(n).padStart(12, "0")}`,
           propina,
           propina_pct,
+          // Los pedidos demo NO llevan telefono, a propósito: son datos de
+          // exhibicion y 7.900 numeros que parecen reales serian un problema
+          // esperando. `telefono` queda NULL y `tipo_entrega` cae en su default.
+          // Si alguna vez hace falta mostrar un retiro en la demo, poner
+          // `tipo_entrega: "retiro"` SIN telefono.
         },
         items,
       });

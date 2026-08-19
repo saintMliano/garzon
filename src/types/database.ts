@@ -68,6 +68,16 @@ export interface Pedido {
     notas: string | null;
     created_at: string;
     updated_at: string;
+    /** Propina sugerida (F10). NO va incluida en `total`: es plata del personal. */
+    propina: number;
+    propina_pct: number;
+    /**
+     * Móvil del comensal en E.164 (`+56912345678`), solo en pedidos de retiro.
+     * Es un DATO PERSONAL: se borra solo a los 7 días y no sale del local que
+     * recibió el pedido. No lo agregues a exportaciones ni a RPCs públicas.
+     */
+    telefono: string | null;
+    tipo_entrega: "mesa" | "retiro";
 }
 
 export interface PedidoItem {
