@@ -5,6 +5,7 @@ import {
   normalizarTelefonoChileno,
   formatearTelefonoChileno,
   formatearMientrasEscribe,
+  enmascararTelefono,
 } from "@/lib/telefono";
 
 const E164 = "+56912345678";
@@ -153,4 +154,28 @@ describe("Teléfono móvil chileno", () => {
     const visible = formatearMientrasEscribe("+56 9 8765 4321");
     expect(normalizarTelefonoChileno(visible)).toBe("+56987654321");
   });
+
+describe("enmascararTelefono", () => {
+  test("deja ver los últimos cuatro y nada más", () => {
+    expect(enmascararTelefono("+56912345678")).toBe("+56 9 ---- 5678");
+    expect(enmascararTelefono("9 1234 5678")).toBe("+56 9 ---- 5678");
+  });
+
+  test("NUNCA deja cinco dígitos seguidos", () => {
+    // Es la misma regla que hace cumplir el CHECK de `supresiones_telefono`:
+    // si el enmascarado dejara pasar el número, la constancia de un borrado
+    // conservaría justo el dato que se acaba de borrar.
+    for (let i = 0; i < 500; i++) {
+      const nacional = "9" + String(i * 199_991).padStart(8, "0").slice(0, 8);
+      const enmascarado = enmascararTelefono(`+56${nacional}`);
+      expect(enmascarado, `${nacional} quedó legible`).not.toMatch(/[0-9]{5,}/);
+    }
+  });
+
+  test("no inventa nada con una entrada inválida", () => {
+    expect(enmascararTelefono("322123456")).toBe("(número inválido)");
+    expect(enmascararTelefono("")).toBe("(número inválido)");
+  });
+});
+
 });

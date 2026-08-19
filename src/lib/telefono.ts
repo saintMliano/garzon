@@ -108,3 +108,21 @@ export function formatearMientrasEscribe(entrada: string): string {
   }
   return agrupar(digitos.slice(0, LARGO_NACIONAL));
 }
+
+/**
+ * De `+56912345678` a `+56 9 ---- 5678`.
+ *
+ * Se usa para dejar constancia de una supresión sin conservar el dato que se
+ * acaba de borrar. Guardar el número completo "para saber a quién le borramos"
+ * anularía el borrado: el teléfono seguiría vivo, mudado de tabla.
+ *
+ * Los ultimos cuatro digitos alcanzan para reconciliar con el reclamo de la
+ * persona y no reconstruyen el numero: quedan 100.000 combinaciones posibles
+ * para los digitos ocultos.
+ */
+export function enmascararTelefono(e164: string): string {
+  const normalizado = normalizarTelefonoChileno(e164);
+  if (!normalizado) return "(número inválido)";
+  const nacional = normalizado.slice(1 + PREFIJO_PAIS.length);
+  return `+${PREFIJO_PAIS} ${nacional.slice(0, 1)} ---- ${nacional.slice(5, 9)}`;
+}

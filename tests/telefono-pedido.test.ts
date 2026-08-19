@@ -202,4 +202,51 @@ describe("Teléfono del comensal", () => {
     const staff = await clientStaffA.rpc("borrar_telefonos_antiguos", { p_dias: 0 });
     expect(staff.error).not.toBeNull();
   });
+
+  describe("Bitácora de supresiones", () => {
+    const creadas: string[] = [];
+
+    afterAll(async () => {
+      // La tabla es de producción: lo que siembre un test se lo lleva el test.
+      if (creadas.length) {
+        await adminClient.from("supresiones_telefono").delete().in("id", creadas);
+      }
+    });
+
+    test("La base RECHAZA guardar el número completo en la constancia", async () => {
+      // Es el corazón del diseño: si la constancia pudiera contener el teléfono,
+      // "borrar" sería mudar el dato de tabla. El CHECK lo impide aunque el
+      // código de la aplicación se equivoque.
+      const { error } = await adminClient.from("supresiones_telefono").insert({
+        telefono_enmascarado: "+56912345678",
+        pedidos_afectados: 1,
+      });
+      expect(error).not.toBeNull();
+    });
+
+    test("Sí acepta el enmascarado", async () => {
+      const { data, error } = await adminClient
+        .from("supresiones_telefono")
+        .insert({ telefono_enmascarado: "+56 9 ---- 5678", pedidos_afectados: 3 })
+        .select("id")
+        .single();
+      expect(error).toBeNull();
+      if (data) creadas.push(data.id);
+    });
+
+    test("Nadie desde el navegador la lee ni la escribe", async () => {
+      // RLS activada y sin políticas: ni el anónimo ni una sesión de staff.
+      const { data: anonLee } = await anonClient.from("supresiones_telefono").select("id");
+      expect(anonLee ?? []).toEqual([]);
+
+      const { data: staffLee } = await clientStaffA.from("supresiones_telefono").select("id");
+      expect(staffLee ?? []).toEqual([]);
+
+      const { error: staffEscribe } = await clientStaffA
+        .from("supresiones_telefono")
+        .insert({ telefono_enmascarado: "+56 9 ---- 0000", pedidos_afectados: 0 });
+      expect(staffEscribe).not.toBeNull();
+    });
+  });
+
 });

@@ -316,7 +316,7 @@ de delivery, que se quedan con el cliente.
 | T5 | Cocina: "Contactar" con llamar y WhatsApp (`wa.me` + mensaje pre-escrito), solo en retiros | TS | **[x]** |
 | T6 | Borrado automático a los 7 días (`pg_cron`) + test que compruebe que borra | SQL | **[x]** |
 | T7 | Respaldo: rotación (conservar 3) y limpieza de los truncados; seeder demo con `telefono NULL` | Scripts | **[x]** |
-| T8 | Búsqueda y borrado por teléfono en el panel de super-admin | TS | **pendiente** |
+| T8 | Búsqueda y borrado por teléfono en el panel de super-admin | TS | **[x]** |
 | T9 | Página `/privacidad` + enlace desde checkout y landing | TS | **[x]** (borrador, falta abogado) |
 | T10 | Tests: aislamiento, que no se filtre por `get_order_status`, que el staff no lo escriba, que no salga en el CSV | Tests | **[x]** |
 | — | **Cláusulas de encargo y revisión legal** | Fuera del código | abogado |
@@ -324,9 +324,26 @@ de delivery, que se quedan con el cliente.
 
 ### Estado (2026-08-19)
 
-**T1 a T7, T9 y T10 implementadas y mergeadas.** Queda T8 (búsqueda y borrado por teléfono desde el
-panel), que es la herramienta para responder una solicitud de supresión — hoy la cubre parcialmente
-el borrado automático a los 7 días, pero hay que construirla antes de tener volumen real.
+**T1 a T10 implementadas y mergeadas.** Lo que queda es lo que no es código: completar los cuatro
+marcadores `[CONTACTO POR DEFINIR]` de `/privacidad` y la revisión legal del contrato de encargo.
+
+**Sobre T8 y la tensión con §7.** Este documento dice que NO haría un buscador por teléfono, porque
+ver "todos los pedidos de este número" es perfilamiento de clientes. Sigue siendo cierto para el
+*staff* del local. La herramienta que se construyó es otra cosa y el diseño lo fuerza:
+
+- Es **solo del super-admin**, por endpoint server-only con service-role.
+- **No acepta búsqueda parcial.** El botón no se habilita hasta que el número está completo y es
+  válido. Sin número traído desde afuera —desde el reclamo— no hay nada que recorrer.
+- **No muestra el contenido de los pedidos ni el nombre** de quien los hizo: para atender una
+  supresión alcanza con cuántos hay y en qué local.
+- **Borra el teléfono, no el pedido.** La venta es la contabilidad del local y no le pertenece a
+  quien pide la supresión.
+- Deja **constancia** en `supresiones_telefono` con el teléfono **enmascarado** (`+56 9 ---- 5678`).
+  Guardarlo entero "para saber a quién le borramos" habría anulado el borrado, dejando el dato vivo
+  en otra tabla. Un `CHECK` en la base rechaza cualquier texto con 5 dígitos seguidos, así que la
+  regla se cumple aunque el código de la aplicación se equivoque.
+- El borrado se ofrece **por local** (lo normal: el responsable es el local que recibió el reclamo)
+  y globalmente como excepción explícita.
 
 Dos cosas que aparecieron al implementar y que el plan no anticipaba:
 
