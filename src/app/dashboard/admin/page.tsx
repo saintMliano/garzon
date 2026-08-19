@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import CarteraSuscripciones from "./cartera-suscripciones";
+import SupresionTelefono from "./supresion-telefono";
 import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 
 type OnboardResult = {
@@ -425,6 +426,8 @@ export default function AdminOnboardPage() {
         </div>
 
         <CarteraSuscripciones onError={setErrorMsg} />
+
+        <SupresionTelefono onError={setErrorMsg} />
       </main>
 
       {/* Toast de error, discreto y auto-ocultable */}

@@ -96,6 +96,7 @@ El cliente anónimo **no** toca las tablas directamente; opera vía funciones `S
 - `src/app/dashboard/admin/page.tsx`: alta de locales (solo super-admin; el link se oculta a quien no lo es). Muestra las credenciales del dueño y hasta cuándo corre su prueba gratis.
 - `src/app/dashboard/admin/cartera-suscripciones.tsx` (F10): cartera de suscripciones del super-admin (renovar, cortesía, cancelar).
 - `src/app/api/admin/onboard/route.ts`: endpoint server-only de onboarding (usa el cliente admin / service-role).
+- `src/app/api/admin/telefono/route.ts`: endpoint server-only del **derecho de supresión**. Exige número completo (no hay búsqueda parcial), borra el teléfono conservando el pedido, y deja constancia enmascarada en `supresiones_telefono`.
 - `src/app/api/admin/suscripcion/route.ts` (F10): endpoint server-only de la cartera. **Único camino de escritura** de las columnas `plan`/`suscripcion_*`, que no tienen GRANT UPDATE para `authenticated`.
 - `src/app/local/[slug]/`: Ruta dinámica del cliente.
   - `page.tsx` — **Server Component** (F7): trae el menú con `get_menu_publico`, expone `generateMetadata` por local, lee `?mesa=` del QR y devuelve **404 real** si el slug no existe.
@@ -204,6 +205,32 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-19 — Supresión de datos por teléfono (panel de super-admin)
+
+La herramienta para responder cuando un comensal pide que borren su teléfono. Cierra T8 de
+[`plan/TELEFONO-COMENSAL.md`](plan/TELEFONO-COMENSAL.md).
+
+- **`/api/admin/telefono`** (server-only, super-admin): `GET` consulta y `POST` borra. Verificado que
+  sin sesión devuelve **401 antes de mirar el número**, así que ni siquiera filtra si un teléfono es
+  válido.
+- **No es un buscador de clientes, y el diseño lo impide.** Solo acepta el número **completo y
+  válido** —sin búsqueda parcial no hay directorio que recorrer—, no devuelve el contenido de los
+  pedidos ni el nombre de quien los hizo, y solo lo puede usar el super-admin. Este documento y el
+  plan decían que un buscador por teléfono para el *staff* sería perfilamiento; sigue siendo cierto
+  y por eso el staff no lo tiene.
+- **Borra el teléfono, no el pedido.** La venta es la contabilidad del local y no le pertenece a
+  quien pide la supresión.
+- **`supresiones_telefono`**: constancia de cada supresión con el teléfono **enmascarado**
+  (`+56 9 ---- 5678`), cuántos pedidos alcanzó, quién y cuándo. Guardarlo entero "para saber a quién
+  le borramos" habría anulado el borrado, mudando el dato de tabla. Un `CHECK` rechaza cualquier
+  texto con **5 dígitos seguidos**, así que la regla se cumple aunque la aplicación se equivoque —
+  hay un test que lo comprueba insertando un número completo y esperando el rechazo.
+- La tabla tiene **RLS activada y CERO políticas**: ni el anónimo ni una sesión de staff la leen o
+  escriben. Solo el service-role, que la salta.
+- El borrado se ofrece **por local** (lo normal: el responsable es el local que recibió el reclamo) y
+  globalmente como excepción explícita.
+- `npm test` **132/132** (126 + 6 nuevos), `tsc`, `eslint` y `build` limpios.
 
 ### 2026-08-19 — Teléfono del comensal (pedidos de retiro)
 

@@ -372,6 +372,41 @@ export type Database = {
           },
         ]
       }
+      supresiones_telefono: {
+        Row: {
+          actor: string | null
+          created_at: string
+          id: string
+          local_id: string | null
+          pedidos_afectados: number
+          telefono_enmascarado: string
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          id?: string
+          local_id?: string | null
+          pedidos_afectados: number
+          telefono_enmascarado: string
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          id?: string
+          local_id?: string | null
+          pedidos_afectados?: number
+          telefono_enmascarado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supresiones_telefono_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
