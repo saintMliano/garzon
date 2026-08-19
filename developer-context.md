@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-13):** Fases 5 a 10 completas (F10 cierra con suscripción por local y pitch de ventas) y la landing reescrita con las promesas reales y el plan. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-13):** Fases 5 a 10 completas (F10 cierra con suscripción por local y pitch de ventas), landing reescrita con las promesas reales y el plan, y prueba gratis bajada a 7 días. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -85,21 +85,29 @@ El cliente anónimo **no** toca las tablas directamente; opera vía funciones `S
 > **Efecto secundario de la reapertura:** el ciclo `entregado → listo → entregado` reescribe `updated_at` vía el trigger `set_updated_at`, así que esa columna **no** es una base confiable para analíticas de tiempos. La auditoría de cambios de estado que la reemplaza va en la Fase 8.
 
 ### Estructura de Carpetas Clave
-- `src/app/page.tsx`: Landing page comercial que presenta el servicio.
+- `src/app/page.tsx`: Landing comercial. Le habla al **dueño del local**, no al comensal: qué hace el sistema, cuánto cuesta y qué **no** hace. Rige la misma regla que el pitch — no se promete nada que no se pueda demostrar en vivo — así que se actualiza el mismo día que el producto gana o pierde una función.
 - `src/app/login/page.tsx`: Login del personal de cocina (email + contraseña).
-- `src/proxy.ts`: Middleware de Next 16 (convención `proxy`, antes `middleware`). Refresca la sesión y **redirige a `/login` si se accede a `/dashboard` sin sesión**.
+- `src/middleware.ts`: Middleware de Next. Refresca la sesión y **redirige a `/login` si se accede a `/dashboard` sin sesión**. Solo llama a `auth.getUser()` en rutas de `/dashboard` o si hay cookies `sb-*`, para que una visita pública al menú no pague latencia de autenticación. *(Durante un tiempo se llamó `src/proxy.ts`; volvió a `middleware.ts` en la consolidación T5.)*
 - `src/app/dashboard/page.tsx`: Tablero Kanban de cocina. Usa el cliente autenticado, resuelve el `local_id` del usuario vía `local_staff`, y **filtra todas las consultas y la suscripción realtime por `local_id`**. Incluye botón de cerrar sesión y muestra el nombre real del local.
 - `src/app/dashboard/menu/page.tsx`: gestión self-service del menú (categorías, productos, precios, disponibilidad, fotos).
-- `src/app/dashboard/config/page.tsx`: identidad visual del local (nombre, slogan, colores, logo).
-- `src/app/dashboard/admin/page.tsx`: alta de locales (solo super-admin; el link se oculta a quien no lo es).
+- `src/app/dashboard/config/page.tsx`: identidad visual del local (nombre, slogan, colores, logo), con validación de contraste WCAG (F9).
+- `src/app/dashboard/reportes/page.tsx` (F6): cierre de caja. Rangos con presets, tarjetas de venta/ticket/propinas, serie por día que pasa a **meses** sobre 62 días, top de productos, tiempos de cocina y export CSV.
+- `src/app/dashboard/aviso-suscripcion.tsx` (F10): banner escalonado de vencimiento, en las cuatro pantallas del dashboard. **Nunca bloquea nada**: si falla la consulta, se calla.
+- `src/app/dashboard/admin/page.tsx`: alta de locales (solo super-admin; el link se oculta a quien no lo es). Muestra las credenciales del dueño y hasta cuándo corre su prueba gratis.
+- `src/app/dashboard/admin/cartera-suscripciones.tsx` (F10): cartera de suscripciones del super-admin (renovar, cortesía, cancelar).
 - `src/app/api/admin/onboard/route.ts`: endpoint server-only de onboarding (usa el cliente admin / service-role).
+- `src/app/api/admin/suscripcion/route.ts` (F10): endpoint server-only de la cartera. **Único camino de escritura** de las columnas `plan`/`suscripcion_*`, que no tienen GRANT UPDATE para `authenticated`.
 - `src/app/local/[slug]/`: Ruta dinámica del cliente.
   - `page.tsx` — **Server Component** (F7): trae el menú con `get_menu_publico`, expone `generateMetadata` por local, lee `?mesa=` del QR y devuelve **404 real** si el slug no existe.
   - `menu-cliente.tsx` — toda la interactividad (búsqueda, pills, carrito, reconciliación de precios).
   - `error.tsx` / `not-found.tsx` — fallo de carga (con reintento) y local inexistente.
   - `checkout-modal.tsx` (llama `crear_pedido`), `order-status.tsx` (seguimiento vía `get_order_status` + **polling cada 4s**, 15s al llegar a `listo`, hasta `entregado`/`cancelado`), `cart-sheet.tsx`, `layout.tsx` (envuelve con `CartProvider`).
 - `src/lib/menu-publico.ts`: lectura del menú en el servidor, envuelta en `cache()` para que la página y `generateMetadata` compartan un solo viaje a la base.
+- `src/lib/color.ts` (F9): contraste WCAG y las **cuatro** variables de marca (`--brand`, `--brand-texto`, `--accent`, `--accent-legible`). Texto sobre `var(--brand)` usa `var(--brand-texto)`, nunca blanco fijo.
+- `src/lib/suscripcion.ts` (F10): `DIAS_PRUEBA` y `DIAS_GRACIA`, las dos cifras que la interfaz repite. **La regla que corta vive en Postgres** (`situacion_suscripcion`); acá solo están los números, y un test verifica que no se separen.
 - `src/lib/cart-context.tsx`: Contexto del carrito, **persistido en `localStorage`** por slug.
+- `src/lib/utils.ts`: helpers compartidos — `formatPrice` (pesos chilenos, sin decimales), `normalizar` (para buscar sin tildes) y `orderNumber`.
+- `src/app/layout.tsx`: layout raíz — metadata base, manifiesto y `viewport`. **El `viewport` permite zoom**: fijarlo con `maximumScale`/`userScalable` dejaba fuera a quien no ve bien (WCAG 1.4.4).
 - `src/lib/supabase.ts` / `src/lib/supabase/{client,server}.ts` / `src/lib/supabase/admin.ts`: clientes anónimo, autenticados y admin (ver arriba).
 - `supabase/migrations/`: **migraciones versionadas (desde el 2026-08-11).** Se aplican con
   `npm run db:push`, que corre solo las pendientes y deja registro en la propia base
@@ -109,6 +117,9 @@ El cliente anónimo **no** toca las tablas directamente; opera vía funciones `S
 - `scripts/`: utilidades de operación que corren con la service-role key (**solo local, nunca en el cliente**):
   - `limpiar-datos-test.mjs` — borra locales `test-local-*` y usuarios `@test.garzon` huérfanos. Dry-run por defecto; `--borrar` ejecuta.
   - `crear-cuenta-local.mjs <slug> <email> [password]` — crea/repara la cuenta de acceso de un local que ya existe y verifica con un login real. Para altas nuevas usar `/dashboard/admin`.
+  - `respaldo-db.mjs` (`npm run db:backup`) — volcado de datos a JSON. **Se corre siempre antes de `db:push`**: el plan gratis no tiene Point-in-Time Recovery. **Pagina** (PostgREST corta en 1000 filas sin avisar), contrasta contra el conteo exacto de cada tabla y relee el archivo escrito para verificarlo.
+  - `sembrar-demo.mjs` — siembra un año de pedidos verosímiles en `el-lalo` para que los reportes se puedan mostrar. Marcados con prefijo `de70de70-` en `client_request_id`; `--borrar` los quita. Dry-run por defecto y semilla fija.
+  - `con-env.mjs` — pasa los secretos por variables de entorno a la CLI de Supabase, en vez de dejarlos en la línea de comando.
   - `seed-catirekaffe.js` — semilla del menú de un cliente concreto.
 
 ---
@@ -117,7 +128,7 @@ El cliente anónimo **no** toca las tablas directamente; opera vía funciones `S
 
 El principio rector tras la auditoría: **el servidor decide, el navegador no.** Las tres decisiones sensibles (identidad, precio y qué se puede modificar) viven en Postgres, no en el cliente.
 
-- **Autenticación de cocina:** `/dashboard` requiere sesión (Supabase Auth). Sin login, `proxy.ts` redirige a `/login`.
+- **Autenticación de cocina:** `/dashboard` requiere sesión (Supabase Auth). Sin login, `src/middleware.ts` redirige a `/login`.
 - **Aislamiento multi-tenant (RLS):** las políticas públicas de `pedidos` y `pedido_items` fueron **eliminadas**. Ahora:
   - Solo el **staff autenticado** puede leer/actualizar los pedidos **de su propio local** (RLS que verifica `auth.uid()` contra `local_staff`).
   - El **cliente anónimo** solo puede crear pedidos y consultar el estado del suyo, a través de las RPCs. No puede leer pedidos ajenos, modificarlos ni insertarlos directamente.
@@ -193,6 +204,27 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-13 — Sincronización de la documentación
+
+Auditoría de este documento y de `CLAUDE.md` contra el código real, archivo por archivo. La bitácora
+venía al día, pero las **secciones de referencia** —las que una sesión nueva lee primero— se habían
+quedado en la Fase 5. Encontrado y corregido:
+
+- **`src/proxy.ts` no existe.** Se renombró a `src/middleware.ts` en la consolidación T5 y la entrada
+  fechada lo registraba, pero la estructura de carpetas y la sección de seguridad seguían nombrando
+  el archivo viejo, igual que `CLAUDE.md`. Era el único error de hecho: un archivo inexistente
+  citado como vigente en dos documentos.
+- **Faltaban seis archivos en la estructura**, entre ellos `dashboard/reportes/page.tsx` —la página
+  de reportes completa, desde F6— y los cuatro de suscripción de F10, más `lib/color.ts` y
+  `lib/suscripcion.ts`.
+- **Faltaban tres scripts** en la lista de operación: `respaldo-db.mjs` (con su advertencia de
+  paginación), `sembrar-demo.mjs` y `con-env.mjs`.
+- El pitch decía 89 pruebas automáticas; son 91.
+- Las descripciones de la landing y de `/dashboard/admin` describían versiones anteriores.
+
+Las menciones a `proxy.ts` dentro de entradas fechadas de julio **se dejaron intactas**: ahí el
+archivo sí se llamaba así, y una bitácora que se reescribe deja de ser una bitácora.
 
 ### 2026-08-13 — Prueba gratis de 7 días (bajada desde 30)
 

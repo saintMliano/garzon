@@ -17,7 +17,7 @@ El cliente escanea un QR en la mesa y pide desde `/local/[slug]` (menú público
 - **Multi-tenant single-DB:** todo cuelga de `local_id`; el aislamiento lo garantiza **RLS por local** (no confíes en filtros de cliente). Nunca introduzcas un camino que permita ver/editar datos de otro local.
 - **El servidor decide, el cliente no:** el total de los pedidos se calcula en Postgres (RPC `crear_pedido`, `SECURITY DEFINER`); los pedidos se crean/leen solo por RPC o por staff autenticado.
 - **Tres clientes Supabase, no los confundas:** `lib/supabase.ts` (anónimo, páginas públicas), `lib/supabase/{client,server}.ts` (autenticado, dashboard), `lib/supabase/admin.ts` (**service-role, SOLO SERVIDOR** — jamás al navegador).
-- **Auth:** Supabase Auth por email; `proxy.ts` protege `/dashboard`. Super-admin en `platform_admins`; el alta de locales pasa por el endpoint server-only `/api/admin/onboard`.
+- **Auth:** Supabase Auth por email; `src/middleware.ts` protege `/dashboard`. Super-admin en `platform_admins`; el alta de locales pasa por el endpoint server-only `/api/admin/onboard`.
 - **Theming por tenant:** cuatro variables CSS desde `locales.color_primario`/`color_acento` (ver "Estado actual").
 
 ## Cómo trabajas (protocolos no negociables)
@@ -27,7 +27,7 @@ El cliente escanea un QR en la mesa y pide desde `/local/[slug]` (menú público
 4. **Decisiones del usuario.** Cuando una decisión sea del dueño del producto (negocio, UX, alcance), pregunta con una recomendación clara; no la asumas.
 5. **Convenciones:** UI en español, sentence case; dashboard en tema oscuro; migraciones SQL idempotentes en `migrations/`; código quirúrgico y consistente con lo existente.
 
-## Estado actual (2026-08-12)
+## Estado actual (2026-08-13)
 - **Fases 0-4 completas y en `main`:** seguridad (auth + RLS + RPCs), integridad/persistencia, robustez de cocina, y "El Estudio del Local" (menú, imágenes, identidad/white-label, onboarding, pulido).
 - **Consolidación T1-T8 completa:** secretos rotados, `crear_pedido` endurecida, máquina de estados, columnas protegidas, tipos reales y 19 tests de integración (`npm test`).
 - **F5 a F10 completas.** El roadmap se reordenó el 2026-08-10 (`plan/AUDITORIA-2026-08-10.md`): "dominios propios" pasó al final y es lo único que queda (F11), **para cuando un cliente lo pida y lo pague**.
