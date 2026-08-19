@@ -334,9 +334,14 @@ export default function Home() {
       <footer className="border-t border-stone-200/80 py-7">
         <div className="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[13px] text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
-          <Link href="/dashboard" className="text-[13px] font-medium text-stone-500 hover:text-stone-800 transition-colors">
-            Entrar a mi local
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link href="/privacidad" className="text-[13px] font-medium text-stone-500 hover:text-stone-800 transition-colors">
+              Privacidad
+            </Link>
+            <Link href="/dashboard" className="text-[13px] font-medium text-stone-500 hover:text-stone-800 transition-colors">
+              Entrar a mi local
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

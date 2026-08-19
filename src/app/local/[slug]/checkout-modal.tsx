@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, normalizar } from "@/lib/utils";
+import { formatearMientrasEscribe, normalizarTelefonoChileno } from "@/lib/telefono";
 
 interface CheckoutModalProps {
   localId: string;
@@ -15,6 +17,17 @@ interface CheckoutModalProps {
 }
 
 const DEFAULT_MESA_OPTIONS = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6", "Barra", "Para llevar"];
+
+/**
+ * El retiro dejó de vivir dentro del texto libre de la mesa y ahora es un campo
+ * propio (`tipo_entrega`). Estas etiquetas se filtran de la grilla de mesas para
+ * que no queden dos formas de decir lo mismo: la de arriba manda.
+ */
+const ETIQUETAS_DE_RETIRO = ["para llevar", "retiro", "para retirar", "llevar", "takeaway"];
+
+function esOpcionDeRetiro(opcion: string): boolean {
+  return ETIQUETAS_DE_RETIRO.includes(normalizar(opcion).trim());
+}
 
 /** Mismo criterio que el carrito: un intento de checkout caduca a las 2 horas. */
 const CHECKOUT_TTL_MS = 2 * 60 * 60 * 1000;
@@ -46,11 +59,27 @@ function nuevoUuid(): string {
 
 export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClose, onConfirmed }: CheckoutModalProps) {
   const { items, total, clearCart } = useCart();
-  const mesaOptions = mesas && mesas.length > 0 ? mesas : DEFAULT_MESA_OPTIONS;
   const mesaBloqueada = !!initialMesa;
+
+  // La grilla ya no ofrece "Para llevar": eso lo decide el selector de arriba.
+  const mesaOptions = (mesas && mesas.length > 0 ? mesas : DEFAULT_MESA_OPTIONS).filter(
+    (opcion) => !esOpcionDeRetiro(opcion)
+  );
+
   const [nombre, setNombre] = useState("");
   const [mesa, setMesa] = useState(initialMesa || "");
   const [notas, setNotas] = useState("");
+
+  // Si el QR trae la mesa, el comensal está sentado: no hay nada que elegir.
+  const [tipoEntrega, setTipoEntrega] = useState<"mesa" | "retiro">("mesa");
+  const esRetiro = !mesaBloqueada && tipoEntrega === "retiro";
+
+  // Se guarda como lo ve el comensal (`9 1234 5678`); a E.164 se convierte al
+  // enviar. El prefijo +56 está impreso al lado del campo, no adentro.
+  const [telefono, setTelefono] = useState("");
+  const [telefonoTocado, setTelefonoTocado] = useState(false);
+  const telefonoE164 = normalizarTelefonoChileno(telefono);
+  const telefonoInvalido = telefono.trim() !== "" && telefonoE164 === null;
   const [propinaPct, setPropinaPct] = useState<number>(PROPINA_PCT_DEFAULT);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -114,6 +143,21 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nombre.trim()) { setError("Ingresa tu nombre"); return; }
+
+    // En retiro el teléfono es obligatorio porque sin él el local no puede
+    // avisarte; comiendo en el local es opcional, y ahí solo se exige que lo
+    // escrito sea un número de verdad.
+    if (esRetiro && !telefonoE164) {
+      setTelefonoTocado(true);
+      setError("Necesitamos tu celular para avisarte cuando esté listo");
+      return;
+    }
+    if (telefonoInvalido) {
+      setTelefonoTocado(true);
+      setError("Revisa el celular: son 9 números y parte con 9");
+      return;
+    }
+
     if (items.length === 0) return;
 
     setSubmitting(true);
@@ -141,6 +185,10 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
         // Va el PORCENTAJE, no el monto: el servidor lo aplica sobre su propio
         // total y acota fuera de rango.
         p_propina_pct: propinaPct,
+        // El servidor vuelve a normalizar: acá se manda ya en E.164 para que lo
+        // que viaja sea exactamente lo que se va a guardar.
+        p_telefono: telefonoE164 ?? "",
+        p_tipo_entrega: esRetiro ? "retiro" : "mesa",
       });
 
       if (rpcError) throw new Error(rpcError.message || "");
@@ -295,7 +343,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
 
           {/* Mesa quick select */}
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-2">¿Dónde estás?</label>
+            <label className="block text-sm font-semibold text-stone-700 mb-2">¿Dónde va tu pedido?</label>
             {mesaBloqueada ? (
               <div
                 className="flex flex-col items-start gap-1 border rounded-xl px-4 py-3"
@@ -308,24 +356,116 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 <span className="text-[11px] text-stone-400">Detectada por el código QR</span>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
-                {mesaOptions.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setMesa(mesa === opt ? "" : opt)}
-                    className={`py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
-                      mesa === opt
-                        ? "shadow-sm"
-                        : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                    }`}
-                    style={mesa === opt ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
+              <>
+                {/* Comer acá o llevar: decide si el teléfono hace falta. */}
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ["mesa", "🍽️ Como acá"],
+                    ["retiro", "🛍️ Para llevar"],
+                  ] as const).map(([valor, etiqueta]) => {
+                    const activo = tipoEntrega === valor;
+                    return (
+                      <button
+                        key={valor}
+                        type="button"
+                        aria-pressed={activo}
+                        onClick={() => {
+                          setTipoEntrega(valor);
+                          // La mesa no significa nada en un retiro, y dejarla
+                          // puesta mandaría "Mesa 3" en una comanda para llevar.
+                          if (valor === "retiro") setMesa("");
+                        }}
+                        className={`py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-95 ${
+                          activo ? "shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                        }`}
+                        style={activo ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
+                      >
+                        {etiqueta}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {tipoEntrega === "mesa" && (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {mesaOptions.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setMesa(mesa === opt ? "" : opt)}
+                        className={`py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
+                          mesa === opt
+                            ? "shadow-sm"
+                            : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                        }`}
+                        style={mesa === opt ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
+          </div>
+
+          {/* Teléfono */}
+          <div>
+            <label htmlFor="telefono" className="block text-sm font-semibold text-stone-700 mb-1.5">
+              Tu celular {esRetiro ? "*" : <span className="font-normal text-stone-400">(opcional)</span>}
+            </label>
+
+            {/* El +56 va impreso al lado, no dentro del input: el comensal
+                escribe 9 dígitos y no tiene que pelear con el prefijo. */}
+            <div
+              className={`flex items-stretch rounded-xl border overflow-hidden transition-all focus-within:ring-2 ${
+                telefonoTocado && telefonoInvalido
+                  ? "border-red-300 focus-within:ring-red-200"
+                  : "border-stone-200 focus-within:ring-[var(--brand)] focus-within:border-[var(--brand)]"
+              }`}
+            >
+              <span className="flex items-center px-3.5 bg-stone-50 text-stone-500 text-[15px] font-semibold border-r border-stone-200 select-none">
+                +56
+              </span>
+              <input
+                id="telefono"
+                type="tel"
+                // `numeric` y no `tel`: el teclado de teléfono trae *, # y
+                // pausas que acá no sirven de nada.
+                inputMode="numeric"
+                autoComplete="tel-national"
+                value={telefono}
+                onChange={(e) => setTelefono(formatearMientrasEscribe(e.target.value))}
+                // El error aparece al salir del campo, no en la primera tecla:
+                // ponerse rojo mientras alguien todavía escribe es hostil.
+                onBlur={() => setTelefonoTocado(true)}
+                placeholder="9 1234 5678"
+                aria-invalid={telefonoTocado && telefonoInvalido}
+                aria-describedby="telefono-ayuda"
+                className="flex-1 min-w-0 px-4 py-3 text-stone-800 placeholder:text-stone-300 focus:outline-none text-[15px] tabular-nums"
+              />
+            </div>
+
+            <p id="telefono-ayuda" className="text-[11px] text-stone-400 mt-1.5 leading-snug">
+              {telefonoTocado && telefonoInvalido ? (
+                <span className="text-red-600 font-medium">Son 9 números y parten con 9.</span>
+              ) : esRetiro ? (
+                <>
+                  Lo usamos solo para avisarte cuando tu pedido esté listo. Lo ve únicamente este
+                  local y se borra a los 7 días.{" "}
+                  <Link href="/privacidad" target="_blank" className="underline hover:text-stone-600">
+                    Cómo tratamos tus datos
+                  </Link>
+                </>
+              ) : (
+                <>
+                  Por si el local necesita ubicarte. Se borra a los 7 días.{" "}
+                  <Link href="/privacidad" target="_blank" className="underline hover:text-stone-600">
+                    Cómo tratamos tus datos
+                  </Link>
+                </>
+              )}
+            </p>
           </div>
 
           {/* Notes */}

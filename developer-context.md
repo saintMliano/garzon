@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-13):** Fases 5 a 10 completas (F10 cierra con suscripción por local y pitch de ventas), landing reescrita con las promesas reales y el plan, y prueba gratis bajada a 7 días. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-19):** Fases 5 a 10 completas, landing con las promesas reales, prueba gratis de 7 días, y **teléfono del comensal para pedidos de retiro** con su tratamiento de datos personales. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -64,7 +64,7 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 **Tablas:**
 - **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40). **Suscripción (F10):** `plan`, `suscripcion_estado` (`prueba|activa|cortesia|cancelada`), `suscripcion_hasta` y `suscripcion_notas`. Esas cuatro columnas **no tienen GRANT UPDATE para `authenticated`**: solo se escriben por `/api/admin/suscripcion` con service-role.
 - **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). **Lectura pública revocada (F7):** el menú se sirve por `get_menu_publico(slug)`; el staff lee las suyas por RLS.
-- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`), `client_request_id` (idempotencia, F8) y `propina`/`propina_pct` (F10). **`total` NO incluye la propina**: son plata distinta. **Acceso público revocado** (ver Seguridad).
+- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`), `client_request_id` (idempotencia, F8) y `propina`/`propina_pct` (F10). **`total` NO incluye la propina**: son plata distinta. **`telefono` y `tipo_entrega`** (2026-08-19): el teléfono es un **dato personal** en E.164, solo en retiros, sin `GRANT UPDATE` para el staff y **borrado automáticamente a los 7 días** por `borrar_telefonos_antiguos` (agendada con `pg_cron`). No lo agregues a exportaciones ni a RPCs públicas. **Acceso público revocado** (ver Seguridad).
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
 - **`pedido_eventos` (F8):** bitácora de cambios de estado (`estado_anterior`, `estado_nuevo`, `actor`, `created_at`). La escribe un trigger; por RLS es **solo lectura** y solo del propio local. Base de los tiempos reales de cocina, en reemplazo de `updated_at`.
 - **`local_staff` (nueva):** Vincula usuarios de `auth.users` con `locales` (`user_id`, `local_id`). Determina qué local ve/gestiona cada cuenta de cocina. Se administra por SQL/rol de servicio.
@@ -204,6 +204,51 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-19 — Teléfono del comensal (pedidos de retiro)
+
+La cocina ya puede contactar a quien viene a retirar. Plan completo, con el análisis legal, en
+[`plan/TELEFONO-COMENSAL.md`](plan/TELEFONO-COMENSAL.md).
+
+**Lo que este cambio significa:** hasta hoy la base guardaba un nombre de pila y una mesa, que no
+identifican a nadie. Un teléfono sí. Garzón Digital pasa a tratar **datos personales de terceros**,
+y todo el diseño sale de ahí — no de la comodidad de tener un campo más.
+
+- **Migración `20260819170000`**: `pedidos.telefono` (E.164, con CHECK `^\+569[0-9]{8}$`) y
+  `pedidos.tipo_entrega` (`mesa|retiro`). Ninguna de las dos tiene `GRANT UPDATE` para el staff: se
+  escriben solo desde `crear_pedido`. El staff **sí** las lee, que es el punto.
+- **`tipo_entrega` es un campo real** y no el texto libre de `mesa`. Colgar una regla de negocio de
+  una cadena de texto era frágil, y de paso la cocina puede agrupar los retiros.
+- **`crear_pedido` v9**: normaliza el teléfono en el servidor (tolera `+56`, el `0` de discado,
+  espacios y guiones) y lo guarda siempre en E.164. Un número ilegible **no tumba el pedido**: se
+  guarda `NULL`. Perder una venta real por un tipeo es peor que no poder llamar.
+- **`src/lib/telefono.ts`**: normalización y formateo puros, con 23 tests unitarios. El campo del
+  checkout muestra el `+56` impreso al costado y el comensal escribe 9 dígitos.
+- **Cocina**: insignia de retiro y botón "Contactar" que revela el número **solo a pedido** —la
+  pantalla de cocina está a la vista del público todo el turno— con `tel:` y `wa.me`. El enlace de
+  WhatsApp abre el WhatsApp **del propio local** con el mensaje escrito y una persona aprieta enviar:
+  sin proveedor de mensajería, sin sub-encargado nuevo y sin costo por mensaje.
+- **Borrado automático a los 7 días** (`borrar_telefonos_antiguos`, agendada con `pg_cron`). Se borra
+  por **edad y no por estado**: la versión que solo tocaba pedidos entregados dejaba vivos para
+  siempre los teléfonos de pedidos abandonados en `nuevo` o `preparando`.
+- **`pg_cron` no estaba habilitado** en el proyecto: la primera migración creó la función e intentó
+  agendarla, el intento cayó en su manejador de excepciones y **la función quedó existiendo sin que
+  nadie la llamara**. La promesa de "se borra a los 7 días" habría sido falsa mientras la política de
+  privacidad la afirmaba. Lo arregla la migración `20260819172000`; verificado contra `cron.job`.
+- **`/privacidad`** (borrador, pendiente de abogado): quién es responsable y quién encargado, qué se
+  guarda, por cuánto, y que los datos están en **us-east-2 (Ohio, EE.UU.)** — dicho explícitamente,
+  porque ocultar una transferencia internacional es el error caro. Enlazada desde el checkout y la
+  landing. Tiene 4 marcadores `[CONTACTO POR DEFINIR]` por completar.
+- **Fidelización: NO se recolecta todavía.** Guardar teléfonos "para cuando exista" sería el cambio
+  de finalidad que hay que evitar. El diseño de dos ciclos de vida separados está en §5 del plan.
+- **Respaldo con rotación** (conserva 3): desde que puede contener teléfonos, cada archivo viejo es
+  una copia más de datos personales en el disco. Verificado que el repo **no** está en OneDrive.
+- **Base demo sin teléfonos**, con el motivo escrito en el sembrador para que nadie lo "mejore".
+- `npm test` **126/126** (91 + 35 nuevos), `tsc`, `eslint` y `build` limpios.
+
+**Pendiente antes del primer teléfono real de un cliente que no seas vos:** la búsqueda y borrado por
+teléfono en el panel de super-admin (derecho de supresión), completar los `[CONTACTO POR DEFINIR]`, y
+la revisión legal del contrato de encargo.
 
 ### 2026-08-13 — Sincronización de la documentación
 
