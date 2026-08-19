@@ -87,7 +87,7 @@ Todo lo de esta tabla está construido, probado y se puede mostrar.
 - El **total lo calcula el servidor**, no el teléfono del cliente: nadie puede editar precios desde
   el navegador.
 - Cada local está **aislado por la base de datos**, no por un filtro en pantalla.
-- **89 pruebas automáticas** corren antes de cada cambio.
+- **91 pruebas automáticas** corren antes de cada cambio.
 
 ---
 
