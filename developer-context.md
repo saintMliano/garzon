@@ -91,6 +91,7 @@ El cliente anónimo **no** toca las tablas directamente; opera vía funciones `S
 - `src/app/dashboard/page.tsx`: Tablero Kanban de cocina. Usa el cliente autenticado, resuelve el `local_id` del usuario vía `local_staff`, y **filtra todas las consultas y la suscripción realtime por `local_id`**. Incluye botón de cerrar sesión y muestra el nombre real del local.
 - `src/app/dashboard/menu/page.tsx`: gestión self-service del menú (categorías, productos, precios, disponibilidad, fotos).
 - `src/app/dashboard/config/page.tsx`: identidad visual del local (nombre, slogan, colores, logo), con validación de contraste WCAG (F9).
+- `src/app/dashboard/cuenta/page.tsx`: cambio de contraseña de la **cuenta** (no del local). Exige la contraseña actual y avisa que las demás sesiones se van a cerrar.
 - `src/app/dashboard/reportes/page.tsx` (F6): cierre de caja. Rangos con presets, tarjetas de venta/ticket/propinas, serie por día que pasa a **meses** sobre 62 días, top de productos, tiempos de cocina y export CSV.
 - `src/app/dashboard/aviso-suscripcion.tsx` (F10): banner escalonado de vencimiento, en las cuatro pantallas del dashboard. **Nunca bloquea nada**: si falla la consulta, se calla.
 - `src/app/dashboard/admin/page.tsx`: alta de locales (solo super-admin; el link se oculta a quien no lo es). Muestra las credenciales del dueño y hasta cuándo corre su prueba gratis.
@@ -205,6 +206,35 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-19 — Cambiar la contraseña desde el panel (`/dashboard/cuenta`)
+
+Cerraba un agujero de coherencia: la tarjeta de alta de locales le dice al dueño *"debe cambiar la
+contraseña en su primer ingreso"* y **no existía ninguna pantalla donde hacerlo**. Ni cambio, ni
+recuperación: solo el login. La instrucción era imposible de cumplir.
+
+- **`/dashboard/cuenta`**, enlazada con un 🔑 al lado de cerrar sesión en las cinco pantallas del
+  dashboard. Vive aparte de `/dashboard/config` porque la contraseña es de la **persona**, no del
+  local: quien atiende dos locales tiene una sola.
+- **Exige la contraseña actual**, que Supabase por sí solo no pide. Sin eso, una tablet desbloqueada
+  sobre el mesón alcanza para que cualquiera cambie la clave y deje al dueño fuera. La verificación
+  se hace en un cliente **desechable**, así un intento fallido no toca la sesión abierta.
+- **Mínimo 10 caracteres** (el de Supabase es 6), campo de confirmación y "ver lo que escribo".
+- **Dos bugs que encontró la verificación contra Supabase real**, ninguno visible en el código:
+  1. `signOut()` de Supabase es **global**: revoca todas las sesiones del usuario. Al verificar la
+     contraseña actual y cerrar el cliente desechable, se llevaba puesta la sesión de quien la
+     estaba cambiando y la de todas las tablets. Corregido con `scope: "local"`.
+  2. **`updateUser({password})` sí cierra las demás sesiones**, y un comentario mío afirmaba lo
+     contrario. Es correcto en seguridad y no se puede evitar desde el cliente, así que la pantalla
+     ahora lo **avisa antes** de cambiarla ("si estás en pleno servicio, mejor hazlo después") y lo
+     repite al terminar. Una tablet que se desloguea sola a mitad de turno, sin explicación, se lee
+     como que el sistema se cayó.
+- **`tests/cuenta.test.ts`** (4 tests) reproduce el flujo completo contra Supabase con una cuenta
+  desechable, incluido un test que existe solo para atrapar la reaparición del `signOut` global.
+- `npm test` **136/136**, `tsc`, `eslint` y `build` limpios.
+
+**Pendiente relacionado:** no hay "olvidé mi contraseña" en el login. Necesita correo, y el SMTP
+compartido del plan gratis de Supabase no es confiable para producción.
 
 ### 2026-08-19 — Supresión de datos por teléfono (panel de super-admin)
 

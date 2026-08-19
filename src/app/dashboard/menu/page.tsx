@@ -428,6 +428,16 @@ export default function MenuPage() {
               )}
             </nav>
 
+            {/* La cuenta vive al lado de cerrar sesión, no entre las pestañas del
+                local: la contraseña es de la persona, no del local. */}
+            <Link
+              href="/dashboard/cuenta"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              title="Tu cuenta"
+            >
+              🔑
+            </Link>
+
             <button
               onClick={handleSignOut}
               className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
