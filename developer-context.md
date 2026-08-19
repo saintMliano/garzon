@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-19):** Fases 5 a 10 completas, landing con las promesas reales, prueba gratis de 7 días, y **teléfono del comensal para pedidos de retiro** con su tratamiento de datos personales. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-19):** Fases 5 a 10 completas, landing con las promesas reales y prueba gratis de 7 días. Lo último: **teléfono del comensal** para pedidos de retiro con todo su tratamiento de datos personales (borrado automático a los 7 días, `/privacidad`, y supresión por teléfono desde el panel) y **cambio de contraseña** en `/dashboard/cuenta`. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
