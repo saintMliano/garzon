@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { OrderStatus } from "@/types/database";
 import AvisoSuscripcion from "../aviso-suscripcion";
+import { NavPanel } from "@/app/dashboard/nav-panel";
+import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 
 // ============================================================
 // Tipos de las RPCs de reportes (F6).
@@ -290,6 +292,10 @@ function campoCsv(valor: string): string {
 }
 
 export default function ReportesPage() {
+  // El rol es por local: lo resuelve el hook compartido a partir del local
+  // seleccionado. Solo decide qué se dibuja; quien niega es la base.
+  const { rol } = useRolLocal();
+
   const supabase = useMemo(() => createClient(), []);
 
   const [localId, setLocalId] = useState<string | null>(null);
@@ -381,7 +387,8 @@ export default function ReportesPage() {
     setLocalNombre(chosen.nombre);
     setLocalSlug(chosen.slug);
     if (typeof window !== "undefined") {
-      localStorage.setItem("garzon_selected_local_id", chosen.id);
+      avisarCambioDeLocal(chosen.id); // avisa a la nav: el rol es por local
+      // y puede cambiar al cambiar de local.
     }
     // El efecto de carga reacciona al cambio de localId.
   }
@@ -641,37 +648,7 @@ export default function ReportesPage() {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
-            <nav className="flex items-center gap-1 dash-bg-surface rounded-xl p-1">
-              <Link
-                href="/dashboard"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Pedidos
-              </Link>
-              <Link
-                href="/dashboard/menu"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Menú
-              </Link>
-              <Link
-                href="/dashboard/config"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Identidad
-              </Link>
-              <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
-                Reportes
-              </span>
-              {isPlatformAdmin && (
-                <Link
-                  href="/dashboard/admin"
-                  className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-                >
-                  Alta de local
-                </Link>
-              )}
-            </nav>
+            <NavPanel actual="reportes" rol={rol} esPlatformAdmin={isPlatformAdmin} />
 
             {/* La cuenta vive al lado de cerrar sesión, no entre las pestañas del
                 local: la contraseña es de la persona, no del local. */}

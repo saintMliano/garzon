@@ -1,7 +1,7 @@
 # Roles por local y comanda del garzón
 
-**Estado:** propuesta, sin construir. Pendiente de decisiones del dueño (§9).
-**Fecha:** 2026-08-20
+**Estado:** ✅ **construido y en la base** (2026-08-20). Decisiones tomadas en §9.
+**Fecha:** 2026-08-20 · propuesto y ejecutado el mismo día
 
 ---
 
@@ -38,9 +38,11 @@ Inventario de lo que ese predicado abre hoy:
 | `locales` | UPDATE | Cualquiera cambia marca, mesas, horarios |
 | `storage.objects` (bucket de imágenes) | INSERT, UPDATE, DELETE | Cualquiera borra las fotos |
 
-Más las RPC `reporte_ventas`, `reporte_ventas_por_dia` y `reporte_top_productos`,
-que son `SECURITY INVOKER` y por lo tanto **quedan abiertas a cualquier fila de
-`local_staff`**: el garzón ve la caja del día.
+Más las **cinco** RPC `reporte_*` (`ventas`, `ventas_por_dia`, `ventas_por_mes`,
+`top_productos`, `tiempos` — el plan original contaba tres porque miré las
+migraciones viejas en vez de la base viva), que son `SECURITY INVOKER` y por lo
+tanto **quedan abiertas a cualquier fila de `local_staff`**: el garzón ve la caja
+del día.
 
 Además: el personal se administra **solo por SQL / service-role**. No hay
 pantalla para dar de alta a nadie. `/api/admin/onboard` inserta la fila del
@@ -62,44 +64,42 @@ entrega a un garzón de temporada las llaves de su negocio.
 
 ---
 
-## 3. Roles propuestos
+## 3. Roles
 
-Tres, y deliberadamente **no más**. El mercado objetivo son fuentes de soda de
-1 a 5 personas donde el dueño suele ser también cajero y a veces cocinero;
-modelar siete roles sería el error clásico de sobreingeniería para
-micronegocios.
+**Dos** — decisión del dueño (§9). La propuesta original separaba `garzon` de
+`cocina`; en una fuente de soda de 1 a 5 personas es la misma persona, así que
+separarlos habría sido burocracia sin uso.
 
-| Rol | Quién es | Pantalla de inicio |
-|---|---|---|
-| `dueño` | El dueño o su administrador | `/dashboard` (todo) |
-| `cocina` | Quien cocina y despacha | `/dashboard` (solo el Kanban) |
-| `garzon` | Quien toma pedidos en mesa | `/dashboard/comanda` |
+| Rol | Quién es |
+|---|---|
+| `dueño` | El dueño o su administrador |
+| `personal` | Quien atiende y cocina |
 
 ### Matriz de permisos
 
-| Acción | dueño | cocina | garzon |
-|---|:--:|:--:|:--:|
-| Ver el Kanban de pedidos | ✅ | ✅ | ✅ |
-| Avanzar estado (nuevo → preparando → listo → entregado) | ✅ | ✅ | ✅ |
-| **Cancelar** un pedido | ✅ | ✅ | ❌ |
-| Reabrir una entrega (F5) | ✅ | ✅ | ❌ |
-| Ver el teléfono del comensal (retiro) | ✅ | ✅ | ✅ |
-| **Crear** un pedido desde la comanda | ✅ | ❌ | ✅ |
-| Ver reportes / caja del día | ✅ | ❌ | ❌ |
-| Exportar CSV | ✅ | ❌ | ❌ |
-| Editar menú, precios, disponibilidad | ✅ | ❌ | ❌ |
-| Subir o borrar fotos de productos | ✅ | ❌ | ❌ |
-| Editar identidad, mesas, horarios | ✅ | ❌ | ❌ |
-| Cambiar su propia contraseña | ✅ | ✅ | ✅ |
-| Dar de alta o quitar personal | ✅ | ❌ | ❌ |
+| Acción | dueño | personal |
+|---|:--:|:--:|
+| Ver el Kanban de pedidos | ✅ | ✅ |
+| Avanzar estado (nuevo → preparando → listo → entregado) | ✅ | ✅ |
+| **Cancelar** un pedido | ✅ | ✅ |
+| Reabrir una entrega (F5) | ✅ | ✅ |
+| Ver el teléfono del comensal (retiro) | ✅ | ✅ |
+| **Crear** un pedido desde la comanda | ✅ | ✅ |
+| Marcar un producto como agotado | ✅ | ✅ |
+| Ver reportes / caja del día | ✅ | ❌ |
+| Exportar CSV | ✅ | ❌ |
+| Editar menú, precios, fotos | ✅ | ❌ |
+| Editar identidad, mesas, horarios | ✅ | ❌ |
+| Cambiar su propia contraseña | ✅ | ✅ |
+| Dar de alta o quitar personal | ✅ | ❌ |
 
-Dos decisiones con criterio que conviene discutir (§9):
+Dos consecuencias de haber fusionado los roles:
 
-- **Cocina puede cancelar, garzón no.** Cancelar es la acción destructiva del
-  Kanban y quien la justifica frente al cliente es la cocina ("se nos acabó").
-- **La disponibilidad de un producto** ("se acabó el lomito") es lo único del
-  menú que la cocina necesita tocar en pleno servicio. Está en la matriz como
-  ❌ por simplicidad, pero es la excepción más pedida en productos así.
+- **`personal` cancela y reabre.** Al ser la misma persona la que atiende la mesa
+  y la que despacha, quien se entera del problema es quien tiene que deshacerlo.
+- **Marcar agotado vive en la comanda, no en el menú.** El menú es del dueño y
+  `personal` no entra ahí; el botón "Se acabó" está en la grilla de la comanda,
+  que es donde el garzón se entera de que se acabó.
 
 ---
 
@@ -291,16 +291,47 @@ Orden obligatorio: R1 → R2. R3, R4 y R5 pueden ir en paralelo después.
 
 ---
 
-## 9. Decisiones que necesito del dueño
+## 9. Decisiones tomadas
 
-1. **¿Tres roles o dos?** ¿`garzon` y `cocina` separados, o un solo rol
-   `personal` que hace ambas cosas? En una fuente de soda chica suele ser la
-   misma persona.
-2. **¿La cocina puede marcar un producto como agotado?** Es la única excepción
-   razonable al "el menú lo toca solo el dueño", y es la que más se pide en
-   pleno servicio.
-3. **¿Quién puede cancelar un pedido?** Propuesta: dueño y cocina; garzón no.
-4. **¿Se construye la comanda (R5) o primero solo los roles (R1–R4)?** Los roles
-   solos ya son vendibles; la comanda es una función nueva que suma al pitch.
-5. **¿`pedidos.creado_por` entra ahora?** Recomiendo que sí: es barato hoy e
-   imposible de recuperar después.
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | ¿Tres roles o dos? | **Dos**: `dueño` y `personal`. En una fuente de soda es la misma persona. Se pidió además que la comanda y el Kanban queden **a un toque** una de otra. |
+| 2 | ¿La cocina marca agotado? | **Sí**, `personal` puede. |
+| 3 | ¿Quién cancela? | **Los dos roles.** Al fusionarse en uno solo, quien atiende la mesa también deshace. |
+| 4 | ¿Solo roles o también comanda? | **Todo**: R1 a R5. |
+| 5 | ¿`pedidos.creado_por` ahora? | **Sí.** |
+
+Sobre la comanda se eligió la **opción 2** (pantalla propia).
+
+---
+
+## 10. Qué quedó construido
+
+| # | Entregable | Dónde |
+|---|---|---|
+| R1 | `local_staff.rol`, helper `tiene_rol()`, onboarding con rol explícito | `20260820120000_f12_roles_local.sql` |
+| R2 | 10 políticas RLS + 3 de storage, guarda en las 5 RPC `reporte_*`, `marcar_disponibilidad()`, `productos_frecuentes()`, trigger de `creado_por` | idem |
+| R2b | Trigger "siempre un dueño" | `20260820150000_f12_ultimo_dueno.sql` |
+| R3 | `dashboard/layout.tsx` (guarda de rutas) + `nav-panel.tsx` (elimina la nav duplicada en 6 páginas) + hook `useRolLocal()` | `src/app/dashboard/`, `src/lib/usar-rol.ts` |
+| R4 | Pantalla de equipo + endpoint | `src/app/dashboard/equipo/`, `src/app/api/local/equipo/` |
+| R5 | Comanda con mesa-primero, frecuentes, buscador y "se acabó" | `src/app/dashboard/comanda/` |
+
+**Verificación:** 29 tests nuevos contra Supabase real (165 en total), que comprueban el efecto y no
+el mensaje — una cuenta `personal` de verdad llamando la API directo. `tsc`, `eslint` y `build`
+limpios.
+
+**Lo que NO se verificó:** las pantallas nuevas no se miraron renderizadas. Hacerlo requería
+autenticarse en el navegador, cosa que no hago. La comanda y la pantalla de equipo están probadas por
+su lógica y su contrato con la base, no por uso real.
+
+## 11. Diferencias con el plan original
+
+- **Cinco funciones de reportes, no tres.** F10 había agregado `reporte_ventas_por_mes` y
+  `reporte_tiempos`, y le había sumado `propinas_total` a `reporte_ventas`. El plan las contaba mal
+  porque leí las migraciones viejas en vez de la base viva.
+- **`productos_frecuentes` no estaba en el plan.** Apareció al notar que `reporte_top_productos`
+  devuelve dinero y que quien usa la comanda es justamente `personal`.
+- **El invariante "siempre un dueño" bajó a la base.** El plan lo dejaba en el endpoint "y mejor un
+  trigger"; se hizo el trigger, porque un endpoint solo protege el camino que pasa por él.
+- **Marcar agotado no vive en el menú.** El menú es del dueño, así que el botón "Se acabó" está en la
+  comanda, que es donde el garzón se entera.

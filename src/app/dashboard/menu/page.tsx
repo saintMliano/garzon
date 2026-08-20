@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Categoria, Producto } from "@/types/database";
 import AvisoSuscripcion from "../aviso-suscripcion";
+import { NavPanel } from "@/app/dashboard/nav-panel";
+import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 
 type ProductoForm = {
   id: string | null;
@@ -45,6 +47,10 @@ const EMPTY_CATEGORIA_FORM: CategoriaForm = {
 };
 
 export default function MenuPage() {
+  // El rol es por local: lo resuelve el hook compartido a partir del local
+  // seleccionado. Solo decide qué se dibuja; quien niega es la base.
+  const { rol } = useRolLocal();
+
   const supabase = useMemo(() => createClient(), []);
 
   const [localId, setLocalId] = useState<string | null>(null);
@@ -125,7 +131,8 @@ export default function MenuPage() {
     setLocalId(chosen.id);
     setLocalNombre(chosen.nombre);
     if (typeof window !== "undefined") {
-      localStorage.setItem("garzon_selected_local_id", chosen.id);
+      avisarCambioDeLocal(chosen.id); // avisa a la nav: el rol es por local
+      // y puede cambiar al cambiar de local.
     }
     fetchMenu(chosen.id);
   }
@@ -171,10 +178,14 @@ export default function MenuPage() {
     const nuevoValor = !prod.disponible;
     setProductos((prev) => prev.map((p) => (p.id === prod.id ? { ...p, disponible: nuevoValor } : p)));
 
-    const { error } = await supabase
-      .from("productos")
-      .update({ disponible: nuevoValor })
-      .eq("id", prod.id);
+    // Por RPC y no por UPDATE directo: es el mismo camino que usa la comanda,
+    // donde quien marca "se acabó" puede ser `personal` — que a propósito no
+    // tiene UPDATE sobre `productos`, porque la RLS no sabe distinguir la
+    // columna `disponible` de la columna `precio`.
+    const { error } = await supabase.rpc("marcar_disponibilidad", {
+      p_producto_id: prod.id,
+      p_disponible: nuevoValor,
+    });
 
     if (error) {
       setProductos((prev) => prev.map((p) => (p.id === prod.id ? { ...p, disponible: prod.disponible } : p)));
@@ -396,37 +407,7 @@ export default function MenuPage() {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
-            <nav className="flex items-center gap-1 dash-bg-surface rounded-xl p-1">
-              <Link
-                href="/dashboard"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Pedidos
-              </Link>
-              <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
-                Menú
-              </span>
-              <Link
-                href="/dashboard/config"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Identidad
-              </Link>
-              <Link
-                href="/dashboard/reportes"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Reportes
-              </Link>
-              {isPlatformAdmin && (
-                <Link
-                  href="/dashboard/admin"
-                  className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-                >
-                  Alta de local
-                </Link>
-              )}
-            </nav>
+            <NavPanel actual="menu" rol={rol} esPlatformAdmin={isPlatformAdmin} />
 
             {/* La cuenta vive al lado de cerrar sesión, no entre las pestañas del
                 local: la contraseña es de la persona, no del local. */}

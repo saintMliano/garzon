@@ -310,6 +310,66 @@ describe("Roles por local (F12)", () => {
   });
 
   // ------------------------------------------------------------------
+  // Un local nunca se queda sin dueño
+  // ------------------------------------------------------------------
+  test("El último dueño no puede degradarse a sí mismo", async () => {
+    // El caso real: el dueño se pone en `personal` para ver cómo lo ve su
+    // garzón, y a partir de ahí nadie puede volver a ascenderlo.
+    const { error } = await adminClient
+      .from("local_staff")
+      .update({ rol: "personal" })
+      .eq("user_id", fx.staffA.id)
+      .eq("local_id", fx.localA.id);
+
+    expect(error, "se pudo dejar el local sin dueño").not.toBeNull();
+
+    const { data } = await adminClient
+      .from("local_staff")
+      .select("rol")
+      .eq("user_id", fx.staffA.id)
+      .eq("local_id", fx.localA.id)
+      .single();
+    expect(data?.rol).toBe("dueño");
+  });
+
+  test("Al último dueño tampoco se lo puede sacar del local", async () => {
+    const { error } = await adminClient
+      .from("local_staff")
+      .delete()
+      .eq("user_id", fx.staffA.id)
+      .eq("local_id", fx.localA.id);
+    expect(error, "se pudo borrar al único dueño").not.toBeNull();
+  });
+
+  test("Con dos dueños, uno sí puede degradarse", async () => {
+    // La contracara: el candado no puede ser tan rígido que impida el relevo.
+    await adminClient
+      .from("local_staff")
+      .update({ rol: "dueño" })
+      .eq("user_id", personal.id)
+      .eq("local_id", fx.localA.id);
+
+    const { error } = await adminClient
+      .from("local_staff")
+      .update({ rol: "personal" })
+      .eq("user_id", fx.staffA.id)
+      .eq("local_id", fx.localA.id);
+    expect(error, "con dos dueños el relevo debería poder hacerse").toBeNull();
+
+    // Se deja todo como estaba para los tests que siguen.
+    await adminClient
+      .from("local_staff")
+      .update({ rol: "dueño" })
+      .eq("user_id", fx.staffA.id)
+      .eq("local_id", fx.localA.id);
+    await adminClient
+      .from("local_staff")
+      .update({ rol: "personal" })
+      .eq("user_id", personal.id)
+      .eq("local_id", fx.localA.id);
+  });
+
+  // ------------------------------------------------------------------
   // Atribución
   // ------------------------------------------------------------------
   test("Un pedido del comensal queda sin autor; uno del personal queda atribuido", async () => {
