@@ -68,7 +68,9 @@ Todo lo de esta tabla está construido, probado y se puede mostrar.
 | Dos roles: dueño y personal | El personal ve y despacha los pedidos. **No ve la caja ni puede cambiar precios.** |
 | El garzón toma el pedido en su celular | Pantalla aparte, pensada para marcar rápido: mesa, grilla de productos, enviar. |
 | "Frecuentes" | Los productos más vendidos del local, primeros. En una fuente de soda son casi todo el servicio. |
-| "Se acabó" desde la mesa | El garzón agota un producto en el momento en que se entera, sin pedirle al dueño que entre al menú. |
+| "Se acabó" desde la mesa | El garzón agota un producto en el momento en que se entera, sin pedirle al dueño que entre al menú. Desaparece de la carta del cliente al instante, y se puede reponer igual de rápido. |
+| Una nota por producto, no una al final | "Chacarero sin ají, italiano sin mayo": cada nota llega pegada a su línea en la pantalla de la cocina. Dos del mismo plato con notas distintas también. |
+| La foto y los ingredientes, a mano | El garzón abre la ficha del plato en su celular para mostrárselo al comensal o leerle qué lleva, sin salir de la comanda. |
 | Queda registrado quién tomó cada pedido | Para cuando hay un reclamo y hace falta saber qué pasó. |
 
 Lo importante para el dueño: **los permisos los hace cumplir la base de datos, no la pantalla**. No
