@@ -103,6 +103,7 @@ El cliente anónimo **no** toca las tablas directamente; opera vía funciones `S
 - `src/app/dashboard/cuenta/page.tsx`: cambio de contraseña de la **cuenta** (no del local). Exige la contraseña actual y avisa que las demás sesiones se van a cerrar.
 - `src/app/dashboard/reportes/page.tsx` (F6): cierre de caja. Rangos con presets, tarjetas de venta/ticket/propinas, serie por día que pasa a **meses** sobre 62 días, top de productos, tiempos de cocina y export CSV.
 - `src/app/dashboard/aviso-suscripcion.tsx` (F10): banner escalonado de vencimiento en el dashboard. **Nunca bloquea nada**: si falla la consulta, se calla.
+- `src/lib/notas-rapidas.ts`: los atajos de nota de producto, compartidos por la comanda y el carrito del comensal. **Provisorios**: están pensados para sándwiches y hay que adaptarlos al primer menú real (ver el comentario del archivo).
 - `src/lib/roles.ts` (F12): los dos roles, sus capacidades y qué capacidad exige cada ruta. **No es la frontera de seguridad**: decide qué se dibuja. Si agregás una capacidad acá, agregá su contraparte en el servidor.
 - `src/lib/usar-rol.ts` (F12): hook que resuelve quién sos y qué rol tenés **en el local seleccionado** (el rol es por local, no por persona). Unifica el bloque de resolución de local que estaba duplicado en cuatro páginas.
 - `src/app/api/local/equipo/route.ts` (F12): alta, cambio de rol y baja del personal. **Único camino** que puede escribir `local_staff.rol`, porque la columna no tiene `GRANT UPDATE` para `authenticated`. A diferencia de `/api/admin/*`, acá manda el dueño **de ese** local, no el super-admin.
@@ -209,6 +210,10 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 "calidad/SEO/Server Components" a F7 y "marca profunda" se repartió entre F7 y F9.)*
 
 **Backlog sin fase asignada:**
+- [ ] **Atajos de nota por local.** Los de `src/lib/notas-rapidas.ts` son de
+  fuente de soda y están fijos en el código. Al instalar un cliente de otro rubro
+  hay que ajustarlos, o moverlos a `locales.notas_sugeridas text[]` editable desde
+  `/dashboard/config`.
 - [ ] Cargador masivo de fotos del menú (arrastrar N fotos, emparejado automático por nombre +
   manual, redimensionado en el navegador respetando EXIF). Acelera el onboarding de un cliente
   nuevo de horas a minutos — Catire Kaffe tiene 59 productos y 0 fotos.
@@ -220,6 +225,39 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-20 — Atajos de nota, compartidos con la carta pública
+
+Los seis atajos (*sin mayo, sin ají, sin tomate, sin cebolla, sin palta, extra
+queso*) salieron de la comanda a `src/lib/notas-rapidas.ts` y ahora los usan las
+**dos** pantallas donde alguien escribe una nota de producto: la comanda del
+garzón y el carrito del comensal. Estaban duplicados un solo día y ya era el
+momento de no duplicarlos, porque justamente lo que se sabe de ellos es que van a
+cambiar.
+
+**Están marcados como provisorios dentro del archivo.** La lista sirve para una
+fuente de soda de sándwiches; en un local de café y pasteles no aplica ninguno, y
+ofrecer atajos que no corresponden es peor que no ofrecer ninguno. El comentario
+deja planteadas las dos salidas: ajustarlos a mano si todos los clientes se
+parecen, o moverlos a una columna `locales.notas_sugeridas text[]` editable desde
+`/dashboard/config`, que es lo correcto en cuanto haya dos rubros distintos. No
+se hizo lo segundo todavía a propósito: es una columna, una migración y una
+pantalla para un problema que aún no sufre nadie.
+
+`agregarNotaRapida(actual, atajo)` **no repite**: con el teléfono en la mano es
+fácil tocar dos veces el mismo atajo, y "sin mayo, sin mayo" llegaría así a la
+cocina. La comparación ignora mayúsculas y espacios sobrantes.
+
+En la carta pública los chips van en **gris y no en el color del local**: son
+ayudas de escritura, no llamadas a la acción, y no deben competir con el botón de
+confirmar el pedido.
+
+**Verificación.** 6 tests unitarios nuevos (**175 en total**), incluido uno que
+comprueba que encadenar los seis atajos no se pasa del tope de 300 caracteres que
+exige `crear_pedido`. Se confirmó además que los atajos y la función llegan al
+**bundle real que se le sirve al comensal** en `/local/[slug]`. *No* se vieron
+dibujados: el panel del navegador perdió el contexto de ejecución entre llamadas,
+como viene pasando toda la sesión.
 
 ### 2026-08-20 — Comanda: agotar se confirma, y la nota se pone antes de agregar
 

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { NavPanel } from "@/app/dashboard/nav-panel";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
+import { NOTAS_RAPIDAS, agregarNotaRapida } from "@/lib/notas-rapidas";
 
 /**
  * Comanda: el garzón toma el pedido en la mesa.
@@ -55,9 +56,6 @@ type Linea = {
   cantidad: number;
   notas: string;
 };
-
-/** Cambios que se piden todo el rato en una fuente de soda. Se agregan al texto. */
-const NOTAS_RAPIDAS = ["Sin mayo", "Sin ají", "Sin tomate", "Sin cebolla", "Sin palta", "Extra queso"];
 
 /** Tope de `crear_pedido` para la nota de un ítem. */
 const LARGO_MAX_NOTA = 300;
@@ -793,9 +791,7 @@ export default function ComandaPage() {
               {NOTAS_RAPIDAS.map((n) => (
                 <button
                   key={n}
-                  onClick={() =>
-                    setNotaTexto((prev) => (prev.trim() === "" ? n : `${prev.trim()}, ${n.toLowerCase()}`))
-                  }
+                  onClick={() => setNotaTexto((prev) => agregarNotaRapida(prev, n))}
                   className="px-2.5 py-1 rounded-lg text-[11px] font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
                 >
                   {n}

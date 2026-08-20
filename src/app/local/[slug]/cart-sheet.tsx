@@ -2,6 +2,7 @@
 
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
+import { NOTAS_RAPIDAS, agregarNotaRapida } from "@/lib/notas-rapidas";
 
 interface CartSheetProps {
   onClose: () => void;
@@ -95,6 +96,26 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                       onChange={(e) => updateNotes(item.producto.id, e.target.value)}
                       className="w-full mt-2.5 px-3 py-2 rounded-lg bg-white border border-stone-150 text-[12px] text-stone-700 placeholder:text-stone-300 focus:outline-none focus:ring-1 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all"
                     />
+
+                    {/* Atajos: los mismos que usa el garzón en su comanda.
+                        Escribir en el teléfono es lento y la mayoría de los
+                        cambios son estos seis. Van en gris y no en el color del
+                        local: son ayudas, no llamadas a la acción, y no deben
+                        competir con el botón de confirmar el pedido. */}
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {NOTAS_RAPIDAS.map((atajo) => (
+                        <button
+                          key={atajo}
+                          type="button"
+                          onClick={() =>
+                            updateNotes(item.producto.id, agregarNotaRapida(item.notas, atajo))
+                          }
+                          className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-medium text-stone-500 hover:text-stone-800 hover:border-stone-300 active:scale-95 transition-all"
+                        >
+                          {atajo}
+                        </button>
+                      ))}
+                    </div>
 
                     {/* Remove */}
                     <button
