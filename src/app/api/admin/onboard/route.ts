@@ -152,9 +152,12 @@ export async function POST(request: Request) {
   }
 
   // 4d. Vincular al dueño con su local.
+  //     El rol va explícito y no confiado al DEFAULT de la columna: si algún
+  //     día el default cambia, el alta de un local nuevo no puede quedar sin
+  //     administrador por un descuido.
   const { error: staffErr } = await admin
     .from("local_staff")
-    .insert({ user_id: ownerId, local_id: local.id });
+    .insert({ user_id: ownerId, local_id: local.id, rol: "dueño" });
   if (staffErr) {
     await admin.from("locales").delete().eq("id", local.id); // rollback
     await admin.auth.admin.deleteUser(ownerId);
