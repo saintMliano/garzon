@@ -75,16 +75,19 @@ export type Database = {
         Row: {
           created_at: string | null
           local_id: string
+          rol: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           local_id: string
+          rol?: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           local_id?: string
+          rol?: string
           user_id?: string
         }
         Relationships: [
@@ -247,6 +250,7 @@ export type Database = {
       pedidos: {
         Row: {
           client_request_id: string | null
+          creado_por: string | null
           created_at: string | null
           estado: string | null
           id: string
@@ -264,6 +268,7 @@ export type Database = {
         }
         Insert: {
           client_request_id?: string | null
+          creado_por?: string | null
           created_at?: string | null
           estado?: string | null
           id?: string
@@ -281,6 +286,7 @@ export type Database = {
         }
         Update: {
           client_request_id?: string | null
+          creado_por?: string | null
           created_at?: string | null
           estado?: string | null
           id?: string
@@ -447,6 +453,17 @@ export type Database = {
           numero_pedido: number
         }[]
       }
+      marcar_disponibilidad: {
+        Args: { p_disponible: boolean; p_producto_id: string }
+        Returns: undefined
+      }
+      productos_frecuentes: {
+        Args: { p_dias?: number; p_limite?: number; p_local_id: string }
+        Returns: {
+          producto_id: string
+          unidades: number
+        }[]
+      }
       reporte_tiempos: {
         Args: { p_desde: string; p_hasta: string; p_local_id: string }
         Returns: {
@@ -502,6 +519,10 @@ export type Database = {
       situacion_suscripcion: {
         Args: { p_estado: string; p_hasta: string }
         Returns: string
+      }
+      tiene_rol: {
+        Args: { p_local_id: string; p_roles: string[] }
+        Returns: boolean
       }
     }
     Enums: {

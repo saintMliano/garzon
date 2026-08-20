@@ -7,6 +7,9 @@ import { formatPrice, orderNumber } from "@/lib/utils";
 import { formatearTelefonoChileno } from "@/lib/telefono";
 import type { OrderStatus, PedidoConItems } from "@/types/database";
 import AvisoSuscripcion from "./aviso-suscripcion";
+import { NavPanel } from "@/app/dashboard/nav-panel";
+import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
+import { puede } from "@/lib/roles";
 
 const COLUMNS: { key: OrderStatus; label: string; icon: string; accent: string }[] = [
   { key: "nuevo", label: "Nuevos", icon: "🆕", accent: "from-blue-500 to-blue-600" },
@@ -102,6 +105,10 @@ function TimerBadge({ createdAt }: { createdAt: string }) {
 }
 
 export default function DashboardPage() {
+  // El rol es por local: lo resuelve el hook compartido a partir del local
+  // seleccionado. Solo decide qué se dibuja; quien niega es la base.
+  const { rol } = useRolLocal();
+
   const supabase = useMemo(() => createClient(), []);
   const [pedidos, setPedidos] = useState<PedidoConItems[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,7 +221,8 @@ export default function DashboardPage() {
     // de un cliente de otra cocina.
     setTelefonoVisibleId(null);
     if (typeof window !== "undefined") {
-      localStorage.setItem("garzon_selected_local_id", chosen.id);
+      avisarCambioDeLocal(chosen.id); // avisa a la nav: el rol es por local
+      // y puede cambiar al cambiar de local.
     }
   }
 
@@ -528,37 +536,19 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-4 md:gap-6">
             {/* Nav */}
-            <nav className="hidden md:flex items-center gap-1 dash-bg-surface rounded-xl p-1">
-              <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
-                Pedidos
-              </span>
+            <NavPanel actual="pedidos" rol={rol} esPlatformAdmin={isPlatformAdmin} className="hidden md:flex" />
+
+            {/* Un toque de la cocina a la comanda. En un local chico la misma
+                persona alterna entre las dos pantallas todo el servicio, así que
+                este botón también se ve en móvil, donde la nav no. */}
+            {puede(rol, "tomar_comanda") && (
               <Link
-                href="/dashboard/menu"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+                href="/dashboard/comanda"
+                className="px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform whitespace-nowrap"
               >
-                Menú
+                + Tomar pedido
               </Link>
-              <Link
-                href="/dashboard/config"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Identidad
-              </Link>
-              <Link
-                href="/dashboard/reportes"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Reportes
-              </Link>
-              {isPlatformAdmin && (
-                <Link
-                  href="/dashboard/admin"
-                  className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-                >
-                  Alta de local
-                </Link>
-              )}
-            </nav>
+            )}
 
             {/* Stats */}
             <div className="hidden sm:flex items-center gap-5">
@@ -566,11 +556,20 @@ export default function DashboardPage() {
                 <p className="text-[10px] dash-text-muted uppercase tracking-wider font-medium">Pedidos</p>
                 <p className="text-lg font-bold dash-text-primary tabular-nums">{todayStats.count}</p>
               </div>
-              <div className="w-px h-8 bg-stone-800" />
-              <div className="text-right">
-                <p className="text-[10px] dash-text-muted uppercase tracking-wider font-medium">Venta</p>
-                <p className="text-lg font-bold text-green-400 tabular-nums">{formatPrice(todayStats.total)}</p>
-              </div>
+              {/* La venta del día es caja, y la caja es del dueño. Ojo: esto es
+                  cosmético — el personal lee `pedidos.total` porque lo necesita
+                  para trabajar, así que la suma se la podría hacer solo. Lo que
+                  sí está cerrado de verdad son los reportes, que es donde vive
+                  el histórico. */}
+              {puede(rol, "ver_reportes") && (
+                <>
+                  <div className="w-px h-8 bg-stone-800" />
+                  <div className="text-right">
+                    <p className="text-[10px] dash-text-muted uppercase tracking-wider font-medium">Venta</p>
+                    <p className="text-lg font-bold text-green-400 tabular-nums">{formatPrice(todayStats.total)}</p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Estado de la conexión: distingue "no hay pedidos" de "no llegan". */}

@@ -50,6 +50,14 @@ const FUNCIONES = [
     titulo: "Propina sugerida",
     desc: "El cliente elige un porcentaje sobre su total y queda anotado en la comanda. La cobras tú, en tu caja.",
   },
+  {
+    titulo: "Una cuenta para cada persona",
+    desc: "Tu garzón entra con su propia clave y ve solo los pedidos. No ve tu caja ni puede tocar tus precios.",
+  },
+  {
+    titulo: "Tu garzón toma el pedido desde su celular",
+    desc: "Elige la mesa, marca los productos y lo manda a cocina. Los más vendidos aparecen primero.",
+  },
 ];
 
 const PASOS = [
@@ -78,6 +86,7 @@ const INCLUYE = [
   "Tablero de cocina en tiempo real, en las pantallas que necesites",
   "Reportes de venta y exportación a CSV",
   "Panel para administrar tu menú y tus precios",
+  "Cuentas para tu equipo, con permisos separados",
   "Soporte por WhatsApp",
 ];
 

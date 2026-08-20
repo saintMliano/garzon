@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-19):** Fases 5 a 10 completas, landing con las promesas reales y prueba gratis de 7 días. Lo último: **teléfono del comensal** para pedidos de retiro con todo su tratamiento de datos personales (borrado automático a los 7 días, `/privacidad`, y supresión por teléfono desde el panel) y **cambio de contraseña** en `/dashboard/cuenta`. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-20):** Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -64,10 +64,10 @@ Esquema base en [`supabase-schema.sql`](supabase-schema.sql); migraciones de end
 **Tablas:**
 - **`locales`:** Multi-tenant; cada local tiene `slug` único, nombre, dirección, color de marca, `mesas`, y `limite_pedidos_min` (tope de pedidos/minuto que aplica `crear_pedido`, default 40). **Suscripción (F10):** `plan`, `suscripcion_estado` (`prueba|activa|cortesia|cancelada`), `suscripcion_hasta` y `suscripcion_notas`. Esas cuatro columnas **no tienen GRANT UPDATE para `authenticated`**: solo se escriben por `/api/admin/suscripcion` con service-role.
 - **`categorias` / `productos`:** Catálogo del menú por local (con precios, disponibilidad y orden). **Lectura pública revocada (F7):** el menú se sirve por `get_menu_publico(slug)`; el staff lee las suyas por RLS.
-- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`), `client_request_id` (idempotencia, F8) y `propina`/`propina_pct` (F10). **`total` NO incluye la propina**: son plata distinta. **`telefono` y `tipo_entrega`** (2026-08-19): el teléfono es un **dato personal** en E.164, solo en retiros, sin `GRANT UPDATE` para el staff y **borrado automáticamente a los 7 días** por `borrar_telefonos_antiguos` (agendada con `pg_cron`). No lo agregues a exportaciones ni a RPCs públicas. **Acceso público revocado** (ver Seguridad).
+- **`pedidos`:** Número de pedido, mesa, nombre del cliente, total, notas, estado (`nuevo`, `aceptado`, `preparando`, `listo`, `entregado`, `cancelado`), `client_request_id` (idempotencia, F8) y `propina`/`propina_pct` (F10). **`total` NO incluye la propina**: son plata distinta. **`telefono` y `tipo_entrega`** (2026-08-19): el teléfono es un **dato personal** en E.164, solo en retiros, sin `GRANT UPDATE` para el staff y **borrado automáticamente a los 7 días** por `borrar_telefonos_antiguos` (agendada con `pg_cron`). No lo agregues a exportaciones ni a RPCs públicas. **Acceso público revocado** (ver Seguridad). **`creado_por` (F12):** quién tomó el pedido; lo rellena un trigger con `auth.uid()`, así que es NULL para el comensal anónimo y el id del staff cuando viene de la comanda. Sin `GRANT UPDATE` para el staff: un registro que el interesado puede reescribir no sirve de nada.
 - **`pedido_items`:** Ítems de cada pedido (cantidad, notas específicas y `precio_unitario`). **Acceso público revocado.**
 - **`pedido_eventos` (F8):** bitácora de cambios de estado (`estado_anterior`, `estado_nuevo`, `actor`, `created_at`). La escribe un trigger; por RLS es **solo lectura** y solo del propio local. Base de los tiempos reales de cocina, en reemplazo de `updated_at`.
-- **`local_staff` (nueva):** Vincula usuarios de `auth.users` con `locales` (`user_id`, `local_id`). Determina qué local ve/gestiona cada cuenta de cocina. Se administra por SQL/rol de servicio.
+- **`local_staff`:** Vincula usuarios de `auth.users` con `locales` (`user_id`, `local_id`). **`rol` (F12, 2026-08-20):** `dueño` | `personal`, con `CHECK` y `DEFAULT 'dueño'` — ese default es lo único que impidió que los locales existentes se quedaran sin administrador al migrar. **No tiene `GRANT UPDATE (rol)` para `authenticated`**: el único camino para escribir un rol es `/api/local/equipo`. Un trigger (`local_staff_exigir_dueno`) impide dejar un local vivo con cero dueños, por UPDATE o por DELETE; deja pasar la cascada de borrar un local entero.
 - **`platform_admins`:** marca qué usuarios son super-admins de la plataforma (pueden dar de alta locales vía `/api/admin/onboard`). RLS: cada quien lee solo su fila; se administra por service-role.
 
 **Integridad:** las FK `local_id` (categorias/productos/pedidos) y `pedido_id` (pedido_items) son `NOT NULL`. Hay `CHECK` en `precio > 0`, `total > 0`, `cantidad > 0` y `precio_unitario >= 0`.
@@ -180,6 +180,7 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F8 — Confianza** | Idempotencia de `crear_pedido`, auditoría de cambios de estado y tiempos reales de cocina. [Plan](plan/F8-CONFIANZA.md) · *anti-abuso: decisión pendiente del dueño* | **Completa** |
 | **F9 — Marca completa** | White-label completo del flujo del cliente y validación de contraste WCAG en el editor de identidad. [Plan](plan/F9-MARCA.md) | **Completa** |
 | **F10 — Negocio** | Propina sugerida + base demo de un año ([plan](plan/F10-PROPINA-Y-DEMO.md)), y suscripción por local con corte en el servidor + pitch de ventas ([plan](plan/F10-SUSCRIPCION.md)). **Pago en línea descartado**: la plata no pasa por la plataforma. | **Completa** |
+| **F12 — Roles y comanda** | Roles por local (`dueño`/`personal`) con cumplimiento en la base, pantalla de equipo, y comanda del garzón (`/dashboard/comanda`). [Plan](plan/ROLES-Y-COMANDA.md) | **Completa** |
 | F11 — Dominios propios | Cuando un cliente lo pida **y lo pague** | Pendiente |
 
 **Fase 4 — "El Estudio del Local" (self-service, completa)** — que un dueño arme y personalice su local sin SQL:
@@ -206,6 +207,70 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-20 — F12: roles por local y comanda del garzón
+
+**El problema.** Una fila en `local_staff` equivalía a ser dueño: las trece políticas RLS del
+proyecto usaban el mismo predicado, así que quien entraba al panel podía cambiar precios, borrar
+categorías, borrar las fotos y ver la caja del día. Para vender a un local con empleados eso era un
+bloqueador: nadie le entrega a un garzón de temporada las llaves de su negocio.
+
+**Dos roles, no tres.** Decisión del dueño: `dueño` y `personal`. En una fuente de soda la misma
+persona toma el pedido y lo cocina; separar "garzón" de "cocina" habría sido burocracia sin uso.
+`personal` tiene el Kanban completo —incluido **cancelar y reabrir**, por decisión explícita— más la
+comanda y marcar agotado. No ve reportes, ni precios, ni identidad del local, ni el equipo.
+
+**Dónde se hace cumplir cada regla** (esconder un link en React no es un permiso):
+
+| Regla | Capa |
+|---|---|
+| Menú, precios, fotos, identidad | Las 10 políticas RLS + las 3 de `storage.objects` |
+| Reportes | Guarda de rol **dentro** de las cinco RPC `reporte_*` |
+| Marcar agotado | RPC `marcar_disponibilidad()` |
+| Escribir un rol | Solo `/api/local/equipo` (sin `GRANT UPDATE (rol)`) |
+| Que quede un dueño | Trigger `local_staff_exigir_dueno` |
+| Qué pantallas se ven | React — **solo cosmético** |
+
+**Los reportes no se pueden cerrar con RLS**, y esto es lo menos obvio del cambio: leen `pedidos`, y
+la cocina también lee `pedidos`. Son las mismas filas. La salida obvia —pasarlas a `SECURITY
+DEFINER`— está prohibida en `CLAUDE.md` y hay un test que se pone rojo. Se resolvió dejándolas
+`INVOKER` y metiendo la guarda en el cuerpo: `prosecdef` no cambia, el test sigue verde, y la guarda
+está escrita para **no** alterar el aislamiento entre locales (quien no es del local sigue recibiendo
+ceros, no un error).
+
+**Dos errores propios que vale la pena dejar anotados:**
+1. Saqué los cuerpos de `reporte_*` de la migración F6 en vez de la base viva. F10 ya las había
+   redefinido: `reporte_ventas` tenía `propinas_total`, y existían dos funciones más que no estaban
+   en mi lista (`reporte_ventas_por_mes` y `reporte_tiempos`). El push falló con 42P13 y hubo que
+   sacar las definiciones reales con `pg_get_functiondef`. **Son cinco, no tres.**
+2. La primera versión dejaba el invariante "siempre un dueño" solo en el endpoint. Un `UPDATE` por
+   SQL lo habría saltado, dejando un local que solo se arregla a mano sobre la cuenta de un cliente.
+
+**La comanda (`/dashboard/comanda`).** Pantalla propia, no la carta pública con otra piel: la carta
+está hecha para un comensal eligiendo con calma y acá hay que marcar doce ítems en cuarenta
+segundos. Mesa primero, grilla densa sin fotos, pestañas por categoría, buscador, y una pestaña
+**"Frecuentes"** alimentada por `productos_frecuentes` — una RPC **nueva**, que no reusa
+`reporte_top_productos` porque aquella devuelve `venta`, justo lo que le estamos cerrando a
+`personal`. El `client_request_id` se genera antes de enviar y se reusa al reintentar; no se pide
+teléfono. Ida y vuelta al Kanban en un toque, también en móvil.
+
+**`pedidos.creado_por`** se llena por trigger y no dentro de `crear_pedido`: reproducir 150 líneas de
+una función que ya va en su v9 es la forma clásica de que se desvíe del original sin que nadie lo
+note.
+
+**De paso:** se eliminó la navegación del panel duplicada a mano en seis páginas (`nav-panel.tsx`) y
+se agregó `dashboard/layout.tsx` con la guarda de rutas.
+
+**Verificación.** 29 tests nuevos contra Supabase real (**165 en total**), que comprueban el efecto y
+no el mensaje: una cuenta `personal` de verdad llamando la API directo. `tsc`, `eslint` y `build`
+limpios. **Lo que NO se verificó:** las pantallas nuevas no se miraron renderizadas —hacerlo pedía
+autenticarse en el navegador— así que la comanda y la pantalla de equipo están probadas por su
+lógica y su contrato con la base, no por uso real.
+
+**Archivos:** `supabase/migrations/20260820120000_f12_roles_local.sql`,
+`supabase/migrations/20260820150000_f12_ultimo_dueno.sql`, `src/lib/roles.ts`, `src/lib/usar-rol.ts`,
+`src/app/dashboard/{layout,nav-panel}.tsx`, `src/app/dashboard/{comanda,equipo}/page.tsx`,
+`src/app/api/local/equipo/route.ts`, `tests/roles.test.ts`, `plan/ROLES-Y-COMANDA.md`.
 
 ### 2026-08-19 — Cambiar la contraseña desde el panel (`/dashboard/cuenta`)
 

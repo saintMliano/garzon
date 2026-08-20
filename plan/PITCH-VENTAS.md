@@ -60,6 +60,21 @@ Todo lo de esta tabla está construido, probado y se puede mostrar.
 | El carrito se corrige solo | Si cambió un precio o se agotó algo mientras miraba la carta, se lo dice con nombre y monto. Nunca hay sorpresa al confirmar. |
 | Si se corta la señal, no se duplica | Reintentar el envío devuelve el mismo pedido. La cocina no recibe dos platos iguales. |
 
+### Para el equipo del local
+
+| Función | Qué significa en el turno |
+|---|---|
+| Cada persona con su cuenta | El dueño crea la cuenta de su garzón desde el panel. No se comparte una sola clave. |
+| Dos roles: dueño y personal | El personal ve y despacha los pedidos. **No ve la caja ni puede cambiar precios.** |
+| El garzón toma el pedido en su celular | Pantalla aparte, pensada para marcar rápido: mesa, grilla de productos, enviar. |
+| "Frecuentes" | Los productos más vendidos del local, primeros. En una fuente de soda son casi todo el servicio. |
+| "Se acabó" desde la mesa | El garzón agota un producto en el momento en que se entera, sin pedirle al dueño que entre al menú. |
+| Queda registrado quién tomó cada pedido | Para cuando hay un reclamo y hace falta saber qué pasó. |
+
+Lo importante para el dueño: **los permisos los hace cumplir la base de datos, no la pantalla**. No
+es que al garzón se le escondan los botones — es que si intenta llegar a los reportes por otro
+camino, el servidor le dice que no.
+
 ### Para la cocina
 
 | Función | Qué significa en el turno |
@@ -104,7 +119,6 @@ más confianza que un "sí, claro" que se descubre en la segunda semana.
 - **No hace delivery** ni se integra con Rappi, PedidosYa ni Uber Eats.
 - **No maneja cuenta abierta por mesa ni divide la cuenta.** Cada pedido es un pedido.
 - **No tiene reservas, fidelización ni cupones.**
-- **No tiene perfiles distintos** para garzón, cocina y dueño: quien entra al panel ve todo.
 - **No funciona sin internet**, ni el local ni el comensal.
 - **Todavía no hay dominio propio por local.** La carta vive en una dirección de Garzón Digital.
 - **No manda notificaciones al teléfono** cuando el pedido está listo: el comensal lo ve si tiene la

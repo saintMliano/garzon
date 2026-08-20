@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import CarteraSuscripciones from "./cartera-suscripciones";
 import SupresionTelefono from "./supresion-telefono";
 import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
+import { NavPanel } from "@/app/dashboard/nav-panel";
+import { useRolLocal } from "@/lib/usar-rol";
 
 type OnboardResult = {
   localId: string;
@@ -41,6 +43,10 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 export default function AdminOnboardPage() {
+  // El rol es por local: lo resuelve el hook compartido a partir del local
+  // seleccionado. Solo decide qué se dibuja; quien niega es la base.
+  const { rol } = useRolLocal();
+
   const supabase = useMemo(() => createClient(), []);
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
@@ -218,35 +224,7 @@ export default function AdminOnboardPage() {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
-            <nav className="flex items-center gap-1 dash-bg-surface rounded-xl p-1">
-              <Link
-                href="/dashboard"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Pedidos
-              </Link>
-              <Link
-                href="/dashboard/menu"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Menú
-              </Link>
-              <Link
-                href="/dashboard/config"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Identidad
-              </Link>
-              <Link
-                href="/dashboard/reportes"
-                className="px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
-              >
-                Reportes
-              </Link>
-              <span className="px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500">
-                Alta de local
-              </span>
-            </nav>
+            <NavPanel actual="admin" rol={rol} esPlatformAdmin={isAdmin} />
 
             {/* La cuenta vive al lado de cerrar sesión, no entre las pestañas del
                 local: la contraseña es de la persona, no del local. */}

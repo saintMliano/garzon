@@ -246,10 +246,11 @@ export async function cleanupTestFixtures(fixtures: TestFixtures) {
   await paso("productos", () => adminClient.from("productos").delete().in("local_id", localIds));
   await paso("categorias", () => adminClient.from("categorias").delete().in("local_id", localIds));
 
-  // 3. Borrar local_staff
-  await paso("local_staff", () => adminClient.from("local_staff").delete().in("local_id", localIds));
-
-  // 4. Borrar locales
+  // 3. Borrar locales. `local_staff` se va solo por ON DELETE CASCADE.
+  //    No se borra el staff aparte a propósito: desde F12 hay un trigger que
+  //    impide dejar un local vivo sin ningún dueño, y borrar las filas antes que
+  //    el local es exactamente ese caso. El trigger sí deja pasar la cascada,
+  //    porque para entonces el local ya no existe.
   await paso("locales", () => adminClient.from("locales").delete().in("id", localIds));
 
   // 5. Borrar usuarios de Auth.
