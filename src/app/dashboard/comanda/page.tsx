@@ -56,6 +56,9 @@ type Linea = {
   notas: string;
 };
 
+/** Cambios que se piden todo el rato en una fuente de soda. Se agregan al texto. */
+const NOTAS_RAPIDAS = ["Sin mayo", "Sin ají", "Sin tomate", "Sin cebolla", "Sin palta", "Extra queso"];
+
 /** Tope de `crear_pedido` para la nota de un ítem. */
 const LARGO_MAX_NOTA = 300;
 
@@ -88,6 +91,16 @@ export default function ComandaPage() {
   const [cambiandoStock, setCambiandoStock] = useState<string | null>(null);
   const [verPedido, setVerPedido] = useState(false);
   const [detalle, setDetalle] = useState<Producto | null>(null);
+
+  // Nota antes de agregar. Con cinco personas en la mesa y tres pidiendo
+  // cambios, dejar las notas para el final obliga a acordarse de quién pidió
+  // qué; ir y volver a otra pantalla por cada una es peor.
+  const [notaPara, setNotaPara] = useState<Producto | null>(null);
+  const [notaTexto, setNotaTexto] = useState("");
+  const [notaCantidad, setNotaCantidad] = useState(1);
+
+  // Agotar es destructivo y llega a la carta del comensal, así que se pregunta.
+  const [confirmarAgotar, setConfirmarAgotar] = useState<Producto | null>(null);
 
   // Se genera una vez por intento. Si el envío falla y el garzón reintenta, va
   // el MISMO id: `crear_pedido` es idempotente y devuelve el pedido ya creado
@@ -168,6 +181,33 @@ export default function ComandaPage() {
       return prev.map((l, j) => (j === i ? { ...l, cantidad } : l));
     });
   }, []);
+
+  /**
+   * Agrega SIEMPRE una línea nueva, aunque el producto ya esté en el pedido.
+   * Es lo que hace que "un italiano" y "un italiano sin mayo" convivan: si se
+   * fusionaran, la nota de uno se le aplicaría a los dos.
+   */
+  const agregarConNota = useCallback((productoId: string, cantidad: number, notas: string) => {
+    setLineas((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), productoId, cantidad, notas: notas.trim().slice(0, LARGO_MAX_NOTA) },
+    ]);
+  }, []);
+
+  function abrirNota(p: Producto) {
+    setNotaPara(p);
+    setNotaTexto("");
+    setNotaCantidad(1);
+  }
+
+  function confirmarNota() {
+    if (!notaPara) return;
+    // Sin texto es simplemente sumar: no tiene sentido crear una línea aparte
+    // que después haya que juntar a mano.
+    if (notaTexto.trim() === "") sumar(notaPara.id, notaCantidad);
+    else agregarConNota(notaPara.id, notaCantidad, notaTexto);
+    setNotaPara(null);
+  }
 
   const cambiarCantidad = useCallback((lineaId: string, delta: number) => {
     setLineas((prev) =>
@@ -541,11 +581,11 @@ export default function ComandaPage() {
                       )}
                       {p.disponible && (
                         <button
-                          onClick={() => cambiarDisponibilidad(p, false)}
+                          onClick={() => setConfirmarAgotar(p)}
                           disabled={cambiandoStock === p.id}
                           title={`Marcar ${p.nombre} como agotado`}
                           aria-label={`Marcar ${p.nombre} como agotado`}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-xs dash-text-muted hover:text-red-300 hover:bg-red-500/10 disabled:opacity-40 transition-colors"
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-red-400 bg-red-500/10 border border-red-500/30 hover:bg-red-500/25 hover:text-red-300 disabled:opacity-40 transition-colors"
                         >
                           ⊘
                         </button>
@@ -579,6 +619,19 @@ export default function ComandaPage() {
                         className="mt-2.5 w-full py-2 rounded-lg text-[11px] font-bold text-amber-200 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-40 transition-colors"
                       >
                         {cambiandoStock === p.id ? "Guardando…" : "Agotado · volver a poner"}
+                      </button>
+                    )}
+
+                    {/* La nota se puede poner ANTES de agregar. Esperar al panel
+                        del final obliga a acordarse de quién de la mesa pidió
+                        qué cambio, que es justo lo que esta pantalla existe
+                        para evitar. */}
+                    {p.disponible && (
+                      <button
+                        onClick={() => abrirNota(p)}
+                        className="mt-2 self-start px-2 py-1 rounded-lg text-[11px] font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
+                      >
+                        📝 Con nota
                       </button>
                     )}
 
@@ -702,6 +755,131 @@ export default function ComandaPage() {
                   Cerrar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== NOTA ANTES DE AGREGAR =====
+          "Italiano sin mayo" se marca en el momento en que la persona lo pide,
+          no al final. Cada uno entra como su propia línea del pedido. */}
+      {notaPara && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setNotaPara(null)}
+        >
+          <div
+            className="dash-card border-2 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="font-bold dash-text-primary text-base leading-snug">{notaPara.nombre}</h3>
+              <span className="text-sm font-bold dash-text-primary tabular-nums whitespace-nowrap">
+                {formatearPrecio(notaPara.precio)}
+              </span>
+            </div>
+
+            <input
+              type="text"
+              value={notaTexto}
+              onChange={(e) => setNotaTexto(e.target.value)}
+              maxLength={LARGO_MAX_NOTA}
+              autoFocus
+              placeholder="Sin ají, bien cocido, aparte…"
+              className="w-full mt-3 rounded-lg dash-bg-surface px-3 py-2.5 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
+            />
+
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {NOTAS_RAPIDAS.map((n) => (
+                <button
+                  key={n}
+                  onClick={() =>
+                    setNotaTexto((prev) => (prev.trim() === "" ? n : `${prev.trim()}, ${n.toLowerCase()}`))
+                  }
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 mt-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setNotaCantidad((c) => Math.max(1, c - 1))}
+                  aria-label="Quitar uno"
+                  className="w-9 h-9 rounded-lg dash-bg-surface dash-text-primary text-lg font-bold active:scale-90 transition-transform"
+                >
+                  −
+                </button>
+                <span className="w-6 text-center text-base font-bold dash-text-primary tabular-nums">
+                  {notaCantidad}
+                </span>
+                <button
+                  onClick={() => setNotaCantidad((c) => Math.min(99, c + 1))}
+                  aria-label="Agregar uno"
+                  className="w-9 h-9 rounded-lg dash-bg-surface dash-text-primary text-lg font-bold active:scale-90 transition-transform"
+                >
+                  +
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setNotaPara(null)}
+                  className="px-4 py-2.5 rounded-xl dash-bg-surface dash-text-secondary text-sm font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarNota}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+                >
+                  Agregar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== CONFIRMAR AGOTAR =====
+          Agotar sale del panel y llega a la carta del comensal, así que no puede
+          pasar por un toque distraído mientras se marca un pedido. */}
+      {confirmarAgotar && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setConfirmarAgotar(null)}
+        >
+          <div
+            className="dash-card border-2 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-bold dash-text-primary text-base">
+              ¿Agotar {confirmarAgotar.nombre}?
+            </h3>
+            <p className="text-[13px] dash-text-muted mt-2 leading-relaxed">
+              Deja de aparecer en la carta del cliente al instante. Lo podés volver a poner desde acá
+              mismo cuando haya de nuevo.
+            </p>
+
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => setConfirmarAgotar(null)}
+                className="flex-1 py-3 rounded-xl dash-bg-surface dash-text-secondary text-sm font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const prod = confirmarAgotar;
+                  setConfirmarAgotar(null);
+                  cambiarDisponibilidad(prod, false);
+                }}
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-500 active:scale-95 transition-all"
+              >
+                Sí, agotar
+              </button>
             </div>
           </div>
         </div>

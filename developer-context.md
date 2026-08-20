@@ -221,6 +221,43 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-08-20 — Comanda: agotar se confirma, y la nota se pone antes de agregar
+
+Dos correcciones más, otra vez salidas de usar la pantalla con un perfil de
+staff real.
+
+**Agotar ahora se confirma.** El icono era gris y pasaba desapercibido; encima
+disparaba al primer toque. Ahora es **rojo** (texto, fondo y borde) y abre un
+diálogo: *"¿Agotar Italiano? Deja de aparecer en la carta del cliente al
+instante."* Es la única acción de esta pantalla que sale del panel y llega al
+comensal, así que no puede pasar por un toque distraído mientras se marca un
+pedido.
+
+**La nota se pone ANTES de agregar.** Era el defecto de fondo: la nota solo
+existía en el panel de revisión del final, así que con cinco personas en la mesa
+y tres pidiendo cambios había que elegir entre acordarse de todo hasta el final o
+ir y volver de pantalla por cada uno. Las dos cosas son exactamente lo que esta
+pantalla existe para evitar.
+
+Cada tarjeta tiene un botón **"📝 Con nota"** que abre un diálogo con el texto,
+una cantidad y seis atajos (*sin mayo, sin ají, sin tomate, sin cebolla, sin
+palta, extra queso*). Al aceptar entra como **línea nueva**, aunque el producto
+ya esté en el pedido: si se fusionara con la línea sin nota, la nota de uno se le
+aplicaría a los dos. Con el texto vacío simplemente suma, para no dejar líneas
+sueltas que después haya que juntar a mano.
+
+Los atajos son **genéricos y están fijos en el código**: una lista por local
+necesitaría una columna nueva y todavía no hay quien la pida.
+
+**Verificación de layout.** Otra vez con una ruta pública temporal, ya borrada.
+A 375 px: sin desborde, tarjetas de 171×146-158 y el diálogo en 375×229, que
+entra de sobra en pantalla. A 1024 px: cuatro columnas, las cuatro tarjetas de la
+misma altura, sin desborde. Y se comprobó por CSS computado que el botón de
+agotar quedó efectivamente en rojo. 169 tests, `tsc`, `eslint` y `build` limpios.
+
+**Lo que no se verificó:** sigue sin mirarse renderizado el flujo real dentro del
+panel, porque pide autenticarse.
+
 ### 2026-08-20 — La comanda, usable: stock reversible, ficha del plato y nota por línea
 
 Tres defectos de la primera versión, los tres encontrados usándola.

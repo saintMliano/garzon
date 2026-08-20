@@ -353,3 +353,13 @@ Las tres salieron de usar la pantalla, no de revisarla.
 funcionaba —`get_menu_publico` filtra `disponible = true` desde F7— y la nota por
 ítem ya viajaba desde el checkout público. Lo que faltaba estaba solo del lado de
 la comanda.
+
+### Segunda pasada de uso (mismo día)
+
+| Defecto | Arreglo |
+|---|---|
+| El botón de agotar era gris y disparaba al primer toque | Rojo, y con diálogo de confirmación por nombre de producto |
+| La nota solo existía en el panel del final | Botón "Con nota" en cada tarjeta, con cantidad y seis atajos; entra como línea nueva |
+
+Medido en una ruta temporal: a 375 px las tarjetas quedan en 171×146-158 y el
+diálogo en 375×229 sin desbordar; a 1024 px, cuatro columnas de altura pareja.
