@@ -507,12 +507,12 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-screen dashboard-dark">
       {/* ===== HEADER ===== */}
       <header className="dash-header border-b px-4 md:px-6 py-3">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
               🍔
             </div>
-            <div>
+            <div className="min-w-0">
               {localesList.length > 1 ? (
                 <div className="flex items-center gap-2">
                   <select
@@ -528,16 +528,18 @@ export default function DashboardPage() {
                   </select>
                 </div>
               ) : (
-                <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
+                <h1 className="font-bold dash-text-primary text-base truncate">{localNombre || "Garzón Digital"}</h1>
               )}
               <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de Control</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
-            {/* Nav */}
-            <NavPanel actual="pedidos" rol={rol} esPlatformAdmin={isPlatformAdmin} className="hidden md:flex" />
-
+          {/* flex-wrap y no un ancho fijo: este bloque llegó a tener nav de siete
+              entradas, botón de comanda, dos estadísticas, estado de conexión,
+              "cerrados hoy" y tres iconos. Sin esto, en un notebook de 1024 px
+              empujaba el ancho del body y el Kanban entero quedaba con scroll
+              horizontal. */}
+          <div className="flex items-center justify-end gap-2.5 md:gap-3 flex-wrap min-w-0">
             {/* Un toque de la cocina a la comanda. En un local chico la misma
                 persona alterna entre las dos pantallas todo el servicio, así que
                 este botón también se ve en móvil, donde la nav no. */}
@@ -551,7 +553,7 @@ export default function DashboardPage() {
             )}
 
             {/* Stats */}
-            <div className="hidden sm:flex items-center gap-5">
+            <div className="hidden lg:flex items-center gap-5">
               <div className="text-right">
                 <p className="text-[10px] dash-text-muted uppercase tracking-wider font-medium">Pedidos</p>
                 <p className="text-lg font-bold dash-text-primary tabular-nums">{todayStats.count}</p>
@@ -574,7 +576,7 @@ export default function DashboardPage() {
 
             {/* Estado de la conexión: distingue "no hay pedidos" de "no llegan". */}
             <div
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap ${
+              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap ${
                 conexion === "en-vivo"
                   ? "text-green-400"
                   : conexion === "sin-conexion"
@@ -643,6 +645,10 @@ export default function DashboardPage() {
               🚪
             </button>
           </div>
+        </div>
+
+        <div className="max-w-[1600px] mx-auto mt-2.5">
+          <NavPanel actual="pedidos" rol={rol} esPlatformAdmin={isPlatformAdmin} className="flex" />
         </div>
       </header>
 

@@ -212,19 +212,18 @@ export default function AdminOnboardPage() {
     <div className="flex flex-col min-h-screen dashboard-dark">
       {/* ===== HEADER ===== */}
       <header className="dash-header border-b px-4 md:px-6 py-3">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
               🍔
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="font-bold dash-text-primary text-base">Garzón Digital</h1>
               <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
-            <NavPanel actual="admin" rol={rol} esPlatformAdmin={isAdmin} />
+          <div className="flex items-center justify-end gap-2.5 md:gap-3 flex-wrap min-w-0">
 
             {/* La cuenta vive al lado de cerrar sesión, no entre las pestañas del
                 local: la contraseña es de la persona, no del local. */}
@@ -244,6 +243,10 @@ export default function AdminOnboardPage() {
               🚪
             </button>
           </div>
+        </div>
+
+        <div className="max-w-[1600px] mx-auto mt-2.5">
+          <NavPanel actual="admin" rol={rol} esPlatformAdmin={isAdmin} className="flex" />
         </div>
       </header>
 

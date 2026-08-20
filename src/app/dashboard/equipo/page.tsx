@@ -166,7 +166,7 @@ export default function EquipoPage() {
   return (
     <div className="flex flex-col min-h-screen dashboard-dark">
       <header className="dash-header border-b px-4 md:px-6 py-3">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
               🍔
@@ -193,8 +193,7 @@ export default function EquipoPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <NavPanel actual="equipo" rol={rol} esPlatformAdmin={esPlatformAdmin} />
+          <div className="flex items-center gap-2.5 md:gap-3 flex-wrap justify-end min-w-0">
             <Link
               href="/dashboard/cuenta"
               className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
@@ -203,6 +202,10 @@ export default function EquipoPage() {
               🔑
             </Link>
           </div>
+        </div>
+
+        <div className="max-w-[1600px] mx-auto mt-2.5">
+          <NavPanel actual="equipo" rol={rol} esPlatformAdmin={esPlatformAdmin} className="flex" />
         </div>
       </header>
 

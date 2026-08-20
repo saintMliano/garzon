@@ -208,6 +208,39 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-08-20 — Arreglo: el header del panel desbordaba a lo ancho
+
+**El síntoma.** En un notebook, el panel quedaba con scroll horizontal: el header
+empujaba el ancho del `body` y arrastraba el Kanban entero. Los iconos de la
+derecha quedaban fuera de pantalla.
+
+**La causa, medida y no supuesta.** La nav pasó de 4 entradas a 6 (7 para el
+super-admin) y encima le sumé el botón "+ Tomar pedido", en una fila que no tenía
+`flex-wrap` ni nada que cediera. Con una ruta pública temporal que reproducía el
+header en su peor caso: la **nav sola medía 554 px**, y la fila completa pedía
+~1.450 px contra los 976 útiles de una pantalla de 1024.
+
+**El arreglo.** Con seis o siete destinos la nav dejó de ser "unas pestañas al
+lado de las estadísticas" y pasó a ser una barra de navegación: ahora va en su
+**propia fila** dentro del header. Además: `flex-wrap` en ambas filas para que
+degrade en vez de desbordar, `min-w-0` + `truncate` en el nombre del local,
+`overflow-x-auto` en la nav (que se desplaza sola en vez de estirar la página),
+espacios más chicos, y las estadísticas y el estado de conexión aparecen recién
+en `lg` en vez de `sm`, donde no cabían. La etiqueta "Tomar pedido" quedó como
+"Comanda".
+
+**Medido después del cambio** (misma ruta temporal, ya borrada):
+
+| Ancho | Antes | Después |
+|---|---|---|
+| 1024 | desborda; header de 176 px | sin desborde; header de 118 px, fila 1 en una sola línea |
+| 1280 | — | sin desborde; header de 118 px |
+| 375 | — | sin desborde; la nav se desplaza dentro de sí misma |
+
+**Efecto secundario bueno:** en celular antes **no había navegación** (era
+`hidden md:flex`). Ahora la nav se ve y se desplaza, que es justamente lo que
+necesita un garzón con el teléfono en la mano.
+
 ### 2026-08-20 — F12: roles por local y comanda del garzón
 
 **El problema.** Una fila en `local_staff` equivalía a ser dueño: las trece políticas RLS del

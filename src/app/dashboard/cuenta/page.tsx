@@ -132,12 +132,12 @@ export default function CuentaPage() {
   return (
     <div className="flex flex-col min-h-screen dashboard-dark">
       <header className="dash-header border-b px-4 md:px-6 py-3">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
               🍔
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="font-bold dash-text-primary text-base">Tu cuenta</h1>
               <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
             </div>

@@ -233,7 +233,7 @@ export default function ComandaPage() {
   // ------------------------------------------------------------------
   const encabezado = (
     <header className="dash-header border-b px-4 md:px-6 py-3 shrink-0">
-      <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+      <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
             🍔
@@ -260,17 +260,18 @@ export default function ComandaPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <NavPanel actual="comanda" rol={rol} esPlatformAdmin={esPlatformAdmin} />
-          {/* Ida y vuelta en un toque: el mismo turno pasa de tomar el pedido a
-              mirar la cocina muchas veces por servicio. */}
-          <Link
-            href="/dashboard"
-            className="px-3.5 py-2 rounded-lg text-xs font-semibold dash-text-secondary dash-bg-surface hover:opacity-80 transition-opacity whitespace-nowrap"
-          >
-            Ver cocina
-          </Link>
-        </div>
+        {/* Ida y vuelta en un toque: el mismo turno pasa de tomar el pedido a
+            mirar la cocina muchas veces por servicio. */}
+        <Link
+          href="/dashboard"
+          className="px-3.5 py-2 rounded-lg text-xs font-semibold dash-text-secondary dash-bg-surface hover:opacity-80 transition-opacity whitespace-nowrap"
+        >
+          Ver cocina
+        </Link>
+      </div>
+
+      <div className="max-w-[1600px] mx-auto mt-2.5">
+        <NavPanel actual="comanda" rol={rol} esPlatformAdmin={esPlatformAdmin} className="flex" />
       </div>
     </header>
   );

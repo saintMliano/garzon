@@ -25,7 +25,7 @@ type Entrada = {
 
 const ENTRADAS: Entrada[] = [
   { seccion: "pedidos", etiqueta: "Pedidos", href: "/dashboard", capacidad: null },
-  { seccion: "comanda", etiqueta: "Tomar pedido", href: "/dashboard/comanda", capacidad: "tomar_comanda" },
+  { seccion: "comanda", etiqueta: "Comanda", href: "/dashboard/comanda", capacidad: "tomar_comanda" },
   { seccion: "menu", etiqueta: "Menú", href: "/dashboard/menu", capacidad: "editar_menu" },
   { seccion: "config", etiqueta: "Identidad", href: "/dashboard/config", capacidad: "editar_local" },
   { seccion: "reportes", etiqueta: "Reportes", href: "/dashboard/reportes", capacidad: "ver_reportes" },
@@ -33,9 +33,9 @@ const ENTRADAS: Entrada[] = [
 ];
 
 const CLASE_ACTIVA =
-  "px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500";
+  "shrink-0 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500";
 const CLASE_INACTIVA =
-  "px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity";
+  "shrink-0 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity";
 
 export function NavPanel({
   actual,
@@ -52,7 +52,9 @@ export function NavPanel({
   const visibles = ENTRADAS.filter((e) => e.capacidad === null || puede(rol, e.capacidad));
 
   return (
-    <nav className={`${className} items-center gap-1 dash-bg-surface rounded-xl p-1`}>
+    <nav
+      className={`${className} items-center gap-1 dash-bg-surface rounded-xl p-1 min-w-0 max-w-full overflow-x-auto`}
+    >
       {visibles.map((e) =>
         e.seccion === actual ? (
           <span key={e.seccion} className={CLASE_ACTIVA}>
