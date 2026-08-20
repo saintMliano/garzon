@@ -210,6 +210,9 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 "calidad/SEO/Server Components" a F7 y "marca profunda" se repartió entre F7 y F9.)*
 
 **Backlog sin fase asignada:**
+- [ ] **Imprimir comandas en térmica.** ⏸ Postergado a propósito
+  ([decisión y análisis](plan/IMPRESION-COMANDAS.md)): se retoma con un cliente real y su
+  impresora a la vista. El camino elegido es `window.print()` con CSS de 80mm — no CloudPRNT.
 - [ ] **Atajos de nota por local.** Los de `src/lib/notas-rapidas.ts` son de
   fuente de soda y están fijos en el código. Al instalar un cliente de otro rubro
   hay que ajustarlos, o moverlos a `locales.notas_sugeridas text[]` editable desde

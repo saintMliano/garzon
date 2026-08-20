@@ -7,7 +7,12 @@
 >
 > Planes por fase: [F5](F5-TURNO-AUTONOMO.md) · [F6](F6-CIERRE-DE-CAJA.md) ·
 > [F7](F7-RENDIMIENTO.md) · [F8](F8-CONFIANZA.md) · [F9](F9-MARCA.md) ·
-> [F10a](F10-PROPINA-Y-DEMO.md) · [F10b](F10-SUSCRIPCION.md).
+> [F10a](F10-PROPINA-Y-DEMO.md) · [F10b](F10-SUSCRIPCION.md) ·
+> [F12](ROLES-Y-COMANDA.md).
+>
+> **Decisiones tomadas y postergadas** (para no volver a discutirlas desde cero):
+> [teléfono del comensal](TELEFONO-COMENSAL.md) · [anti-abuso del checkout](F8-CONFIANZA.md) ·
+> [imprimir comandas](IMPRESION-COMANDAS.md).
 
 Este directorio es el **plan ejecutable** de consolidación de Garzón Digital, producido por la
 revisión de consolidación del 2026-07-10 (ver [`AUDITORIA.md`](AUDITORIA.md)). Las tareas están
