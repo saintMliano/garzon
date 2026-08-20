@@ -31,7 +31,7 @@ export const NOMBRE_ROL: Record<Rol, string> = {
 
 export const DESCRIPCION_ROL: Record<Rol, string> = {
   dueño: "Acceso completo: menú, precios, reportes, identidad del local y equipo.",
-  personal: "Pedidos y comanda. No ve reportes ni puede cambiar precios.",
+  personal: "Pedidos, comanda y marcar productos agotados. No ve reportes ni puede cambiar precios.",
 };
 
 /**
@@ -90,7 +90,10 @@ export function puede(rol: Rol | null | undefined, capacidad: Capacidad): boolea
  */
 export const CAPACIDAD_POR_RUTA: ReadonlyArray<{ ruta: string; capacidad: Capacidad }> = [
   { ruta: "/dashboard/reportes", capacidad: "ver_reportes" },
-  { ruta: "/dashboard/menu", capacidad: "editar_menu" },
+  // El menú lo ABRE cualquiera del local: `personal` entra a marcar que se
+  // acabó algo. Lo que no puede es editar ni borrar, y eso se decide adentro
+  // de la página con `editar_menu` — y lo hace cumplir la RLS, no la página.
+  { ruta: "/dashboard/menu", capacidad: "marcar_agotado" },
   { ruta: "/dashboard/config", capacidad: "editar_local" },
   { ruta: "/dashboard/equipo", capacidad: "gestionar_equipo" },
   { ruta: "/dashboard/comanda", capacidad: "tomar_comanda" },

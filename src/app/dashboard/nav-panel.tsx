@@ -26,7 +26,7 @@ type Entrada = {
 const ENTRADAS: Entrada[] = [
   { seccion: "pedidos", etiqueta: "Pedidos", href: "/dashboard", capacidad: null },
   { seccion: "comanda", etiqueta: "Comanda", href: "/dashboard/comanda", capacidad: "tomar_comanda" },
-  { seccion: "menu", etiqueta: "Menú", href: "/dashboard/menu", capacidad: "editar_menu" },
+  { seccion: "menu", etiqueta: "Menú", href: "/dashboard/menu", capacidad: "marcar_agotado" },
   { seccion: "config", etiqueta: "Identidad", href: "/dashboard/config", capacidad: "editar_local" },
   { seccion: "reportes", etiqueta: "Reportes", href: "/dashboard/reportes", capacidad: "ver_reportes" },
   { seccion: "equipo", etiqueta: "Equipo", href: "/dashboard/equipo", capacidad: "gestionar_equipo" },

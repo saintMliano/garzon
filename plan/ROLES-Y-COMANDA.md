@@ -335,3 +335,21 @@ su lógica y su contrato con la base, no por uso real.
   trigger"; se hizo el trigger, porque un endpoint solo protege el camino que pasa por él.
 - **Marcar agotado no vive en el menú.** El menú es del dueño, así que el botón "Se acabó" está en la
   comanda, que es donde el garzón se entera.
+
+---
+
+## 12. Correcciones tras el primer uso (2026-08-20)
+
+Las tres salieron de usar la pantalla, no de revisarla.
+
+| Defecto | Arreglo |
+|---|---|
+| Agotar sacaba el producto de la grilla: puerta de una sola dirección | La tarjeta se queda, atenuada, con "volver a poner". El control pasó a la esquina, fuera del recorrido del dedo |
+| `personal` no tenía dónde reponer fuera del flujo de pedido | La pestaña Menú exige `marcar_agotado` y no `editar_menu`; crear/editar/borrar ocultos (la RLS ya los niega) |
+| La nota era del pedido y no del ítem | El carrito pasó a ser una lista de líneas `{id, productoId, cantidad, notas}`, con "Separar uno" |
+| No se podía mostrar el plato ni leer los ingredientes | Botón ⓘ con foto, precio y descripción |
+
+**Lo que NO hubo que construir:** que agotar llegue a la carta del comensal ya
+funcionaba —`get_menu_publico` filtra `disponible = true` desde F7— y la nota por
+ítem ya viajaba desde el checkout público. Lo que faltaba estaba solo del lado de
+la comanda.

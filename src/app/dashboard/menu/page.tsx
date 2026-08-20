@@ -9,6 +9,7 @@ import type { Categoria, Producto } from "@/types/database";
 import AvisoSuscripcion from "../aviso-suscripcion";
 import { NavPanel } from "@/app/dashboard/nav-panel";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
+import { puede } from "@/lib/roles";
 
 type ProductoForm = {
   id: string | null;
@@ -50,6 +51,10 @@ export default function MenuPage() {
   // El rol es por local: lo resuelve el hook compartido a partir del local
   // seleccionado. Solo decide qué se dibuja; quien niega es la base.
   const { rol } = useRolLocal();
+  // `personal` entra acá solo a marcar que se acabó algo. Ocultarle los botones
+  // es cortesía, no seguridad: la RLS ya le niega crear, editar y borrar, así
+  // que si alguno se escapara solo conseguiría un error, nunca un cambio.
+  const puedeEditar = puede(rol, "editar_menu");
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -437,17 +442,29 @@ export default function MenuPage() {
 
       {/* ===== PANEL DE MENÚ ===== */}
       <main className="flex-1 p-3 md:p-5 overflow-x-auto">
+        {!puedeEditar && (
+          <div className="max-w-[1600px] mx-auto mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
+            <p className="text-[11px] text-amber-200 leading-relaxed">
+              Podés marcar lo que se acabó con el interruptor verde. Apenas lo hagas, el producto
+              deja de aparecer en la carta del cliente. Los precios y el resto del menú los cambia
+              el dueño.
+            </p>
+          </div>
+        )}
+
         <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 min-w-0">
           {/* Panel izquierdo: categorías */}
           <div className="dash-card rounded-2xl border-2 p-3 h-fit">
             <div className="flex items-center justify-between mb-3 px-1">
               <h2 className="font-bold dash-text-primary text-sm">Categorías</h2>
-              <button
-                onClick={openNewCategoria}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.03] active:scale-95 transition-transform"
-              >
-                ＋ Categoría
-              </button>
+              {puedeEditar && (
+                <button
+                  onClick={openNewCategoria}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.03] active:scale-95 transition-transform"
+                >
+                  ＋ Categoría
+                </button>
+              )}
             </div>
 
             {categorias.length === 0 ? (
@@ -469,7 +486,7 @@ export default function MenuPage() {
                       <p className="font-semibold dash-text-primary text-sm truncate">{cat.nombre}</p>
                       <p className="text-[11px] dash-text-muted">{productosDeCategoria(cat.id).length} producto(s)</p>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className={`flex items-center gap-1 opacity-0 transition-opacity ${puedeEditar ? "group-hover:opacity-100" : "hidden"}`}>
                       <button
                         onClick={(e) => { e.stopPropagation(); openEditCategoria(cat); }}
                         className="w-7 h-7 rounded-lg dash-bg-surface flex items-center justify-center text-xs hover:opacity-80"
@@ -497,18 +514,20 @@ export default function MenuPage() {
               <h2 className="font-bold dash-text-primary text-sm">
                 {categoriaActiva ? `Productos · ${categoriaActiva.nombre}` : "Productos"}
               </h2>
-              <button
-                onClick={openNewProducto}
-                disabled={categorias.length === 0}
-                className="px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.03] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
-              >
-                ＋ Nuevo producto
-              </button>
+              {puedeEditar && (
+                <button
+                  onClick={openNewProducto}
+                  disabled={categorias.length === 0}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.03] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+                >
+                  ＋ Nuevo producto
+                </button>
+              )}
             </div>
 
             {!categoriaActiva ? (
               <div className="dash-col-empty rounded-xl border-2 border-dashed p-10 text-center dash-text-muted text-sm">
-                Selecciona o crea una categoría para ver sus productos.
+                {puedeEditar ? "Selecciona o crea una categoría para ver sus productos." : "Elige una categoría para ver sus productos."}
               </div>
             ) : productosActivos.length === 0 ? (
               <div className="dash-col-empty rounded-xl border-2 border-dashed p-10 text-center dash-text-muted text-sm">
@@ -548,7 +567,7 @@ export default function MenuPage() {
                       {formatPrice(prod.precio)}
                     </span>
 
-                    <div className="flex items-center gap-1">
+                    <div className={`items-center gap-1 ${puedeEditar ? "flex" : "hidden"}`}>
                       <button
                         onClick={() => openEditProducto(prod)}
                         className="w-8 h-8 rounded-lg dash-bg-surface flex items-center justify-center text-xs hover:opacity-80"

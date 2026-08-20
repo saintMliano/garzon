@@ -169,6 +169,60 @@ describe("Roles por local (F12)", () => {
     });
   });
 
+  test("El personal puede REPONER lo que agotó (no es de una sola dirección)", async () => {
+    // La primera versión de la comanda sacaba el producto de la grilla al
+    // agotarlo, así que un toque por error lo borraba de la carta pública sin
+    // forma de volver atrás desde esa pantalla. La RPC siempre pudo hacer las
+    // dos cosas; lo que faltaba era poder pedirlo.
+    await clientePersonal.rpc("marcar_disponibilidad", {
+      p_producto_id: fx.localA.prodAvailable.id,
+      p_disponible: false,
+    });
+    const { error } = await clientePersonal.rpc("marcar_disponibilidad", {
+      p_producto_id: fx.localA.prodAvailable.id,
+      p_disponible: true,
+    });
+    expect(error).toBeNull();
+
+    const { data } = await adminClient
+      .from("productos")
+      .select("disponible")
+      .eq("id", fx.localA.prodAvailable.id)
+      .single();
+    expect(data?.disponible, "el personal no pudo reponer lo que agotó").toBe(true);
+  });
+
+  test("Lo que agota el personal desaparece de la carta del comensal, y vuelve al reponerlo", async () => {
+    // Es la promesa que se le hace al dueño: el garzón marca que se acabó la
+    // palta y el cliente deja de verla, sin que el dueño toque nada.
+    type MenuPublico = { productos: { id: string }[] };
+    const pedirMenu = async () => {
+      const { data } = await (anonClient as unknown as {
+        rpc<T>(n: string, a: Record<string, unknown>): PromiseLike<{ data: T | null }>;
+      }).rpc<MenuPublico>("get_menu_publico", { p_slug: fx.localA.slug });
+      return (data?.productos ?? []).map((p) => p.id);
+    };
+
+    expect(await pedirMenu()).toContain(fx.localA.prodAvailable.id);
+
+    await clientePersonal.rpc("marcar_disponibilidad", {
+      p_producto_id: fx.localA.prodAvailable.id,
+      p_disponible: false,
+    });
+    expect(
+      await pedirMenu(),
+      "el comensal sigue viendo un producto que la cocina dio por agotado"
+    ).not.toContain(fx.localA.prodAvailable.id);
+
+    await clientePersonal.rpc("marcar_disponibilidad", {
+      p_producto_id: fx.localA.prodAvailable.id,
+      p_disponible: true,
+    });
+    expect(await pedirMenu(), "reponerlo no lo devolvió a la carta").toContain(
+      fx.localA.prodAvailable.id
+    );
+  });
+
   test("marcar_disponibilidad NO deja tocar productos de otro local", async () => {
     const { error } = await clientePersonal.rpc("marcar_disponibilidad", {
       p_producto_id: fx.localB.prodAvailable.id,
@@ -367,6 +421,59 @@ describe("Roles por local (F12)", () => {
       .update({ rol: "personal" })
       .eq("user_id", personal.id)
       .eq("local_id", fx.localA.id);
+  });
+
+  // ------------------------------------------------------------------
+  // La comanda: una nota por línea, no un párrafo al final
+  // ------------------------------------------------------------------
+  test("Dos líneas del mismo producto llegan con su propia nota cada una", async () => {
+    // "Dos italianos, uno sin mayo" es el caso de todos los días. La primera
+    // versión de la comanda tenía un carrito de {producto: cantidad}, así que
+    // no podía expresarlo. `pedido_items` no tiene índice único por
+    // (pedido_id, producto_id), así que la base lo aguanta sin cambios.
+    const { data: pedidoId, error } = await clientePersonal.rpc("crear_pedido", {
+      p_local_id: fx.localA.id,
+      p_nombre: "Mesa 5",
+      p_mesa: "Mesa 5",
+      p_notas: "",
+      p_items: [
+        { producto_id: fx.localA.prodAvailable.id, cantidad: 1, notas: "sin ají" },
+        { producto_id: fx.localA.prodAvailable.id, cantidad: 2, notas: null },
+      ],
+      p_client_request_id: crypto.randomUUID(),
+    });
+    expect(error).toBeNull();
+
+    const { data: items } = await adminClient
+      .from("pedido_items")
+      .select("cantidad, notas")
+      .eq("pedido_id", pedidoId as string);
+
+    expect(items, "el mismo producto en dos líneas se colapsó en una").toHaveLength(2);
+
+    const conNota = items?.find((i) => i.notas === "sin ají");
+    const sinNota = items?.find((i) => i.notas === null);
+    expect(conNota?.cantidad).toBe(1);
+    expect(sinNota?.cantidad).toBe(2);
+  });
+
+  test("El total lo sigue calculando el servidor, la nota no lo altera", async () => {
+    // La nota es texto libre del garzón: no puede tocar la plata.
+    const { data: pedidoId } = await clientePersonal.rpc("crear_pedido", {
+      p_local_id: fx.localA.id,
+      p_nombre: "Mesa 6",
+      p_mesa: "Mesa 6",
+      p_notas: "",
+      p_items: [{ producto_id: fx.localA.prodAvailable.id, cantidad: 2, notas: "sin mayo" }],
+      p_client_request_id: crypto.randomUUID(),
+    });
+
+    const { data: pedido } = await adminClient
+      .from("pedidos")
+      .select("total")
+      .eq("id", pedidoId as string)
+      .single();
+    expect(pedido?.total).toBe(fx.localA.prodAvailable.precio * 2);
   });
 
   // ------------------------------------------------------------------

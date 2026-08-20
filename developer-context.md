@@ -208,6 +208,59 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-08-20 — La comanda, usable: stock reversible, ficha del plato y nota por línea
+
+Tres defectos de la primera versión, los tres encontrados usándola.
+
+**1. Agotar era una puerta de una sola dirección.** La comanda filtraba el
+producto al marcarlo agotado, así que desaparecía de la grilla: un toque sin
+querer lo sacaba de la carta pública y desde esa pantalla no había cómo
+devolverlo. Ahora la tarjeta se queda en su lugar, atenuada y tachada, con un
+botón "Agotado · volver a poner". Y el control de agotar salió de debajo del
+precio —donde estaba justo en el recorrido del dedo que va a sumar— a un icono
+chico en la esquina.
+
+**2. `personal` no tenía dónde reponer fuera del pedido.** La pestaña Menú pasó
+a exigir `marcar_agotado` en vez de `editar_menu`, así que `personal` entra, ve
+el menú completo y usa el interruptor de disponibilidad. Los botones de crear,
+editar y borrar se le ocultan — pero eso es cortesía, no seguridad: **la RLS ya
+le niega esas tres operaciones**, así que un botón que se escapara solo
+conseguiría un error, nunca un cambio. La página lleva un aviso explicando qué
+puede hacer.
+
+*Nota:* que agotar llegue a la carta del comensal **ya funcionaba** desde F7 —
+`get_menu_publico` filtra `disponible = true`. No hubo que construirlo; ahora
+hay un test que lo fija.
+
+**3. La nota era del pedido, no del ítem.** Faltaba lo que la carta pública ya
+hacía (`checkout-modal.tsx` manda `notas` por ítem desde siempre): "chacarero
+sin ají, italiano sin mayo", cada uno en su línea. El carrito de la comanda era
+`Record<productoId, cantidad>` y no podía expresarlo.
+
+Ahora es una lista de **líneas** — `{id, productoId, cantidad, notas}` — así que
+el mismo producto puede ir dos veces con notas distintas ("dos italianos, uno
+sin mayo"). `pedido_items` **no tiene índice único por (pedido_id, producto_id)**,
+así que la base lo aguantaba sin cambios, y la cocina ya renderiza `item.notas`
+por línea. Hay un panel "revisar" donde cada línea tiene su nota, un botón
+**Separar uno** para partir una línea de dos en dos líneas, y abajo la nota
+general del pedido, que se conserva.
+
+**4. Ficha del producto.** Un botón ⓘ en la tarjeta abre foto, precio e
+ingredientes, para mostrarle el plato al comensal o leerle qué lleva sin salir
+de la comanda. Solo aparece si el producto tiene foto o descripción; si no tiene
+ninguna, la ficha lo dice y aclara que las carga el dueño.
+
+**De paso:** la pestaña activa de la comanda pasó de corregirse en un `useEffect`
+a ser un valor derivado (`useMemo`). El `react-hooks/set-state-in-effect` de este
+proyecto es un error, no una advertencia, y además así no hay un primer render
+con la pestaña equivocada.
+
+**Verificación.** 4 tests nuevos contra Supabase real (**169 en total**): que
+`personal` puede reponer lo que agotó, que agotar saca el producto de
+`get_menu_publico` y reponerlo lo devuelve, que dos líneas del mismo producto
+llegan con su propia nota cada una, y que la nota no altera el total (que lo
+sigue calculando el servidor). `tsc`, `eslint` y `build` limpios.
+
 ### 2026-08-20 — Arreglo: el header del panel desbordaba a lo ancho
 
 **El síntoma.** En un notebook, el panel quedaba con scroll horizontal: el header
