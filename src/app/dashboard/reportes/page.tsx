@@ -645,7 +645,7 @@ export default function ReportesPage() {
               ) : (
                 <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -683,6 +683,11 @@ export default function ReportesPage() {
           {/* ===== SELECTOR DE RANGO ===== */}
           <div className="dash-card rounded-2xl border-2 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* El rango elegido es un indicador de qué estás mirando, no una
+                  acción: por eso naranja de marca plano y no el gradiente, que
+                  acá quedaba prometiendo una acción importante que no existe.
+                  Esta pantalla es para leer; el dueño no viene a apretar nada.
+                  `text-stone-900` sobre `orange-500` es lo que pide el contraste. */}
               <div className="flex flex-wrap items-center gap-1.5">
                 {PRESETS.map((p) => (
                   <button
@@ -690,7 +695,7 @@ export default function ReportesPage() {
                     onClick={() => aplicarPreset(p.id)}
                     className={`px-3 py-2 rounded-xl text-xs font-semibold transition-transform hover:scale-[1.03] active:scale-95 ${
                       preset === p.id
-                        ? "text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500"
+                        ? "text-stone-900 bg-orange-500"
                         : "dash-bg-surface dash-text-secondary"
                     }`}
                   >
@@ -736,7 +741,7 @@ export default function ReportesPage() {
               </div>
             )}
 
-            <p className="text-[11px] dash-text-muted mt-3">
+            <p className="text-xs dash-text-muted mt-3">
               {rangoEsUnDia
                 ? fechaLarga(desde)
                 : `Del ${fechaLarga(desde)} al ${fechaLarga(hasta)}`}
@@ -783,7 +788,7 @@ export default function ReportesPage() {
                   <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
                     {formatPrice(resumen.venta_total)}
                   </p>
-                  <p className="text-[11px] dash-text-muted mt-1">No incluye pedidos rechazados.</p>
+                  <p className="text-xs dash-text-muted mt-1">No incluye pedidos rechazados.</p>
                 </div>
 
                 <div className="dash-card rounded-2xl border-2 p-5">
@@ -791,7 +796,7 @@ export default function ReportesPage() {
                   <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
                     {resumen.pedidos_total.toLocaleString("es-CL")}
                   </p>
-                  <p className="text-[11px] dash-text-muted mt-1">Total recibidos en el período.</p>
+                  <p className="text-xs dash-text-muted mt-1">Total recibidos en el período.</p>
                 </div>
 
                 <div className="dash-card rounded-2xl border-2 p-5">
@@ -799,7 +804,7 @@ export default function ReportesPage() {
                   <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
                     {formatPrice(resumen.ticket_promedio)}
                   </p>
-                  <p className="text-[11px] dash-text-muted mt-1">Promedio por pedido no rechazado.</p>
+                  <p className="text-xs dash-text-muted mt-1">Promedio por pedido no rechazado.</p>
                 </div>
               </div>
 
@@ -813,7 +818,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {formatPrice(resumen.venta_entregada)}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       {resumen.pedidos_entregados} pedido(s) · esto es lo que debería estar en la caja
                     </p>
                   </div>
@@ -823,7 +828,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {formatPrice(ventaPendiente)}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       {resumen.pedidos_pendientes} pedido(s) · todavía en curso, aún no cobrados
                     </p>
                   </div>
@@ -833,7 +838,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {resumen.pedidos_cancelados.toLocaleString("es-CL")}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       No suman a la venta ni al ticket promedio
                     </p>
                   </div>
@@ -846,7 +851,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {formatPrice(resumen.propinas_total)}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       Aparte de la venta · las cobra el local en caja y son del personal
                     </p>
                   </div>
@@ -862,7 +867,7 @@ export default function ReportesPage() {
                 <div className="dash-card rounded-2xl border-2 p-4">
                   <div className="flex items-baseline justify-between mb-4">
                     <h2 className="font-bold dash-text-primary text-sm">Tiempos de cocina</h2>
-                    <span className="text-[11px] dash-text-muted">
+                    <span className="text-xs dash-text-muted">
                       mediana de {tiempos.pedidos_medidos} pedido{tiempos.pedidos_medidos !== 1 && "s"}
                     </span>
                   </div>
@@ -874,13 +879,13 @@ export default function ReportesPage() {
                       { etiqueta: "Hasta entregar", seg: tiempos.seg_hasta_entregado, detalle: "el ciclo completo" },
                     ].map((t) => (
                       <div key={t.etiqueta} className="dash-bg-surface rounded-xl p-3">
-                        <p className="text-[11px] dash-text-muted uppercase tracking-wide font-medium">
+                        <p className="text-2xs dash-text-muted uppercase tracking-wide font-medium">
                           {t.etiqueta}
                         </p>
                         <p className="text-xl font-bold dash-text-primary tabular-nums mt-0.5">
                           {duracion(t.seg)}
                         </p>
-                        <p className="text-[11px] dash-text-muted mt-1 leading-snug">{t.detalle}</p>
+                        <p className="text-xs dash-text-muted mt-1 leading-snug">{t.detalle}</p>
                       </div>
                     ))}
                   </div>
@@ -897,16 +902,16 @@ export default function ReportesPage() {
                         en la misma pantalla y no sabría cuál creer. */}
                     <h2 className="font-bold dash-text-primary text-sm">
                       Ventas por {agrupadoPorMes ? "mes" : "día"}{" "}
-                      <span className="font-normal dash-text-muted text-[11px]">· sin rechazados</span>
+                      <span className="font-normal dash-text-muted text-2xs">· sin rechazados</span>
                     </h2>
                     {(() => {
                       const elegida = serieGrafico.find((d) => d.clave === barraElegida);
                       return elegida ? (
-                        <span className="text-[11px] dash-text-secondary tabular-nums" aria-live="polite">
+                        <span className="text-xs dash-text-secondary tabular-nums" aria-live="polite">
                           {elegida.etiqueta}: {formatPrice(elegida.venta)} · {elegida.pedidos} pedido(s)
                         </span>
                       ) : (
-                        <span className="text-[11px] dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
+                        <span className="text-xs dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
                       );
                     })()}
                   </div>
@@ -943,7 +948,7 @@ export default function ReportesPage() {
                             title={`${d.etiqueta} · ${d.pedidos} pedido(s) · ${formatPrice(d.venta)}`}
                           >
                             <span
-                              className={`text-[10px] dash-text-secondary tabular-nums transition-opacity whitespace-nowrap ${
+                              className={`text-2xs dash-text-secondary tabular-nums transition-opacity whitespace-nowrap ${
                                 elegida ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                               }`}
                             >
@@ -969,7 +974,7 @@ export default function ReportesPage() {
                         const mostrar = i % paso === 0 || i === serieGrafico.length - 1;
                         return (
                           <div key={d.clave} className="flex-1 min-w-[14px] text-center">
-                            <span className="text-[10px] dash-text-muted tabular-nums whitespace-nowrap">
+                            <span className="text-2xs dash-text-muted tabular-nums whitespace-nowrap">
                               {mostrar ? (agrupadoPorMes ? d.etiqueta.slice(0, 3) : d.clave.slice(8, 10)) : ""}
                             </span>
                           </div>
@@ -979,7 +984,7 @@ export default function ReportesPage() {
                   </div>
 
                   {!agrupadoPorMes && serieGrafico.length >= MAX_DIAS_GRAFICO && (
-                    <p className="text-[11px] dash-text-muted mt-2">
+                    <p className="text-xs dash-text-muted mt-2">
                       Se muestran los primeros {MAX_DIAS_GRAFICO} días del rango.
                     </p>
                   )}

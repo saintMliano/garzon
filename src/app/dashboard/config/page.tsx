@@ -41,14 +41,14 @@ function ChipContraste({
 }) {
   if (!completo) {
     return (
-      <p className="mt-1.5 text-[11px] dash-text-muted">
+      <p className="mt-1.5 text-xs dash-text-muted">
         Escribe el color completo (#rgb o #rrggbb) para ver el contraste.
       </p>
     );
   }
   const pasa = razon >= CONTRASTE_AA;
   return (
-    <p className={`mt-1.5 text-[11px] font-medium ${pasa ? "text-green-400" : "text-amber-400"}`}>
+    <p className={`mt-1.5 text-xs font-medium ${pasa ? "text-green-400" : "text-amber-400"}`}>
       <span aria-hidden>{pasa ? "✓" : "⚠"}</span> {razon.toFixed(1)}:1 · {detalle}
     </p>
   );
@@ -317,7 +317,7 @@ export default function ConfigPage() {
               ) : (
                 <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -474,7 +474,7 @@ export default function ConfigPage() {
             {/* ===== Vista previa real: lo que va a ver el cliente ===== */}
             <div className="rounded-xl border border-stone-800 bg-stone-950/40 p-4">
               <p className="text-xs font-semibold dash-text-secondary">Vista previa del menú</p>
-              <p className="text-[11px] dash-text-muted mt-0.5">
+              <p className="text-xs dash-text-muted mt-0.5">
                 Así se ven tus colores sobre el fondo claro que ve el cliente.
               </p>
 
@@ -486,9 +486,13 @@ export default function ConfigPage() {
                   Ver pedido · $12.500
                 </div>
 
+                {/* Los dos rótulos de esta comparación van en el piso de la
+                    escala y en versalitas: nombran las dos muestras de color,
+                    que es lo que hay que mirar. Si uno subiera a `xs` y el otro
+                    no, dejarían de leerse como el mismo par. */}
                 <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
                       Tu acento
                     </p>
                     <p className="text-lg font-bold" style={{ color: acentoVista }}>
@@ -496,7 +500,7 @@ export default function ConfigPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
                       {acentoNecesitaAjuste ? "Corregido para el menú" : "En el menú"}
                     </p>
                     <p className="text-lg font-bold" style={{ color: acentoLegible }}>
@@ -514,7 +518,7 @@ export default function ConfigPage() {
               {acentoNecesitaAjuste && (
                 <div className="mt-3 flex gap-2 rounded-xl dash-bg-surface px-3 py-2.5 dash-text-secondary">
                   <span aria-hidden>ℹ</span>
-                  <p className="text-[11px] leading-relaxed">
+                  <p className="text-xs leading-relaxed">
                     Tu color de acento contrasta {contrasteAcento.toFixed(1)}:1 sobre blanco y el
                     mínimo para que un precio se lea es {CONTRASTE_AA}:1. En el menú los precios se
                     van a pintar en{" "}
@@ -575,7 +579,7 @@ export default function ConfigPage() {
             <button
               onClick={handleGuardar}
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold btn-primario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
             >
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>

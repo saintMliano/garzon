@@ -114,6 +114,39 @@ export function legibleSobre(color: string, fondo: string, minimo = CONTRASTE_AA
 }
 
 /**
+ * Mezcla dos colores en RGB, igual que `color-mix(in srgb, a X%, b)` del CSS.
+ *
+ * Existe para poder calcular en el servidor el mismo tinte que el navegador
+ * pinta con `color-mix`, y así medir el contraste contra el fondo REAL.
+ */
+export function mezclar(a: string, b: string, proporcionA: number): string {
+  const ra = parseHex(a);
+  const rb = parseHex(b);
+  if (!ra || !rb) return a;
+  const p = Math.min(Math.max(proporcionA, 0), 1);
+  return aHex({
+    r: ra.r * p + rb.r * (1 - p),
+    g: ra.g * p + rb.g * (1 - p),
+    b: ra.b * p + rb.b * (1 - p),
+  });
+}
+
+/**
+ * El tinte más oscuro sobre el que la carta escribe texto con `--accent-legible`.
+ *
+ * La carta no pone los precios sobre blanco puro: los pone sobre superficies
+ * teñidas con la marca del local — `color-mix(in srgb, var(--brand) 12%, white)`
+ * en el resumen del checkout, 10% en el control de cantidad de cada producto.
+ * Un fondo teñido es más oscuro que el blanco, así que un texto oscuro que
+ * apenas llegaba a 4,5:1 contra blanco cae por debajo contra el tinte: medido en
+ * vivo, el número del control de cantidad daba 4,17:1.
+ *
+ * Calcular el acento contra el 12% lo deja legible sobre las tres superficies,
+ * porque las otras dos son más claras.
+ */
+const TINTE_MAXIMO = 0.12;
+
+/**
  * Las cuatro variables CSS del tenant, listas para un `style`.
  *
  * `--brand` / `--accent` son los colores tal cual los eligió el dueño;
@@ -130,10 +163,14 @@ export function variablesDeMarca(
   const brand = parseHex(colorPrimario) ? colorPrimario! : "#f97316";
   const accent = parseHex(colorAcento) ? colorAcento! : brand;
 
+  // El acento se mide contra el tinte de marca y no contra `fondo` a secas: es
+  // la superficie sobre la que la carta realmente lo escribe. Ver TINTE_MAXIMO.
+  const superficie = mezclar(brand, fondo, TINTE_MAXIMO);
+
   return {
     "--brand": brand,
     "--brand-texto": textoSobre(brand),
     "--accent": accent,
-    "--accent-legible": legibleSobre(accent, fondo),
+    "--accent-legible": legibleSobre(accent, superficie),
   };
 }

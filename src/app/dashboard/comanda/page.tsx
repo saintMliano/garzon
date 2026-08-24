@@ -393,7 +393,7 @@ export default function ComandaPage() {
                 {localNombre ?? "Comanda"}
               </h1>
             )}
-            <p className="text-[11px] dash-text-muted">Garzón Digital · Tomar pedido</p>
+            <p className="text-xs dash-text-muted">Garzón Digital · Tomar pedido</p>
           </div>
         </div>
 
@@ -471,13 +471,16 @@ export default function ComandaPage() {
             <p className="text-sm dash-text-secondary mt-1">
               N.º {exito.numero} · {exito.mesa}
             </p>
-            <p className="text-[11px] dash-text-muted mt-2 leading-relaxed">
+            <p className="text-xs dash-text-muted mt-2 leading-relaxed">
               Ya está en la pantalla de la cocina.
             </p>
             <div className="flex flex-col gap-2 mt-5">
+              {/* El primario de esta pantalla. El turno no termina en el pedido
+                  que acaba de salir: la mesa siguiente ya está esperando, y
+                  volver a la cocina es el desvío, no el camino. */}
               <button
                 onClick={otroPedido}
-                className="w-full px-4 py-3 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+                className="w-full px-4 py-3 rounded-xl text-sm font-bold btn-primario active:scale-95 transition-transform"
               >
                 Tomar otro pedido
               </button>
@@ -501,9 +504,13 @@ export default function ComandaPage() {
 
       <div className="px-4 md:px-6 py-3 border-b border-stone-800 shrink-0">
         <div className="max-w-[1600px] mx-auto flex items-center gap-3 flex-wrap">
+          {/* Secundario: dice en qué mesa estás parado y deja cambiarla, pero
+              cambiar de mesa a mitad de comanda es la excepción, no lo que se
+              viene a hacer acá. Con el gradiente competía de igual a igual con
+              "Enviar a cocina", que está a un metro más abajo. */}
           <button
             onClick={() => setMesa(null)}
-            className="px-3 py-2 rounded-lg text-xs font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+            className="px-3 py-2 rounded-lg text-xs font-bold btn-secundario active:scale-95 transition-transform"
           >
             {mesa} ▾
           </button>
@@ -518,6 +525,16 @@ export default function ComandaPage() {
         </div>
       </div>
 
+      {/* La pestaña activa NO es un botón primario: no es una acción, es un
+          indicador de dónde estás parado. Llevaba el mismo gradiente que
+          "Enviar a cocina" y por eso había dos cosas gritando lo mismo en una
+          pantalla donde solo una importa.
+
+          Queda el naranja de marca plano —sin gradiente— contra el fondo de
+          superficie de las inactivas: alcanza de sobra para ver en qué
+          categoría estás, y el degradé queda reservado para lo único que cierra
+          el trabajo. `text-stone-900` sobre `orange-500` es lo que devuelve
+          `textoSobre()`; el blanco acá no llega al AA. */}
       {!busqueda && (
         <div className="px-4 md:px-6 py-2 border-b border-stone-800 overflow-x-auto shrink-0">
           <div className="max-w-[1600px] mx-auto flex gap-1.5">
@@ -526,7 +543,7 @@ export default function ComandaPage() {
                 onClick={() => setPestana(FRECUENTES)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   pestanaEfectiva === FRECUENTES
-                    ? "text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500"
+                    ? "text-stone-900 bg-orange-500"
                     : "dash-bg-surface dash-text-secondary"
                 }`}
               >
@@ -539,7 +556,7 @@ export default function ComandaPage() {
                 onClick={() => setPestana(c.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   pestanaEfectiva === c.id
-                    ? "text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500"
+                    ? "text-stone-900 bg-orange-500"
                     : "dash-bg-surface dash-text-secondary"
                 }`}
               >
@@ -622,7 +639,7 @@ export default function ComandaPage() {
                       <button
                         onClick={() => cambiarDisponibilidad(p, true)}
                         disabled={cambiandoStock === p.id}
-                        className="mt-2.5 w-full py-2 rounded-lg text-[11px] font-bold text-amber-200 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-40 transition-colors"
+                        className="mt-2.5 w-full py-2 rounded-lg text-xs font-bold text-amber-200 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-40 transition-colors"
                       >
                         {cambiandoStock === p.id ? "Guardando…" : "Agotado · volver a poner"}
                       </button>
@@ -635,7 +652,7 @@ export default function ComandaPage() {
                     {p.disponible && (
                       <button
                         onClick={() => abrirNota(p)}
-                        className="mt-2 self-start px-2 py-1 rounded-lg text-[11px] font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
+                        className="mt-2 self-start px-2 py-1 rounded-lg text-2xs font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
                       >
                         📝 Con nota
                       </button>
@@ -653,10 +670,14 @@ export default function ComandaPage() {
                         <span className="text-base font-bold dash-text-primary tabular-nums">
                           {cantidad}
                         </span>
+                        {/* Secundario, y no primario, aunque sea el botón que
+                            más se toca del turno: sumar un ítem es un paso del
+                            camino, no el acto por el que existe la pantalla.
+                            El contorno igual lo separa del "−" de al lado. */}
                         <button
                           onClick={() => sumar(p.id, 1)}
                           aria-label={`Agregar uno de ${p.nombre}`}
-                          className="w-9 h-9 rounded-lg text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 text-lg font-bold active:scale-90 transition-transform"
+                          className="w-9 h-9 rounded-lg btn-secundario text-lg font-bold active:scale-90 transition-transform"
                         >
                           +
                         </button>
@@ -679,7 +700,7 @@ export default function ComandaPage() {
           {error && (
             <p
               role="alert"
-              className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"
+              className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"
             >
               {error}
             </p>
@@ -697,7 +718,7 @@ export default function ComandaPage() {
                   doce veces. */}
               <p
                 aria-live="polite"
-                className="text-[10px] dash-text-muted uppercase tracking-wider font-medium"
+                className="text-2xs dash-text-muted uppercase tracking-wider font-medium"
               >
                 {mesa} · {unidades} {unidades === 1 ? "ítem" : "ítems"}
                 {unidades > 0 && <span className="text-orange-400"> · revisar</span>}
@@ -706,10 +727,14 @@ export default function ComandaPage() {
                 {formatearPrecio(total)}
               </p>
             </button>
+            {/* EL primario de la comanda. Esta pantalla existe para que el
+                pedido llegue a la cocina: todo lo demás —elegir mesa, buscar,
+                sumar, anotar, revisar— es camino hasta acá. Es el único
+                gradiente que queda en el flujo de toma del pedido. */}
             <button
               onClick={enviar}
               disabled={enviando || unidades === 0}
-              className="px-6 py-3.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-40 active:scale-95 transition-transform"
+              className="px-6 py-3.5 rounded-xl text-sm font-bold btn-primario disabled:opacity-40 active:scale-95 transition-transform"
             >
               {enviando ? "Enviando…" : "Enviar a cocina"}
             </button>
@@ -757,6 +782,9 @@ export default function ComandaPage() {
                 </p>
               )}
 
+              {/* Un primario por diálogo: la ficha se abre para mostrar el
+                  plato, y lo que se hace con eso es agregarlo. "Cerrar" es la
+                  salida, no la acción. */}
               <div className="flex gap-2 mt-4">
                 {detalle.disponible && (
                   <button
@@ -764,7 +792,7 @@ export default function ComandaPage() {
                       sumar(detalle.id, 1);
                       setDetalle(null);
                     }}
-                    className="flex-1 py-3 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+                    className="flex-1 py-3 rounded-xl text-sm font-bold btn-primario active:scale-95 transition-transform"
                   >
                     Agregar al pedido
                   </button>
@@ -818,7 +846,7 @@ export default function ComandaPage() {
                 <button
                   key={n}
                   onClick={() => setNotaTexto((prev) => agregarNotaRapida(prev, n))}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
+                  className="px-2.5 py-1 rounded-lg text-2xs font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
                 >
                   {n}
                 </button>
@@ -853,9 +881,12 @@ export default function ComandaPage() {
                 >
                   Cancelar
                 </button>
+                {/* El primario de este diálogo: se abrió para agregar el ítem
+                    con su nota, y ese es el único botón que lo cierra haciendo
+                    algo. Los "−/+" de la cantidad no compiten. */}
                 <button
                   onClick={confirmarNota}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold btn-primario active:scale-95 transition-transform"
                 >
                   Agregar
                 </button>
@@ -882,7 +913,7 @@ export default function ComandaPage() {
             <h3 className="font-bold dash-text-primary text-base">
               ¿Agotar {confirmarAgotar.nombre}?
             </h3>
-            <p className="text-[13px] dash-text-muted mt-2 leading-relaxed">
+            <p className="text-sm dash-text-muted mt-2 leading-relaxed">
               Deja de aparecer en la carta del cliente al instante. Lo podés volver a poner desde acá
               mismo cuando haya de nuevo.
             </p>
@@ -946,7 +977,7 @@ export default function ComandaPage() {
                       <p className="text-sm font-semibold dash-text-primary truncate">
                         {producto.nombre}
                       </p>
-                      <p className="text-[11px] dash-text-muted tabular-nums">
+                      <p className="text-2xs dash-text-muted tabular-nums">
                         {formatearPrecio(producto.precio * linea.cantidad)}
                       </p>
                     </div>
@@ -960,10 +991,13 @@ export default function ComandaPage() {
                     <span className="w-6 text-center text-sm font-bold dash-text-primary tabular-nums">
                       {linea.cantidad}
                     </span>
+                    {/* Corregir una cantidad mientras se revisa es ajuste, no
+                        la acción del diálogo: secundario, igual que el "+" de
+                        la grilla. */}
                     <button
                       onClick={() => cambiarCantidad(linea.id, 1)}
                       aria-label={`Agregar uno de ${producto.nombre}`}
-                      className="w-8 h-8 rounded-lg text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 font-bold active:scale-90 transition-transform"
+                      className="w-8 h-8 rounded-lg btn-secundario font-bold active:scale-90 transition-transform"
                     >
                       +
                     </button>
@@ -979,7 +1013,7 @@ export default function ComandaPage() {
                     // un lector de pantalla anuncia varios campos idénticos.
                     aria-label={`Nota para ${producto.nombre}`}
                     placeholder="Sin ají, sin mayo, bien cocido…"
-                    className="w-full mt-2.5 rounded-lg dash-card px-3 py-2 text-[13px] dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full mt-2.5 rounded-lg dash-card px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
                   />
 
                   <div className="flex items-center gap-3 mt-2">
@@ -987,14 +1021,14 @@ export default function ComandaPage() {
                       <button
                         onClick={() => dividir(linea.id)}
                         title="Separar una unidad para ponerle otra nota"
-                        className="text-[11px] font-semibold text-orange-400 hover:text-orange-300 transition-colors"
+                        className="text-2xs font-semibold text-orange-400 hover:text-orange-300 transition-colors"
                       >
                         Separar uno
                       </button>
                     )}
                     <button
                       onClick={() => quitarLinea(linea.id)}
-                      className="text-[11px] font-semibold dash-text-muted hover:text-red-300 transition-colors"
+                      className="text-2xs font-semibold dash-text-muted hover:text-red-300 transition-colors"
                     >
                       Quitar
                     </button>
@@ -1005,7 +1039,7 @@ export default function ComandaPage() {
               <div>
                 <label
                   htmlFor="nota-pedido"
-                  className="text-[11px] font-semibold dash-text-secondary block mb-1"
+                  className="text-xs font-semibold dash-text-secondary block mb-1"
                 >
                   Nota para todo el pedido
                 </label>
@@ -1024,13 +1058,16 @@ export default function ComandaPage() {
               <p className="text-xl font-bold dash-text-primary tabular-nums">
                 {formatearPrecio(total)}
               </p>
+              {/* El primario del diálogo. Es el mismo acto que el del pie de
+                  la pantalla, y por eso puede llevar el mismo peso: nunca se
+                  ven los dos a la vez, el panel tapa la pantalla entera. */}
               <button
                 onClick={() => {
                   setVerPedido(false);
                   enviar();
                 }}
                 disabled={enviando || unidades === 0}
-                className="px-6 py-3 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-40 active:scale-95 transition-transform"
+                className="px-6 py-3 rounded-xl text-sm font-bold btn-primario disabled:opacity-40 active:scale-95 transition-transform"
               >
                 Enviar a cocina
               </button>

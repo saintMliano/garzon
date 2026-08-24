@@ -288,7 +288,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                     type="button"
                     aria-pressed={activo}
                     onClick={() => setPropinaPct(pct)}
-                    className={`py-2.5 px-1 rounded-xl text-[11px] font-semibold leading-tight transition-all active:scale-95 ${
+                    className={`py-2.5 px-1 rounded-xl text-xs font-semibold leading-tight transition-all active:scale-95 ${
                       activo ? "shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                     }`}
                     style={activo ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
@@ -312,7 +312,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 className="w-full cursor-pointer"
                 style={{ accentColor: "var(--brand)" }}
               />
-              <div className="flex items-center justify-between text-[11px] text-stone-500 -mt-0.5">
+              <div className="flex items-center justify-between text-xs text-stone-500 -mt-0.5">
                 <span>0%</span>
                 <span className="font-bold" style={{ color: "var(--accent-legible)" }}>{propinaPct}%</span>
                 <span>{PROPINA_PCT_MAX}%</span>
@@ -340,7 +340,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               </div>
             </div>
 
-            <p className="text-[11px] text-stone-500 mt-1.5 leading-snug">
+            <p className="text-xs text-stone-500 mt-1.5 leading-snug">
               La propina es opcional. No se paga nada por la app: el local la cobra en caja, junto con la cuenta.
             </p>
           </div>
@@ -355,7 +355,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Juan"
               autoFocus
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all text-[15px]"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all text-base"
             />
           </div>
 
@@ -374,7 +374,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 }}
               >
                 <span className="font-bold text-sm" style={{ color: "var(--accent-legible)" }}>📍 {mesa}</span>
-                <span className="text-[11px] text-stone-500">Detectada por el código QR</span>
+                <span className="text-xs text-stone-500">Detectada por el código QR</span>
               </div>
             ) : (
               <>
@@ -396,7 +396,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                           // puesta mandaría "Mesa 3" en una comanda para llevar.
                           if (valor === "retiro") setMesa("");
                         }}
-                        className={`py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-95 ${
+                        className={`py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                           activo ? "shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                         }`}
                         style={activo ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
@@ -414,7 +414,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                         key={opt}
                         type="button"
                         onClick={() => setMesa(mesa === opt ? "" : opt)}
-                        className={`py-2.5 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
+                        className={`py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
                           mesa === opt
                             ? "shadow-sm"
                             : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -445,7 +445,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                   : "border-stone-200 focus-within:ring-[var(--brand)] focus-within:border-[var(--brand)]"
               }`}
             >
-              <span className="flex items-center px-3.5 bg-stone-50 text-stone-500 text-[15px] font-semibold border-r border-stone-200 select-none">
+              <span className="flex items-center px-3.5 bg-stone-50 text-stone-500 text-base font-semibold border-r border-stone-200 select-none">
                 +56
               </span>
               <input
@@ -463,14 +463,14 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 placeholder="9 1234 5678"
                 aria-invalid={telefonoTocado && telefonoInvalido}
                 aria-describedby="telefono-ayuda"
-                className="flex-1 min-w-0 px-4 py-3 text-stone-800 placeholder:text-stone-400 focus:outline-none text-[15px] tabular-nums"
+                className="flex-1 min-w-0 px-4 py-3 text-stone-800 placeholder:text-stone-400 focus:outline-none text-base tabular-nums"
               />
             </div>
 
             {/* El `role="alert"` va en el span del error y no en el `p`, que en
                 reposo es texto de ayuda: si viviera arriba, cada vez que el
                 error se va el lector recitaría de nuevo el aviso de privacidad. */}
-            <p id="telefono-ayuda" className="text-[11px] text-stone-500 mt-1.5 leading-snug">
+            <p id="telefono-ayuda" className="text-xs text-stone-500 mt-1.5 leading-snug">
               {telefonoTocado && telefonoInvalido ? (
                 <span role="alert" className="text-red-600 font-medium">Son 9 números y parten con 9.</span>
               ) : esRetiro ? (
@@ -495,13 +495,16 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           {/* Notes */}
           <div>
             <label htmlFor="checkout-notas" className="block text-sm font-semibold text-stone-700 mb-1.5">Notas adicionales</label>
+            {/* `text-base` y no `text-sm`, aunque el resto de la ficha vaya en 14:
+                por debajo de 16px Safari de iOS hace zoom solo al enfocar y deja
+                el checkout descuadrado a mitad de camino. */}
             <textarea
               id="checkout-notas"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               placeholder="Indicaciones especiales..."
               rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all resize-none text-[14px]"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all resize-none text-base"
             />
           </div>
 
@@ -528,7 +531,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
             <button
               type="submit"
               disabled={submitting}
-              className="flex-[2] h-[50px] rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+              className="flex-[2] h-[50px] rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"
               style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
             >
               {submitting ? (

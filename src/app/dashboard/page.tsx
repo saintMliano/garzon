@@ -540,7 +540,7 @@ export default function DashboardPage() {
               ) : (
                 <h1 className="font-bold dash-text-primary text-base truncate">{localNombre || "Garzón Digital"}</h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de Control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de Control</p>
             </div>
           </div>
 
@@ -552,11 +552,21 @@ export default function DashboardPage() {
           <div className="flex items-center justify-end gap-2.5 md:gap-3 flex-wrap min-w-0">
             {/* Un toque de la cocina a la comanda. En un local chico la misma
                 persona alterna entre las dos pantallas todo el servicio, así que
-                este botón también se ve en móvil, donde la nav no. */}
+                este botón también se ve en móvil, donde la nav no.
+
+                Secundario y no primario: este tablero existe para VER los
+                pedidos que entran y moverlos de columna, no para tomarlos. Esto
+                es un atajo a otra pantalla, y en gradiente le ganaba en peso
+                visual a los botones de avance de las tarjetas, que son la razón
+                por la que la cocina mira esta pantalla. Esos botones no llevan
+                `btn-primario` porque no son uno solo ni son siempre el mismo:
+                cada uno se pinta del color de la columna a la que manda el
+                pedido, que es información y no jerarquía. Acá no hay primario, y
+                está bien: la acción principal del panel es de a un pedido. */}
             {puede(rol, "tomar_comanda") && (
               <Link
                 href="/dashboard/comanda"
-                className="px-3.5 py-2 rounded-lg text-xs font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform whitespace-nowrap"
+                className="btn-secundario px-3.5 py-2 rounded-lg text-xs font-bold hover:scale-[1.02] active:scale-95 transition-transform whitespace-nowrap"
               >
                 + Tomar pedido
               </Link>
@@ -565,7 +575,7 @@ export default function DashboardPage() {
             {/* Stats */}
             <div className="hidden lg:flex items-center gap-5">
               <div className="text-right">
-                <p className="text-[10px] dash-text-muted uppercase tracking-wider font-medium">Pedidos</p>
+                <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Pedidos</p>
                 <p className="text-lg font-bold dash-text-primary tabular-nums">{todayStats.count}</p>
               </div>
               {/* La venta del día es caja, y la caja es del dueño. Ojo: esto es
@@ -577,7 +587,7 @@ export default function DashboardPage() {
                 <>
                   <div className="w-px h-8 bg-stone-800" />
                   <div className="text-right">
-                    <p className="text-[10px] dash-text-muted uppercase tracking-wider font-medium">Venta</p>
+                    <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Venta</p>
                     <p className="text-lg font-bold text-green-400 tabular-nums">{formatPrice(todayStats.total)}</p>
                   </div>
                 </>
@@ -591,7 +601,7 @@ export default function DashboardPage() {
                 servicio — el polling de 30 segundos sigue trayendo pedidos. */}
             <div
               aria-live="polite"
-              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap ${
+              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-2xs font-semibold whitespace-nowrap ${
                 conexion === "en-vivo"
                   ? "text-green-400"
                   : conexion === "sin-conexion"
@@ -647,7 +657,7 @@ export default function DashboardPage() {
               {nuevoCount > 0 && (
                 <span
                   aria-label={nuevoCount === 1 ? "1 pedido nuevo" : `${nuevoCount} pedidos nuevos`}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-2xs font-bold rounded-full flex items-center justify-center"
                 >
                   {nuevoCount}
                 </span>
@@ -700,12 +710,12 @@ export default function DashboardPage() {
       {/* ===== MOBILE STATS ===== */}
       <div className="sm:hidden flex items-center gap-4 px-4 py-3 border-b border-stone-800">
         <div className="flex-1 text-center">
-          <p className="text-[10px] dash-text-muted uppercase tracking-wider">Pedidos</p>
+          <p className="text-2xs dash-text-muted uppercase tracking-wider">Pedidos</p>
           <p className="text-xl font-bold dash-text-primary">{todayStats.count}</p>
         </div>
         <div className="w-px h-8 bg-stone-800" />
         <div className="flex-1 text-center">
-          <p className="text-[10px] dash-text-muted uppercase tracking-wider">Venta</p>
+          <p className="text-2xs dash-text-muted uppercase tracking-wider">Venta</p>
           <p className="text-xl font-bold text-green-400">{formatPrice(todayStats.total)}</p>
         </div>
       </div>
@@ -746,7 +756,7 @@ export default function DashboardPage() {
                           {orderNumber(pedido.numero_pedido)}
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-lg text-2xs font-bold ${
                             pedido.estado === "cancelado"
                               ? "bg-red-950/60 text-red-300"
                               : "bg-green-950/60 text-green-300"
@@ -755,17 +765,17 @@ export default function DashboardPage() {
                           {pedido.estado === "cancelado" ? "Rechazado" : "Entregado"}
                         </span>
                       </div>
-                      <span className="text-[11px] dash-text-muted tabular-nums">
+                      <span className="text-2xs dash-text-muted tabular-nums">
                         {formatPrice(pedido.total)}
                       </span>
                     </div>
 
-                    <p className="text-[12px] dash-text-secondary truncate">
+                    <p className="text-xs dash-text-secondary truncate">
                       {pedido.nombre_cliente}
                       {pedido.mesa && <span className="dash-text-muted"> · {pedido.mesa}</span>}
                     </p>
 
-                    <p className="text-[11px] dash-text-muted truncate">
+                    <p className="text-xs dash-text-muted truncate">
                       {pedido.pedido_items.map((i) => `${i.cantidad}x ${i.producto?.nombre ?? "Producto"}`).join(", ")}
                     </p>
 
@@ -773,7 +783,7 @@ export default function DashboardPage() {
                       <button
                         onClick={() => handleReabrir(pedido.id)}
                         disabled={updatingId === pedido.id}
-                        className="mt-1 px-3 py-2 rounded-lg text-[12px] font-semibold dash-bg-surface dash-text-secondary hover:opacity-80 transition-opacity disabled:opacity-50"
+                        className="mt-1 px-3 py-2 rounded-lg text-xs font-semibold dash-bg-surface dash-text-secondary hover:opacity-80 transition-opacity disabled:opacity-50"
                       >
                         ↩ Reabrir
                       </button>
@@ -801,7 +811,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-3 px-1">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{col.icon}</span>
-                    <h2 className="font-bold dash-text-primary text-[15px]">{col.label}</h2>
+                    <h2 className="font-bold dash-text-primary text-base">{col.label}</h2>
                   </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold text-white bg-gradient-to-r ${col.accent}`}>
                     {colPedidos.length}
@@ -834,12 +844,12 @@ export default function DashboardPage() {
                                 que ya usan las notas y el temporizador para decir
                                 "ojo con esto"; nunca el color de marca del local. */}
                             {pedido.tipo_entrega === "retiro" && (
-                              <span className="px-2 py-0.5 rounded-lg bg-amber-950/60 text-amber-300 text-[11px] font-bold">
+                              <span className="px-2 py-0.5 rounded-lg bg-amber-950/60 text-amber-300 text-2xs font-bold">
                                 🛍 Retiro
                               </span>
                             )}
                             {pedido.mesa && (
-                              <span className="px-2 py-0.5 rounded-lg dash-bg-surface text-[11px] font-semibold dash-text-secondary">
+                              <span className="px-2 py-0.5 rounded-lg dash-bg-surface text-2xs font-semibold dash-text-secondary">
                                 {pedido.mesa}
                               </span>
                             )}
@@ -849,7 +859,7 @@ export default function DashboardPage() {
 
                         {/* Customer */}
                         <p className="text-sm font-semibold dash-text-secondary mb-2.5 flex items-center gap-1.5">
-                          <span className="w-6 h-6 rounded-full dash-bg-surface flex items-center justify-center text-[11px]">👤</span>
+                          <span className="w-6 h-6 rounded-full dash-bg-surface flex items-center justify-center text-2xs">👤</span>
                           {pedido.nombre_cliente}
                         </p>
 
@@ -868,20 +878,20 @@ export default function DashboardPage() {
                               onClick={() =>
                                 setTelefonoVisibleId((actual) => (actual === pedido.id ? null : pedido.id))
                               }
-                              className="px-2.5 py-1.5 rounded-lg dash-bg-surface text-[11px] font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
+                              className="px-2.5 py-1.5 rounded-lg dash-bg-surface text-2xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
                             >
                               {telefonoVisibleId === pedido.id ? "Ocultar contacto" : "📞 Contactar"}
                             </button>
 
                             {telefonoVisibleId === pedido.id && (
                               <div className="mt-2 dash-bg-surface rounded-xl px-3 py-2 flex flex-wrap items-center gap-2">
-                                <span className="text-[12px] font-semibold dash-text-primary tabular-nums">
+                                <span className="text-xs font-semibold dash-text-primary tabular-nums">
                                   {formatearTelefonoChileno(pedido.telefono)}
                                 </span>
                                 <div className="flex items-center gap-1.5 ml-auto">
                                   <a
                                     href={`tel:${pedido.telefono}`}
-                                    className="px-2.5 py-1.5 rounded-lg bg-stone-700 text-white text-[11px] font-bold hover:opacity-80 transition-opacity"
+                                    className="px-2.5 py-1.5 rounded-lg bg-stone-700 text-white text-2xs font-bold hover:opacity-80 transition-opacity"
                                   >
                                     📞 Llamar
                                   </a>
@@ -894,7 +904,7 @@ export default function DashboardPage() {
                                     )}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-2.5 py-1.5 rounded-lg bg-green-700 text-white text-[11px] font-bold hover:opacity-80 transition-opacity"
+                                    className="px-2.5 py-1.5 rounded-lg bg-green-700 text-white text-2xs font-bold hover:opacity-80 transition-opacity"
                                   >
                                     💬 WhatsApp
                                   </a>
@@ -909,13 +919,13 @@ export default function DashboardPage() {
                           {pedido.pedido_items.map((item) => (
                             <div key={item.id} className="flex items-start justify-between text-sm">
                               <div className="flex-1 min-w-0">
-                                <span className="font-bold dash-text-primary text-[13px]">{item.cantidad}x </span>
-                                <span className="dash-text-secondary text-[13px]">{item.producto?.nombre ?? "Producto"}</span>
+                                <span className="font-bold dash-text-primary text-sm">{item.cantidad}x </span>
+                                <span className="dash-text-secondary text-sm">{item.producto?.nombre ?? "Producto"}</span>
                                 {item.notas && (
-                                  <p className="text-[11px] text-amber-400 italic mt-0.5">📝 {item.notas}</p>
+                                  <p className="text-xs text-amber-400 italic mt-0.5">📝 {item.notas}</p>
                                 )}
                               </div>
-                              <span className="text-[11px] dash-text-muted ml-2 whitespace-nowrap tabular-nums">
+                              <span className="text-2xs dash-text-muted ml-2 whitespace-nowrap tabular-nums">
                                 {formatPrice(item.precio_unitario * item.cantidad)}
                               </span>
                             </div>
@@ -924,20 +934,20 @@ export default function DashboardPage() {
 
                         {/* Order notes */}
                         {pedido.notas && (
-                          <div className="dash-bg-surface rounded-xl px-3 py-2 mb-3 text-[11px] text-amber-300 border border-amber-900/30">
+                          <div className="dash-bg-surface rounded-xl px-3 py-2 mb-3 text-xs text-amber-300 border border-amber-900/30">
                             📋 {pedido.notas}
                           </div>
                         )}
 
                         {/* Total + Actions */}
                         <div className="flex items-center justify-between pt-3 border-t border-stone-800 gap-2">
-                          <span className="font-bold dash-text-primary text-[15px] tabular-nums">{formatPrice(pedido.total)}</span>
+                          <span className="font-bold dash-text-primary text-base tabular-nums">{formatPrice(pedido.total)}</span>
                           <div className="flex items-center gap-1.5">
                             {pedido.estado !== "listo" && (
                               <button
                                 onClick={() => handleReject(pedido.id, pedido.estado)}
                                 disabled={updatingId === pedido.id}
-                                className="px-2.5 py-2 rounded-lg text-[11px] font-semibold text-red-400/70 hover:text-red-300 hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                                className="px-2.5 py-2 rounded-lg text-2xs font-semibold text-red-400/70 hover:text-red-300 hover:bg-red-950/30 transition-colors disabled:opacity-50"
                               >
                                 Rechazar
                               </button>
@@ -945,7 +955,7 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleAvanzar(pedido)}
                               disabled={updatingId === pedido.id}
-                              className={`px-4 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg bg-gradient-to-r disabled:opacity-60 disabled:hover:scale-100 ${
+                              className={`px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg bg-gradient-to-r disabled:opacity-60 disabled:hover:scale-100 ${
                                 COLUMNS.find(c => c.key === (NEXT_STATUS[pedido.estado] ?? pedido.estado))?.accent ?? "from-stone-600 to-stone-700"
                               }`}
                             >
@@ -970,7 +980,7 @@ export default function DashboardPage() {
             <span>Pedido {orderNumber(undoPedido.numero)} entregado</span>
             <button
               onClick={() => handleReabrir(undoPedido.id)}
-              className="px-3 py-1.5 rounded-lg bg-stone-700 hover:bg-stone-600 text-white text-[13px] font-bold transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-stone-700 hover:bg-stone-600 text-white text-sm font-bold transition-colors"
             >
               ↩ Deshacer
             </button>

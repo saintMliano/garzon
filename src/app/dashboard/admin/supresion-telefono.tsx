@@ -194,7 +194,10 @@ export default function SupresionTelefono({
   return (
     <div className="max-w-2xl mx-auto dash-card rounded-2xl border-2 p-5 mt-4">
       <h2 className="font-bold dash-text-primary text-base">Supresión de datos</h2>
-      <p className="text-[11px] dash-text-muted mt-1 leading-relaxed">
+      {/* Casi todo lo que se lee acá son frases completas que explican qué se
+          está por hacer con el dato de una persona: eso es prosa y va en
+          `text-xs`, no en el piso de 11px, que es para rótulos sueltos. */}
+      <p className="text-xs dash-text-muted mt-1 leading-relaxed">
         Para responder cuando un comensal pide que borren su teléfono. Se consulta con el número
         completo que trae el reclamo: acá no hay listado de clientes ni búsqueda parcial, y no se
         muestra qué pidió ni cómo se llama.
@@ -232,10 +235,15 @@ export default function SupresionTelefono({
             />
           </div>
 
+          {/* Secundario a propósito, aunque consultar sea lo primero que se hace
+              acá: la pantalla existe para un borrado irreversible de datos
+              personales, y un primario naranja invita a tocar lo que conviene
+              tocar despacio. El peso visual queda para el rojo del borrado, que
+              además pasa por confirmación. */}
           <button
             type="submit"
             disabled={!puedeBuscar}
-            className="shrink-0 px-4 py-2 rounded-lg text-xs font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+            className="shrink-0 px-4 py-2 rounded-lg text-xs font-bold btn-secundario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
           >
             {buscando ? "Consultando…" : "Consultar"}
           </button>
@@ -252,7 +260,7 @@ export default function SupresionTelefono({
           )}
         </div>
 
-        <p id="supresion-telefono-ayuda" className="text-[11px] dash-text-muted mt-1.5">
+        <p id="supresion-telefono-ayuda" className="text-xs dash-text-muted mt-1.5">
           Son 9 números y parten con 9. El botón se habilita recién con el número completo.
         </p>
       </form>
@@ -268,7 +276,7 @@ export default function SupresionTelefono({
             Listo: se borró el teléfono {aviso.enmascarado} de {pedidosTexto(aviso.borrados)}
             {aviso.alcance ? ` en ${aviso.alcance}` : " en todos los locales"}.
           </p>
-          <p className="text-[11px] dash-text-muted mt-1 leading-relaxed">
+          <p className="text-xs dash-text-muted mt-1 leading-relaxed">
             Los pedidos y sus ventas siguen ahí — son la contabilidad del local. Queda registrada la
             supresión con el número enmascarado, que es la prueba que se le puede mostrar a la
             persona. Vuelve a consultar si quieres comprobar que no quedó nada.
@@ -282,7 +290,7 @@ export default function SupresionTelefono({
              responder una supresión es no tener el dato. */
           <div className="mt-4 rounded-xl dash-bg-surface p-4">
             <p className="text-sm font-semibold dash-text-primary">No queda nada que borrar</p>
-            <p className="text-[11px] dash-text-muted mt-1 leading-relaxed">
+            <p className="text-xs dash-text-muted mt-1 leading-relaxed">
               Ningún pedido guarda ese número. Lo más probable es que ya lo haya borrado el purgado
               automático de los 7 días. Se le puede responder que el dato ya no está.
             </p>
@@ -293,7 +301,7 @@ export default function SupresionTelefono({
               {busqueda.enmascarado} · {pedidosTexto(busqueda.total)} en{" "}
               {busqueda.locales.length === 1 ? "1 local" : `${busqueda.locales.length} locales`}
             </p>
-            <p className="text-[11px] dash-text-muted mt-1 leading-relaxed">
+            <p className="text-xs dash-text-muted mt-1 leading-relaxed">
               El responsable de los datos es cada local, así que lo normal es borrar en el local que
               recibió el reclamo; la opción global es para cuando la persona pide que no quede en
               ninguno. En ambos casos se conserva el pedido y su venta: lo que desaparece es el
@@ -308,14 +316,14 @@ export default function SupresionTelefono({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-semibold dash-text-primary text-sm truncate">{l.nombre}</p>
-                        <p className="text-[11px] dash-text-muted font-mono truncate">/{l.slug}</p>
+                        <p className="text-2xs dash-text-muted font-mono truncate">/{l.slug}</p>
                       </div>
-                      <span className="shrink-0 px-2 py-1 rounded-lg border border-stone-700 text-[11px] font-bold dash-text-secondary">
+                      <span className="shrink-0 px-2 py-1 rounded-lg border border-stone-700 text-2xs font-bold dash-text-secondary">
                         {pedidosTexto(l.pedidos)}
                       </span>
                     </div>
 
-                    <p className="text-[11px] dash-text-muted mt-2">
+                    <p className="text-xs dash-text-muted mt-2">
                       {l.desde === l.hasta
                         ? `El ${formatearFecha(l.desde)}`
                         : `Del ${formatearFecha(l.desde)} al ${formatearFecha(l.hasta)}`}
@@ -325,7 +333,7 @@ export default function SupresionTelefono({
                       <button
                         onClick={() => borrar(l)}
                         disabled={ocupado}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-red-500/15 text-red-300 border border-red-500/30 hover:opacity-80 transition-opacity disabled:opacity-40"
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/15 text-red-300 border border-red-500/30 hover:opacity-80 transition-opacity disabled:opacity-40"
                       >
                         {trabajando ? "Borrando…" : "Borrar en este local"}
                       </button>
@@ -338,13 +346,13 @@ export default function SupresionTelefono({
             {/* La global va fuera de las tarjetas y separada: es la excepción,
                 no el gesto por omisión. */}
             <div className="mt-4 pt-3 border-t border-stone-800 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11px] dash-text-muted">
+              <p className="text-xs dash-text-muted">
                 Si la persona pidió que no quede en ninguna parte:
               </p>
               <button
                 onClick={() => borrar(null)}
                 disabled={ocupado}
-                className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-red-500/15 text-red-300 border border-red-500/30 hover:opacity-80 transition-opacity disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/15 text-red-300 border border-red-500/30 hover:opacity-80 transition-opacity disabled:opacity-40"
               >
                 {borrando === TODOS ? "Borrando…" : "Borrar en todos los locales"}
               </button>

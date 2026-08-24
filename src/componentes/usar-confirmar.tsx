@@ -106,7 +106,7 @@ export function useConfirmar() {
             className={`px-4 py-3 sm:py-2.5 rounded-xl text-sm font-bold active:scale-[0.98] transition-all ${
               opciones.destructivo
                 ? "text-white bg-red-600 hover:bg-red-500"
-                : "text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-105"
+                : "btn-primario"
             }`}
           >
             {opciones.aceptar ?? "Confirmar"}

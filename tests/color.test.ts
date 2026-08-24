@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { contraste, textoSobre, legibleSobre, variablesDeMarca, CONTRASTE_AA } from "@/lib/color";
+import { contraste, textoSobre, legibleSobre, mezclar, variablesDeMarca, CONTRASTE_AA } from "@/lib/color";
 
 describe("Utilidad de color (F9)", () => {
   test("valores WCAG conocidos", () => {
@@ -58,5 +58,35 @@ describe("Utilidad de color (F9)", () => {
     const v = variablesDeMarca("no-es-color", null);
     expect(v["--brand"]).toBe("#f97316");
     expect(v["--accent"]).toBe("#f97316");
+  });
+
+  test("mezclar reproduce color-mix del navegador", () => {
+    expect(mezclar("#000000", "#ffffff", 0.5)).toBe("#808080");
+    expect(mezclar("#ff7b00", "#ffffff", 0)).toBe("#ffffff");
+    expect(mezclar("#ff7b00", "#ffffff", 1)).toBe("#ff7b00");
+  });
+
+  // La carta NO escribe los precios sobre blanco puro: los escribe sobre
+  // superficies teñidas con la marca del local —12% en el resumen del checkout,
+  // 10% en el control de cantidad—. Un fondo teñido es más oscuro que el blanco,
+  // así que un acento calculado contra blanco se quedaba corto sobre el tinte:
+  // medido en vivo, el número del control de cantidad daba 4,17:1.
+  //
+  // Este test barre marcas y acentos representativos y exige AA sobre el tinte
+  // REAL, que es lo que ve el comensal.
+  test("el acento es legible sobre el tinte de marca, no solo sobre blanco", () => {
+    const marcas = ["#ff7b00", "#f97316", "#ffe600", "#1e3a8a", "#22c55e", "#8c5aff", "#fca5a5", "#000000"];
+    const acentos = ["#ff7b00", "#fde047", "#84cc16", "#0ea5e9", "#f43f5e", null];
+
+    for (const brand of marcas) {
+      for (const accent of acentos) {
+        const v = variablesDeMarca(brand, accent);
+        const tinte = mezclar(v["--brand"], "#ffffff", 0.12);
+        expect(
+          contraste(v["--accent-legible"], tinte),
+          `marca ${brand} + acento ${accent ?? "(hereda)"} sobre el tinte ${tinte}`
+        ).toBeGreaterThanOrEqual(CONTRASTE_AA);
+      }
+    }
   });
 });

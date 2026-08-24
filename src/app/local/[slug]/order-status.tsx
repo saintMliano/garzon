@@ -149,7 +149,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
         {isCancelled ? (
           /* Cancelled card */
           <div className="bg-red-50/60 rounded-3xl p-6 shadow-sm border border-red-100 mb-6 text-center">
-            <p className="text-[14px] text-red-500 font-medium leading-relaxed">
+            <p className="text-sm text-red-500 font-medium leading-relaxed">
               El local no pudo tomar tu pedido. Acércate a caja o consulta con el personal.
             </p>
           </div>
@@ -202,7 +202,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
 
                     <div className="pt-2.5">
                       <p
-                        className={`font-semibold text-[14px] transition-colors ${
+                        className={`font-semibold text-sm transition-colors ${
                           isDone ? "text-green-600" : isActive ? "" : "text-stone-400"
                         }`}
                         style={isDone || !isActive ? undefined : { color: MARCA_LEGIBLE }}
@@ -215,7 +215,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                             className="w-1.5 h-1.5 rounded-full animate-pulse"
                             style={{ backgroundColor: "var(--brand)" }}
                           />
-                          <p className="text-[11px] text-stone-500">{statusLabel(status)}...</p>
+                          <p className="text-xs text-stone-500">{statusLabel(status)}...</p>
                         </div>
                       )}
                     </div>
@@ -230,14 +230,14 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
         {isCancelled ? (
           <button
             onClick={onNewOrder}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-stone-600 to-stone-700 text-white font-bold text-[15px] shadow-xl shadow-stone-200/40 hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-stone-600 to-stone-700 text-white font-bold text-base shadow-xl shadow-stone-200/40 hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
           >
             Hacer otro pedido 🍔
           </button>
         ) : isComplete ? (
           <button
             onClick={onNewOrder}
-            className="w-full h-14 rounded-2xl font-bold text-[15px] hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
+            className="w-full h-14 rounded-2xl font-bold text-base hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
             style={{
               background: `linear-gradient(90deg, var(--brand), ${MARCA_TONO_2})`,
               // `--brand-texto` ya viene calculado para leerse sobre la marca:
@@ -252,9 +252,9 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
           <div className="text-center space-y-3">
             <div className="flex items-center justify-center gap-2 text-stone-400">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <p className="text-[13px]">Actualizaciones en tiempo real</p>
+              <p className="text-sm">Actualizaciones en tiempo real</p>
             </div>
-            <p className="text-[11px] text-stone-400">No cierres esta página</p>
+            <p className="text-xs text-stone-400">No cierres esta página</p>
           </div>
         )}
       </div>

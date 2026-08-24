@@ -196,7 +196,7 @@ export default function EquipoPage() {
                   {localNombre ?? "Equipo"}
                 </h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Equipo</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Equipo</p>
             </div>
           </div>
 
@@ -222,14 +222,17 @@ export default function EquipoPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="font-bold dash-text-primary text-base">Quién trabaja acá</h2>
-                <p className="text-[11px] dash-text-muted mt-1 leading-relaxed max-w-lg">
+                <p className="text-xs dash-text-muted mt-1 leading-relaxed max-w-lg">
                   Cada persona entra con su propia cuenta. El rol es de este local: si alguien
                   trabaja en dos, puede ser dueño en uno y personal en el otro.
                 </p>
               </div>
+              {/* Abre y cierra el formulario, no da de alta a nadie: si fuera
+                  primario, con el formulario abierto habría dos naranjas
+                  compitiendo y el de abajo es el que crea la cuenta. */}
               <button
                 onClick={() => setAbrirAlta((v) => !v)}
-                className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
+                className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold btn-secundario hover:scale-[1.02] active:scale-95 transition-transform"
               >
                 {abrirAlta ? "Cancelar" : "Agregar"}
               </button>
@@ -250,7 +253,7 @@ export default function EquipoPage() {
                     required
                     className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
                   />
-                  <p className="text-[11px] dash-text-muted mt-1">
+                  <p className="text-xs dash-text-muted mt-1">
                     No hace falta que sea un correo real ni que lo revise: es su nombre de usuario
                     para entrar. No existe &quot;olvidé mi contraseña&quot;, así que si se pierde
                     tenés que darle una nueva vos.
@@ -280,7 +283,7 @@ export default function EquipoPage() {
                     </button>
                   </div>
                   {claveCorta && (
-                    <p className="text-[11px] text-amber-400 mt-1">
+                    <p className="text-xs text-amber-400 mt-1">
                       Necesita al menos {LARGO_MINIMO_CLAVE} caracteres.
                     </p>
                   )}
@@ -310,7 +313,7 @@ export default function EquipoPage() {
                           <span className="block text-sm font-semibold dash-text-primary">
                             {NOMBRE_ROL[r]}
                           </span>
-                          <span className="block text-[11px] dash-text-muted leading-relaxed">
+                          <span className="block text-xs dash-text-muted leading-relaxed">
                             {DESCRIPCION_ROL[r]}
                           </span>
                         </span>
@@ -322,7 +325,7 @@ export default function EquipoPage() {
                 <button
                   type="submit"
                   disabled={ocupado === "alta" || claveCorta}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-transform"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-bold btn-primario disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-transform"
                 >
                   {ocupado === "alta" ? "Creando…" : "Crear la cuenta"}
                 </button>
@@ -358,9 +361,9 @@ export default function EquipoPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-semibold dash-text-primary truncate">
                       {m.email}
-                      {m.es_vos && <span className="text-[11px] dash-text-muted font-normal"> · vos</span>}
+                      {m.es_vos && <span className="text-2xs dash-text-muted font-normal"> · vos</span>}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">{DESCRIPCION_ROL[m.rol]}</p>
+                    <p className="text-xs dash-text-muted mt-0.5">{DESCRIPCION_ROL[m.rol]}</p>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -389,7 +392,7 @@ export default function EquipoPage() {
             )}
           </div>
 
-          <p className="text-[11px] dash-text-muted leading-relaxed px-1">
+          <p className="text-xs dash-text-muted leading-relaxed px-1">
             El local necesita siempre al menos un dueño: si intentás degradar o sacar al último, el
             sistema no te va a dejar. Nombrá a otro primero.
           </p>

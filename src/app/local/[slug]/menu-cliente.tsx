@@ -242,10 +242,10 @@ export default function MenuCliente({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="font-extrabold text-stone-900 text-[17px] leading-tight truncate">
+              <h1 className="font-extrabold text-stone-900 text-lg leading-tight truncate">
                 {local.nombre}
               </h1>
-              <p className="text-[11px] text-stone-500 truncate flex items-center gap-1">
+              <p className="text-xs text-stone-500 truncate flex items-center gap-1">
                 <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -253,7 +253,7 @@ export default function MenuCliente({
                 {local.direccion}
               </p>
               {local.slogan && (
-                <p className="text-[11px] text-stone-500 truncate">{local.slogan}</p>
+                <p className="text-xs text-stone-500 truncate">{local.slogan}</p>
               )}
             </div>
             {/* Cart icon in header */}
@@ -267,7 +267,7 @@ export default function MenuCliente({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8l-1.35-6.73M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
                 </svg>
                 <span
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[10px] font-black rounded-full flex items-center justify-center shadow-sm animate-pop"
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-white text-xs font-black rounded-full flex items-center justify-center shadow-sm animate-pop"
                   style={{ color: "var(--accent-legible)" }}
                 >
                   {itemCount}
@@ -281,12 +281,15 @@ export default function MenuCliente({
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
+            {/* `text-base` y no `text-sm`: por debajo de 16px iOS hace zoom solo
+                al enfocar el buscador y deja la carta descuadrada, con el header
+                pegajoso tapando media pantalla. */}
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar en el menú..."
-              className="w-full h-10 pl-9 pr-4 rounded-xl bg-stone-100/80 border border-stone-200/60 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] focus:bg-white transition-all"
+              className="w-full h-10 pl-9 pr-4 rounded-xl bg-stone-100/80 border border-stone-200/60 text-base text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] focus:bg-white transition-all"
             />
             {search && (
               <button
@@ -306,7 +309,7 @@ export default function MenuCliente({
                   key={cat.id}
                   ref={(el) => { if (el) pillRefs.current.set(cat.id, el); }}
                   onClick={() => scrollToCategory(cat.id)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 ${
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
                     activeCategory === cat.id
                       ? ""
                       : "bg-white text-stone-600 border border-stone-200/80 hover:border-[var(--brand)] hover:text-[var(--brand)]"
@@ -334,10 +337,10 @@ export default function MenuCliente({
             <div className="flex items-start gap-2">
               <span className="text-base leading-none mt-0.5">🕐</span>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-bold text-stone-800">
+                <p className="text-sm font-bold text-stone-800">
                   Por ahora no se puede pedir desde acá
                 </p>
-                <p className="text-[12px] text-stone-500 mt-0.5">
+                <p className="text-xs text-stone-500 mt-0.5">
                   Podés mirar la carta y hacer tu pedido con el garzón.
                 </p>
               </div>
@@ -356,17 +359,17 @@ export default function MenuCliente({
             <div className="flex items-start gap-2">
               <span className="text-base leading-none mt-0.5">📣</span>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-bold text-amber-900">
+                <p className="text-sm font-bold text-amber-900">
                   Actualizamos tu pedido con la carta de hoy
                 </p>
                 <ul className="mt-1 space-y-0.5">
                   {cambiosCarrito.actualizados.map((c) => (
-                    <li key={c.nombre} className="text-[12px] text-amber-800">
+                    <li key={c.nombre} className="text-xs text-amber-800">
                       {c.nombre}: {formatPrice(c.precioAnterior)} → <strong>{formatPrice(c.precioNuevo)}</strong>
                     </li>
                   ))}
                   {cambiosCarrito.removidos.map((nombre) => (
-                    <li key={nombre} className="text-[12px] text-amber-800">
+                    <li key={nombre} className="text-xs text-amber-800">
                       {nombre}: ya no está disponible, lo sacamos del carrito
                     </li>
                   ))}
@@ -426,7 +429,7 @@ export default function MenuCliente({
                 ref={(el) => { if (el) categoryRefs.current.set(cat.id, el); }}
                 className="mb-8 scroll-mt-40"
               >
-                <h2 className="text-[15px] font-extrabold text-stone-800 mb-3 flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-stone-800 mb-3 flex items-center gap-2">
                   <span className="text-lg">{cat.icono}</span> {cat.nombre}
                 </h2>
                 <div className="grid gap-2.5">
@@ -462,9 +465,9 @@ export default function MenuCliente({
               <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm font-black">
                 {itemCount}
               </span>
-              <span className="text-[15px]">Ver pedido</span>
+              <span className="text-base">Ver pedido</span>
             </div>
-            <span className="text-[17px] font-bold">{formatPrice(total)}</span>
+            <span className="text-lg font-bold">{formatPrice(total)}</span>
           </button>
         </div>
       )}
@@ -533,7 +536,7 @@ function ProductCard({
         </div>
       ) : (
         <div
-          className="w-[60px] h-[60px] rounded-xl flex items-center justify-center text-[26px] flex-shrink-0 transition-transform group-hover:scale-105 bg-gradient-to-br from-stone-50 to-stone-100/80"
+          className="w-[60px] h-[60px] rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform group-hover:scale-105 bg-gradient-to-br from-stone-50 to-stone-100/80"
           style={inCart ? { background: "color-mix(in srgb, var(--brand) 12%, white)" } : undefined}
         >
           {icon}
@@ -542,11 +545,11 @@ function ProductCard({
 
       {/* Info */}
       <div className="flex-1 min-w-0 py-0.5">
-        <h3 className="font-semibold text-stone-800 text-[14px] leading-tight">{prod.nombre}</h3>
+        <h3 className="font-semibold text-stone-800 text-sm leading-tight">{prod.nombre}</h3>
         {prod.descripcion && (
-          <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1 leading-snug">{prod.descripcion}</p>
+          <p className="text-xs text-stone-500 mt-0.5 line-clamp-1 leading-snug">{prod.descripcion}</p>
         )}
-        <p className="text-[14px] font-bold mt-1" style={{ color: "var(--accent-legible)" }}>{formatPrice(prod.precio)}</p>
+        <p className="text-sm font-bold mt-1" style={{ color: "var(--accent-legible)" }}>{formatPrice(prod.precio)}</p>
       </div>
 
       {/* Add / Qty control */}

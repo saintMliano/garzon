@@ -424,7 +424,7 @@ export default function MenuPage() {
               ) : (
                 <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -461,7 +461,7 @@ export default function MenuPage() {
       <main className="flex-1 p-3 md:p-5 overflow-x-auto">
         {!puedeEditar && (
           <div className="max-w-[1600px] mx-auto mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
-            <p className="text-[11px] text-amber-200 leading-relaxed">
+            <p className="text-xs text-amber-200 leading-relaxed">
               Podés marcar lo que se acabó con el interruptor verde. Apenas lo hagas, el producto
               deja de aparecer en la carta del cliente. Los precios y el resto del menú los cambia
               el dueño.
@@ -477,7 +477,7 @@ export default function MenuPage() {
               {puedeEditar && (
                 <button
                   onClick={openNewCategoria}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.03] active:scale-95 transition-transform"
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold btn-secundario hover:scale-[1.03] active:scale-95 transition-transform"
                 >
                   ＋ Categoría
                 </button>
@@ -501,7 +501,10 @@ export default function MenuPage() {
                     <span className="text-lg">{cat.icono || "🍽️"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold dash-text-primary text-sm truncate">{cat.nombre}</p>
-                      <p className="text-[11px] dash-text-muted">{productosDeCategoria(cat.id).length} producto(s)</p>
+                      {/* El piso de la escala (11px) es para rótulos de una o dos
+                          palabras: "3 producto(s)" lo es, y va debajo del nombre
+                          de la categoría, que es lo que se lee primero. */}
+                      <p className="text-2xs dash-text-muted">{productosDeCategoria(cat.id).length} producto(s)</p>
                     </div>
                     <div className={`flex items-center gap-1 opacity-0 transition-opacity ${puedeEditar ? "group-hover:opacity-100" : "hidden"}`}>
                       <button
@@ -532,10 +535,13 @@ export default function MenuPage() {
                 {categoriaActiva ? `Productos · ${categoriaActiva.nombre}` : "Productos"}
               </h2>
               {puedeEditar && (
+                /* El único primario de la pantalla: administrar la carta es,
+                   casi siempre, agregar productos. Crear categoría es el paso
+                   previo que se hace una vez y queda secundario. */
                 <button
                   onClick={openNewProducto}
                   disabled={categorias.length === 0}
-                  className="px-3 py-2 rounded-xl text-xs font-semibold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.03] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+                  className="px-3 py-2 rounded-xl text-xs font-semibold btn-primario hover:scale-[1.03] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
                 >
                   ＋ Nuevo producto
                 </button>
@@ -576,7 +582,7 @@ export default function MenuPage() {
                         {prod.nombre}
                       </p>
                       {prod.descripcion && (
-                        <p className="text-[11px] dash-text-muted truncate">{prod.descripcion}</p>
+                        <p className="text-xs dash-text-muted truncate">{prod.descripcion}</p>
                       )}
                     </div>
 
@@ -667,7 +673,7 @@ export default function MenuPage() {
               <button
                 onClick={saveCategoria}
                 disabled={savingCategoria}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
+                className="px-4 py-2 rounded-xl text-sm font-bold btn-primario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
               >
                 {savingCategoria ? "Guardando..." : "Guardar"}
               </button>
@@ -818,7 +824,7 @@ export default function MenuPage() {
               <button
                 onClick={saveProducto}
                 disabled={savingProducto}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
+                className="px-4 py-2 rounded-xl text-sm font-bold btn-primario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
               >
                 {savingProducto ? "Guardando..." : "Guardar"}
               </button>

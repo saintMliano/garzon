@@ -219,7 +219,7 @@ export default function AdminOnboardPage() {
             </div>
             <div className="min-w-0">
               <h1 className="font-bold dash-text-primary text-base">Garzón Digital</h1>
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -262,7 +262,7 @@ export default function AdminOnboardPage() {
                   pantalla no se entera de que hay credenciales esperando. */}
               <div className="rounded-xl dash-bg-surface p-4 space-y-3">
                 <div>
-                  <p className="text-[11px] dash-text-muted uppercase tracking-wider font-medium">Local creado</p>
+                  <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Local creado</p>
                   <p className="font-bold dash-text-primary text-sm">{result.nombre}</p>
                   <p className="text-xs dash-text-muted font-mono">/{result.slug}</p>
                 </div>
@@ -271,7 +271,7 @@ export default function AdminOnboardPage() {
 
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] dash-text-muted uppercase tracking-wider font-medium">Email del dueño</p>
+                    <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Email del dueño</p>
                     <p className="font-semibold dash-text-primary text-sm truncate">{result.email}</p>
                   </div>
                   <button
@@ -284,7 +284,7 @@ export default function AdminOnboardPage() {
 
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] dash-text-muted uppercase tracking-wider font-medium">Contraseña temporal</p>
+                    <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Contraseña temporal</p>
                     <p className="font-semibold dash-text-primary text-sm font-mono truncate">{result.tempPassword}</p>
                   </div>
                   <button
@@ -333,10 +333,14 @@ export default function AdminOnboardPage() {
                 </a>
               </div>
 
+              {/* Secundario y no primario: acá el local ya se creó y lo que
+                  importa de esta pantalla son las credenciales de arriba, que
+                  hay que copiar antes de irse. "Crear otro" vacía el formulario;
+                  el primario de la pantalla es el alta misma. */}
               <div className="flex justify-end pt-2">
                 <button
                   onClick={resetForm}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold btn-secundario hover:scale-[1.02] active:scale-95 transition-transform"
                 >
                   Crear otro
                 </button>
@@ -365,7 +369,7 @@ export default function AdminOnboardPage() {
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
                   placeholder="completos-lalo"
                 />
-                <p className="text-[11px] dash-text-muted mt-1">Se genera del nombre si lo dejas vacío.</p>
+                <p className="text-xs dash-text-muted mt-1">Se genera del nombre si lo dejas vacío.</p>
               </div>
 
               <div>
@@ -413,7 +417,7 @@ export default function AdminOnboardPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold btn-primario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
                 >
                   {submitting ? "Creando…" : "Crear local"}
                 </button>

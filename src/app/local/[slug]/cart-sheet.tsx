@@ -69,13 +69,13 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-stone-800 text-[14px] leading-tight">
+                        <h3 className="font-semibold text-stone-800 text-sm leading-tight">
                           {item.producto.nombre}
                         </h3>
-                        <p className="text-[13px] font-bold mt-1" style={{ color: "var(--accent)" }}>
+                        <p className="text-sm font-bold mt-1" style={{ color: "var(--accent)" }}>
                           {formatPrice(item.producto.precio * item.cantidad)}
                           {item.cantidad > 1 && (
-                            <span className="text-[11px] text-stone-500 font-normal ml-1">
+                            <span className="text-xs text-stone-500 font-normal ml-1">
                               ({formatPrice(item.producto.precio)} c/u)
                             </span>
                           )}
@@ -88,7 +88,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                           onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
                           className="w-7 h-7 rounded-lg hover:bg-stone-50 flex items-center justify-center text-stone-500 font-bold transition-colors text-sm"
                         >−</button>
-                        <span className="w-6 text-center font-bold text-[13px] text-stone-800">{item.cantidad}</span>
+                        <span className="w-6 text-center font-bold text-sm text-stone-800">{item.cantidad}</span>
                         <button
                           onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
                           className="w-7 h-7 rounded-lg flex items-center justify-center font-bold transition-colors text-sm"
@@ -98,6 +98,9 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                     </div>
 
                     {/* Notes */}
+                    {/* Va en `text-base` aunque la línea del producto sea más
+                        chica: con menos de 16px iOS hace zoom al enfocar y saca
+                        de cuadro el carrito entero. */}
                     <input
                       type="text"
                       // El `placeholder` no es un nombre accesible: desaparece al
@@ -108,7 +111,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                       placeholder="Ej: sin mayo, extra queso..."
                       value={item.notas}
                       onChange={(e) => updateNotes(item.producto.id, e.target.value)}
-                      className="w-full mt-2.5 px-3 py-2 rounded-lg bg-white border border-stone-150 text-[12px] text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all"
+                      className="w-full mt-2.5 px-3 py-2 rounded-lg bg-white border border-stone-150 text-base text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all"
                     />
 
                     {/* Atajos: los mismos que usa el garzón en su comanda.
@@ -124,7 +127,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                           onClick={() =>
                             updateNotes(item.producto.id, agregarNotaRapida(item.notas, atajo))
                           }
-                          className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-medium text-stone-500 hover:text-stone-800 hover:border-stone-300 active:scale-95 transition-all"
+                          className="px-2 py-1 rounded-lg bg-white border border-stone-200 text-xs font-medium text-stone-500 hover:text-stone-800 hover:border-stone-300 active:scale-95 transition-all"
                         >
                           {atajo}
                         </button>
@@ -134,7 +137,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                     {/* Remove */}
                     <button
                       onClick={() => removeItem(item.producto.id)}
-                      className="mt-2 text-[11px] text-stone-500 hover:text-red-500 transition-colors flex items-center gap-1"
+                      className="mt-2 text-xs text-stone-500 hover:text-red-500 transition-colors flex items-center gap-1"
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -157,7 +160,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
             </div>
             <button
               onClick={onCheckout}
-              className="w-full h-[52px] rounded-2xl font-bold text-[15px] shadow-lg hover:shadow-xl active:scale-[0.98] transition-all"
+              className="w-full h-[52px] rounded-2xl font-bold text-base shadow-lg hover:shadow-xl active:scale-[0.98] transition-all"
               style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
             >
               Confirmar Pedido →

@@ -48,7 +48,7 @@ export default function LoginPage() {
               placeholder="cocina@tulocal.cl"
               required
               autoFocus
-              className="w-full px-4 py-3 rounded-xl dash-bg-surface border border-stone-700 dash-text-primary placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all text-[15px]"
+              className="w-full px-4 py-3 rounded-xl dash-bg-surface border border-stone-700 dash-text-primary placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all text-base"
             />
           </div>
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full px-4 py-3 rounded-xl dash-bg-surface border border-stone-700 dash-text-primary placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all text-[15px]"
+              className="w-full px-4 py-3 rounded-xl dash-bg-surface border border-stone-700 dash-text-primary placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all text-base"
             />
           </div>
 
@@ -80,7 +80,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-[50px] rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-stone-900 font-bold shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+            className="w-full h-[50px] rounded-xl btn-primario font-bold shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"
           >
             {submitting ? (
               <span className="flex items-center justify-center gap-2">
