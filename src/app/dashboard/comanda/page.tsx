@@ -418,7 +418,7 @@ export default function ComandaPage() {
     return (
       <div className="flex flex-col min-h-dvh dashboard-dark">
         {encabezado}
-        <main className="flex-1 p-4 md:p-6">
+        <main id="contenido" className="flex-1 p-4 md:p-6">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-bold dash-text-primary text-lg">¿Para qué mesa?</h2>
             <p className="text-xs dash-text-muted mt-1">
@@ -458,7 +458,7 @@ export default function ComandaPage() {
     return (
       <div className="flex flex-col min-h-dvh dashboard-dark">
         {encabezado}
-        <main className="flex-1 p-4 md:p-6 flex items-center justify-center">
+        <main id="contenido" className="flex-1 p-4 md:p-6 flex items-center justify-center">
           {/* Lo único que confirma que la cocina lo tiene. Aparece sola cuando
               vuelve el POST, así que se anuncia; `polite` y no `alert` porque es
               una buena noticia y puede esperar el renglón en curso. */}
@@ -567,7 +567,7 @@ export default function ComandaPage() {
         </div>
       )}
 
-      <main className="flex-1 p-3 md:p-5 pb-40">
+      <main id="contenido" className="flex-1 p-3 md:p-5 pb-40">
         <div className="max-w-[1600px] mx-auto">
           {cargando ? (
             <p className="text-xs dash-text-muted">Cargando el menú…</p>

@@ -1,4 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* Inter ya no se pide con `@import` desde acá: lo carga `next/font/google` en
+   `layout.tsx`. El `@import` encadenaba dos descargas antes de poder pintar
+   —primero esta hoja, después la de Google—, salía a un tercer dominio y no
+   ajustaba las métricas del sustituto, así que el texto saltaba al llegar la
+   fuente. `next/font` autoaloja el archivo, lo sirve desde el mismo origen y
+   genera un fallback con métricas calzadas. En la carta del comensal, sobre
+   datos móviles, eso se paga en la primera impresión. */
 @import "tailwindcss";
 
 :root {
@@ -24,7 +30,8 @@
   --color-muted: var(--muted);
   --color-success: var(--success);
   --color-danger: var(--danger);
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  /* La variable la inyecta `next/font` desde el layout; el resto es el fallback. */
+  --font-sans: var(--fuente-inter), system-ui, -apple-system, sans-serif;
 
   /* ===== ESCALA TIPOGRÁFICA =====
      Hasta el 2026-08-24 convivían 198 tamaños arbitrarios en píxeles, repartidos
@@ -55,7 +62,7 @@ html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--fuente-inter), system-ui, -apple-system, sans-serif;
 }
 
 /* ===== SCROLLBAR ===== */
@@ -113,12 +120,12 @@ body {
 .dashboard-dark .btn-terciario { color: #9c948c; }
 .dashboard-dark .btn-terciario:hover { color: #fafaf9; }
 
-/* ===== CATEGORY PILLS ===== */
-.category-active {
-  background: var(--accent);
-  color: white;
-  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3);
-}
+/* `.category-active` vivió acá hasta el 2026-08-24. No la usaba nadie —la
+   píldora activa de la carta se pinta con estilos en línea desde
+   `menu-cliente.tsx`—, y arrastraba el mismo defecto que ya corregimos ahí:
+   `color: white` sobre el color de la marca, que en un local con marca clara
+   deja el texto invisible. Borrarla evita que alguien la encuentre y la use
+   creyendo que es la forma correcta. */
 
 /* ===== ANIMATIONS ===== */
 @keyframes slide-up {

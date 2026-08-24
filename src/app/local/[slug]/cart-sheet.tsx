@@ -61,7 +61,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
               >
                 <div className="flex items-start gap-3">
                   {/* Product icon */}
-                  <div className="w-11 h-11 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-lg flex-shrink-0 shadow-sm">
+                  <div className="w-11 h-11 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-lg shrink-0 shadow-sm">
                     🍽️
                   </div>
 

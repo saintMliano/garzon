@@ -678,7 +678,7 @@ export default function ReportesPage() {
 
       <AvisoSuscripcion localId={localId} />
 
-      <main className="flex-1 p-3 md:p-5">
+      <main id="contenido" className="flex-1 p-3 md:p-5">
         <div className="max-w-[1600px] mx-auto space-y-4">
           {/* ===== SELECTOR DE RANGO ===== */}
           <div className="dash-card rounded-2xl border-2 p-4">

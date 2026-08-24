@@ -155,7 +155,7 @@ export default function Privacidad() {
       </section>
 
       {/* ===== CUERPO ===== */}
-      <main className="max-w-3xl mx-auto w-full px-5 py-10 md:py-14 flex flex-col gap-9">
+      <main id="contenido" className="max-w-3xl mx-auto w-full px-5 py-10 md:py-14 flex flex-col gap-9">
         <Seccion id="quien" titulo="¿Quién responde por tus datos?">
           <p>
             El <strong className="text-stone-900">local donde hiciste el pedido</strong> es el

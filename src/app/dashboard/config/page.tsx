@@ -351,7 +351,7 @@ export default function ConfigPage() {
       <AvisoSuscripcion localId={localId} />
 
       {/* ===== PANEL DE IDENTIDAD ===== */}
-      <main className="flex-1 p-3 md:p-5">
+      <main id="contenido" className="flex-1 p-3 md:p-5">
         <div className="max-w-2xl mx-auto dash-card rounded-2xl border-2 p-5">
           <h2 className="font-bold dash-text-primary text-base mb-4">Identidad del local</h2>
 

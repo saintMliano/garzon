@@ -458,7 +458,7 @@ export default function MenuPage() {
       <AvisoSuscripcion localId={localId} />
 
       {/* ===== PANEL DE MENÚ ===== */}
-      <main className="flex-1 p-3 md:p-5 overflow-x-auto">
+      <main id="contenido" className="flex-1 p-3 md:p-5 overflow-x-auto">
         {!puedeEditar && (
           <div className="max-w-[1600px] mx-auto mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
             <p className="text-xs text-amber-200 leading-relaxed">

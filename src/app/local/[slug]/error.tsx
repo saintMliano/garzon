@@ -31,7 +31,10 @@ export default function ErrorMenu({
         <p className="text-stone-500 mt-2 text-sm">Revisa tu conexión e intenta nuevamente.</p>
         <button
           onClick={reset}
-          className="mt-5 h-11 px-6 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm active:scale-95 transition-all"
+          // El último `text-white` sobre naranja que quedaba en el proyecto: sin
+          // gradiente, así que el barrido de la auditoría no lo alcanzó. Daba
+          // 2,80:1. `btn-primario` ya resuelve el color del texto.
+          className="mt-5 h-11 px-6 rounded-xl btn-primario font-semibold text-sm active:scale-95 transition-all"
         >
           Reintentar
         </button>

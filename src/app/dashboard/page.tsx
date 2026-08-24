@@ -797,7 +797,7 @@ export default function DashboardPage() {
       )}
 
       {/* ===== KANBAN BOARD ===== */}
-      <main className="flex-1 p-3 md:p-5 overflow-x-auto">
+      <main id="contenido" className="flex-1 p-3 md:p-5 overflow-x-auto">
         {/* lg (1024px) y no xl (1280px): una tablet de 10-11" en horizontal ronda
             los 1100-1180px y caía en 2 columnas, justo en el dispositivo para el
             que está pensada esta pantalla. */}

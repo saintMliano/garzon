@@ -128,8 +128,13 @@ export default function Home() {
         </div>
       </header>
 
+      {/* El `<main>` envuelve todo lo que no es barra ni pie: es el destino del
+          enlace "saltar al contenido" del layout, y sin él la landing era la
+          única pantalla del sitio sin punto de aterrizaje para el teclado. */}
+      <main id="contenido">
+
       {/* ===== HERO ===== */}
-      <section className="bg-stone-950 border-b border-stone-900">
+      <section className="sobre-oscuro bg-stone-950 border-b border-stone-900">
         <div className="max-w-5xl mx-auto px-5 py-16 md:py-24">
           <div className="max-w-2xl">
             <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
@@ -348,6 +353,8 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      </main>
 
       <footer className="border-t border-stone-200/80 py-7">
         <div className="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">

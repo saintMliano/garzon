@@ -152,7 +152,7 @@ export default function CuentaPage() {
         </div>
       </header>
 
-      <main className="flex-1 p-3 md:p-5">
+      <main id="contenido" className="flex-1 p-3 md:p-5">
         <div className="max-w-md mx-auto dash-card rounded-2xl border-2 p-5">
           <h2 className="font-bold dash-text-primary text-base">Cambiar contraseña</h2>
           <p className="text-xs dash-text-muted mt-1 leading-relaxed">

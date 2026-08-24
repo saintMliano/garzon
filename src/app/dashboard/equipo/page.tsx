@@ -216,7 +216,7 @@ export default function EquipoPage() {
         </div>
       </header>
 
-      <main className="flex-1 p-3 md:p-5">
+      <main id="contenido" className="flex-1 p-3 md:p-5">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="dash-card rounded-2xl border-2 p-5">
             <div className="flex items-start justify-between gap-4">

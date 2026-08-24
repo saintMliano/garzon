@@ -246,7 +246,7 @@ export default function MenuCliente({
                 {local.nombre}
               </h1>
               <p className="text-xs text-stone-500 truncate flex items-center gap-1">
-                <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -309,7 +309,7 @@ export default function MenuCliente({
                   key={cat.id}
                   ref={(el) => { if (el) pillRefs.current.set(cat.id, el); }}
                   onClick={() => scrollToCategory(cat.id)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
                     activeCategory === cat.id
                       ? ""
                       : "bg-white text-stone-600 border border-stone-200/80 hover:border-[var(--brand)] hover:text-[var(--brand)]"
@@ -388,7 +388,7 @@ export default function MenuCliente({
       )}
 
       {/* ===== PRODUCT LIST ===== */}
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-4 pb-28">
+      <main id="contenido" className="flex-1 max-w-lg mx-auto w-full px-4 pt-4 pb-28">
         {/* Search results */}
         {filteredProducts ? (
           <section>
@@ -525,7 +525,7 @@ function ProductCard({
     >
       {/* Product thumbnail */}
       {imgSrc ? (
-        <div className="w-[60px] h-[60px] rounded-xl overflow-hidden flex-shrink-0 transition-transform group-hover:scale-105 bg-stone-50">
+        <div className="w-[60px] h-[60px] rounded-xl overflow-hidden shrink-0 transition-transform group-hover:scale-105 bg-stone-50">
           <Image
             src={imgSrc}
             alt={prod.nombre}
@@ -536,7 +536,7 @@ function ProductCard({
         </div>
       ) : (
         <div
-          className="w-[60px] h-[60px] rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform group-hover:scale-105 bg-gradient-to-br from-stone-50 to-stone-100/80"
+          className="w-[60px] h-[60px] rounded-xl flex items-center justify-center text-2xl shrink-0 transition-transform group-hover:scale-105 bg-gradient-to-br from-stone-50 to-stone-100/80"
           style={inCart ? { background: "color-mix(in srgb, var(--brand) 12%, white)" } : undefined}
         >
           {icon}
