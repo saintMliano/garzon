@@ -42,6 +42,7 @@ export default function Modal({
   children,
   cerrarConEscape = true,
   className = "",
+  onClickFondo,
 }: {
   onClose: () => void;
   /**
@@ -52,6 +53,16 @@ export default function Modal({
   children: React.ReactNode;
   cerrarConEscape?: boolean;
   className?: string;
+  /**
+   * Para los diálogos en los que el propio contenedor hace de fondo oscuro y
+   * cerrar tocando afuera es su gesto natural (los cuatro de la comanda, los de
+   * menú). Sin esto el gesto se pierde justo donde más falta: en el celular no
+   * hay Escape, así que quedaría solo el botón de cerrar.
+   *
+   * Los paneles de adentro ya frenan la propagación, así que el clic solo llega
+   * acá cuando de verdad fue en el fondo.
+   */
+  onClickFondo?: React.MouseEventHandler<HTMLDivElement>;
 }) {
   const contenedor = useRef<HTMLDivElement>(null);
   const abridor = useRef<HTMLElement | null>(null);
@@ -133,6 +144,7 @@ export default function Modal({
       aria-modal="true"
       aria-labelledby={idTitulo}
       className={className}
+      onClick={onClickFondo}
     >
       {/* Espejo del título para el lector de pantalla. El panel de `children`
           dibuja el suyo visible; duplicarlo acá evita obligar a cada uno de los

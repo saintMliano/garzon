@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { NavPanel } from "@/app/dashboard/nav-panel";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 import { NOTAS_RAPIDAS, agregarNotaRapida } from "@/lib/notas-rapidas";
+import Modal from "@/componentes/modal";
 
 /**
  * Comanda: el garzón toma el pedido en la mesa.
@@ -458,7 +459,13 @@ export default function ComandaPage() {
       <div className="flex flex-col min-h-dvh dashboard-dark">
         {encabezado}
         <main className="flex-1 p-4 md:p-6 flex items-center justify-center">
-          <div className="max-w-sm w-full dash-card rounded-2xl border-2 p-6 text-center">
+          {/* Lo único que confirma que la cocina lo tiene. Aparece sola cuando
+              vuelve el POST, así que se anuncia; `polite` y no `alert` porque es
+              una buena noticia y puede esperar el renglón en curso. */}
+          <div
+            aria-live="polite"
+            className="max-w-sm w-full dash-card rounded-2xl border-2 p-6 text-center"
+          >
             <div className="text-4xl">✅</div>
             <h2 className="font-bold dash-text-primary text-lg mt-3">Pedido enviado</h2>
             <p className="text-sm dash-text-secondary mt-1">
@@ -504,6 +511,7 @@ export default function ComandaPage() {
             type="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
+            aria-label="Buscar producto"
             placeholder="Buscar producto…"
             className="flex-1 min-w-[10rem] rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
           />
@@ -665,8 +673,14 @@ export default function ComandaPage() {
       {/* Pie fijo: el total y el botón nunca quedan fuera de pantalla. */}
       <div className="fixed bottom-0 inset-x-0 dash-header border-t px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto space-y-2">
+          {/* `alert` y no `polite`: el pedido NO salió. Si el aviso espera a que
+              el lector termine lo que esté leyendo, el garzón ya se fue a la mesa
+              siguiente creyendo que la cocina lo tiene. */}
           {error && (
-            <p className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            <p
+              role="alert"
+              className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"
+            >
               {error}
             </p>
           )}
@@ -677,7 +691,14 @@ export default function ComandaPage() {
               disabled={unidades === 0}
               className="text-left disabled:cursor-default"
             >
-              <p className="text-[10px] dash-text-muted uppercase tracking-wider font-medium">
+              {/* El contador cambia por un toque en la grilla, lejos de acá: sin
+                  esto el único modo de saber si el ítem entró es ir a buscarlo.
+                  `polite` porque marcar doce cosas seguidas no puede interrumpir
+                  doce veces. */}
+              <p
+                aria-live="polite"
+                className="text-[10px] dash-text-muted uppercase tracking-wider font-medium"
+              >
                 {mesa} · {unidades} {unidades === 1 ? "ítem" : "ítems"}
                 {unidades > 0 && <span className="text-orange-400"> · revisar</span>}
               </p>
@@ -700,9 +721,11 @@ export default function ComandaPage() {
           Para mostrarle el plato al comensal o leerle los ingredientes sin
           tener que abrir la carta pública en otra pestaña. */}
       {detalle && (
-        <div
+        <Modal
+          titulo={detalle.nombre}
+          onClose={() => setDetalle(null)}
+          onClickFondo={() => setDetalle(null)}
           className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => setDetalle(null)}
         >
           <div
             className="dash-card border-2 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm max-h-[85vh] overflow-y-auto"
@@ -755,16 +778,18 @@ export default function ComandaPage() {
               </div>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ===== NOTA ANTES DE AGREGAR =====
           "Italiano sin mayo" se marca en el momento en que la persona lo pide,
           no al final. Cada uno entra como su propia línea del pedido. */}
       {notaPara && (
-        <div
+        <Modal
+          titulo={notaPara.nombre}
+          onClose={() => setNotaPara(null)}
+          onClickFondo={() => setNotaPara(null)}
           className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => setNotaPara(null)}
         >
           <div
             className="dash-card border-2 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-4"
@@ -783,6 +808,7 @@ export default function ComandaPage() {
               onChange={(e) => setNotaTexto(e.target.value)}
               maxLength={LARGO_MAX_NOTA}
               autoFocus
+              aria-label={`Nota para ${notaPara.nombre}`}
               placeholder="Sin ají, bien cocido, aparte…"
               className="w-full mt-3 rounded-lg dash-bg-surface px-3 py-2.5 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
             />
@@ -836,16 +862,18 @@ export default function ComandaPage() {
               </div>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ===== CONFIRMAR AGOTAR =====
           Agotar sale del panel y llega a la carta del comensal, así que no puede
           pasar por un toque distraído mientras se marca un pedido. */}
       {confirmarAgotar && (
-        <div
+        <Modal
+          titulo={`¿Agotar ${confirmarAgotar.nombre}?`}
+          onClose={() => setConfirmarAgotar(null)}
+          onClickFondo={() => setConfirmarAgotar(null)}
           className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => setConfirmarAgotar(null)}
         >
           <div
             className="dash-card border-2 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-5"
@@ -878,7 +906,7 @@ export default function ComandaPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ===== EL PEDIDO =====
@@ -886,9 +914,15 @@ export default function ComandaPage() {
           líneas, y así llegan a la cocina: la nota va pegada a su ítem y no en
           un párrafo al final del pedido. */}
       {verPedido && (
-        <div
+        <Modal
+          titulo={`Pedido de ${mesa}`}
+          onClose={() => setVerPedido(false)}
+          onClickFondo={() => { if (!enviando) setVerPedido(false); }}
+          // Mientras el POST está en vuelo, Escape no cierra: el panel es lo
+          // único que muestra qué se está mandando, y sacarlo de encima a media
+          // confirmación deja al garzón sin saber si el pedido salió.
+          cerrarConEscape={!enviando}
           className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => setVerPedido(false)}
         >
           <div
             className="dash-card border-2 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] flex flex-col"
@@ -940,6 +974,10 @@ export default function ComandaPage() {
                     value={linea.notas}
                     onChange={(e) => cambiarNota(linea.id, e.target.value)}
                     maxLength={LARGO_MAX_NOTA}
+                    // El carrito es una lista de LÍNEAS: el mismo producto puede ir
+                    // dos veces con notas distintas. Sin el nombre en la etiqueta,
+                    // un lector de pantalla anuncia varios campos idénticos.
+                    aria-label={`Nota para ${producto.nombre}`}
                     placeholder="Sin ají, sin mayo, bien cocido…"
                     className="w-full mt-2.5 rounded-lg dash-card px-3 py-2 text-[13px] dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
                   />
@@ -998,7 +1036,7 @@ export default function ComandaPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

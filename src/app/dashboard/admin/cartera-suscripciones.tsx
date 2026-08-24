@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useConfirmar } from "@/componentes/usar-confirmar";
 import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 
 /**
@@ -52,6 +53,7 @@ export default function CarteraSuscripciones({
 }) {
   const [locales, setLocales] = useState<LocalSuscripcion[] | null>(null);
   const [trabajando, setTrabajando] = useState<string | null>(null);
+  const { confirmar, dialogo } = useConfirmar();
 
   const cargar = useCallback(async () => {
     try {
@@ -74,9 +76,16 @@ export default function CarteraSuscripciones({
   async function ejecutar(local: LocalSuscripcion, accion: Accion) {
     // Cancelar es la única que quita el servicio de golpe: se confirma.
     if (accion === "cancelar") {
-      const ok = window.confirm(
-        `¿Cancelar la suscripción de ${local.nombre}? Los pedidos por QR se pausan de inmediato.`
-      );
+      // La misma advertencia de siempre, repartida: la pregunta arriba y la
+      // consecuencia abajo. El botón dice "Sí, cancelar" y no el "Confirmar" por
+      // omisión porque acá "Cancelar" a secas nombraría las dos cosas opuestas:
+      // la acción que se pide y el arrepentirse de pedirla.
+      const ok = await confirmar({
+        titulo: `¿Cancelar la suscripción de ${local.nombre}?`,
+        detalle: "Los pedidos por QR se pausan de inmediato.",
+        aceptar: "Sí, cancelar",
+        destructivo: true,
+      });
       if (!ok) return;
     }
 
@@ -124,7 +133,11 @@ export default function CarteraSuscripciones({
             const ocupado = trabajando === l.id;
 
             return (
-              <div key={l.id} className="rounded-xl dash-bg-surface p-3">
+              /* Acá no hay cartel de "listo": la confirmación de que la acción
+                 llegó es la tarjeta misma cambiando de etiqueta y de fecha. Por
+                 eso la región viva va en la tarjeta y no en la lista entera —
+                 así no se releen los otros locales cada vez que se toca uno. */
+              <div key={l.id} aria-live="polite" className="rounded-xl dash-bg-surface p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold dash-text-primary text-sm truncate">{l.nombre}</p>
@@ -174,6 +187,8 @@ export default function CarteraSuscripciones({
           })}
         </div>
       )}
+
+      {dialogo}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { NavPanel } from "@/app/dashboard/nav-panel";
+import { useConfirmar } from "@/componentes/usar-confirmar";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 import { DESCRIPCION_ROL, NOMBRE_ROL, ROLES, type Rol } from "@/lib/roles";
 
@@ -29,6 +30,7 @@ type Miembro = {
 
 export default function EquipoPage() {
   const { cargando: cargandoRol, rol, localId, localNombre, locales, esPlatformAdmin } = useRolLocal();
+  const { confirmar, dialogo } = useConfirmar();
 
   const [equipo, setEquipo] = useState<Miembro[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -135,11 +137,16 @@ export default function EquipoPage() {
 
   async function sacar(m: Miembro) {
     if (!localId) return;
-    const confirmado = window.confirm(
-      `¿Sacar a ${m.email} de ${localNombre ?? "el local"}?\n\n` +
+    // La misma advertencia de siempre, repartida: la pregunta arriba y la
+    // consecuencia abajo. El salto de línea doble que pedía `window.confirm()`
+    // ya no hace falta: el diálogo separa título y detalle por su cuenta.
+    const confirmado = await confirmar({
+      titulo: `¿Sacar a ${m.email} de ${localNombre ?? "el local"}?`,
+      detalle:
         "Deja de ver los pedidos de inmediato. Su cuenta no se borra: si trabaja " +
-        "en otro local, sigue entrando ahí."
-    );
+        "en otro local, sigue entrando ahí.",
+      destructivo: true,
+    });
     if (!confirmado) return;
 
     setOcupado(m.user_id);
@@ -285,11 +292,13 @@ export default function EquipoPage() {
                     {ROLES.map((r) => (
                       <label
                         key={r}
+                        htmlFor={`rol-${r}`}
                         className={`flex gap-3 items-start rounded-xl border-2 p-3 cursor-pointer transition-colors ${
                           rolNuevo === r ? "border-orange-500 bg-orange-500/10" : "border-stone-800"
                         }`}
                       >
                         <input
+                          id={`rol-${r}`}
                           type="radio"
                           name="rol"
                           value={r}
@@ -321,13 +330,19 @@ export default function EquipoPage() {
             )}
           </div>
 
+          {/* El alta cierra el formulario al terminar, así que el resultado
+              aparece lejos de donde estaba el foco. Sin anunciarlo, quien usa
+              lector de pantalla no se entera de que la cuenta se creó —ni de la
+              contraseña que hay que anotar— y vuelve a apretar "Agregar".
+              El aviso es "polite" (buena noticia, puede esperar el turno); el
+              error es `alert` porque interrumpe: nada de lo pedido pasó. */}
           {aviso && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+            <div aria-live="polite" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
               <p className="text-xs text-emerald-300 leading-relaxed">{aviso}</p>
             </div>
           )}
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
+            <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
               <p className="text-xs text-red-300 leading-relaxed">{error}</p>
             </div>
           )}
@@ -380,6 +395,8 @@ export default function EquipoPage() {
           </p>
         </div>
       </main>
+
+      {dialogo}
     </div>
   );
 }

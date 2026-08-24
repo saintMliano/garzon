@@ -357,8 +357,9 @@ export default function ConfigPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
+              <label htmlFor="config-nombre" className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
               <input
+                id="config-nombre"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -367,8 +368,9 @@ export default function ConfigPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Eslogan</label>
+              <label htmlFor="config-eslogan" className="text-xs font-semibold dash-text-secondary block mb-1">Eslogan</label>
               <input
+                id="config-eslogan"
                 value={slogan}
                 onChange={(e) => setSlogan(e.target.value)}
                 className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -378,8 +380,9 @@ export default function ConfigPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Dirección</label>
+                <label htmlFor="config-direccion" className="text-xs font-semibold dash-text-secondary block mb-1">Dirección</label>
                 <input
+                  id="config-direccion"
                   value={direccion}
                   onChange={(e) => setDireccion(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -387,8 +390,9 @@ export default function ConfigPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Teléfono</label>
+                <label htmlFor="config-telefono" className="text-xs font-semibold dash-text-secondary block mb-1">Teléfono</label>
                 <input
+                  id="config-telefono"
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -398,15 +402,22 @@ export default function ConfigPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Color primario</label>
+              {/* Son dos controles para un mismo color y la etiqueta solo puede
+                  apuntar a uno: va al selector, que es por donde entra casi todo
+                  el mundo. El campo hex se nombra solo con aria-label para que no
+                  quede anónimo en el lector de pantalla. */}
+              <label htmlFor="config-color-primario" className="text-xs font-semibold dash-text-secondary block mb-1">Color primario</label>
               <div className="flex items-center gap-3">
                 <input
+                  id="config-color-primario"
                   type="color"
                   value={aColorInput(primarioVista)}
                   onChange={(e) => cambiarPrimario(e.target.value)}
                   className="w-11 h-10 rounded-lg dash-bg-surface cursor-pointer border-0 p-1"
                 />
                 <input
+                  id="config-color-primario-hex"
+                  aria-label="Color primario en hexadecimal"
                   value={colorPrimario}
                   onChange={(e) => cambiarPrimario(e.target.value)}
                   className="flex-1 rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
@@ -429,15 +440,18 @@ export default function ConfigPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Color de acento (precios y detalles)</label>
+              <label htmlFor="config-color-acento" className="text-xs font-semibold dash-text-secondary block mb-1">Color de acento (precios y detalles)</label>
               <div className="flex items-center gap-3">
                 <input
+                  id="config-color-acento"
                   type="color"
                   value={aColorInput(acentoVista)}
                   onChange={(e) => cambiarAcento(e.target.value)}
                   className="w-11 h-10 rounded-lg dash-bg-surface cursor-pointer border-0 p-1"
                 />
                 <input
+                  id="config-color-acento-hex"
+                  aria-label="Color de acento en hexadecimal"
                   value={colorAcento}
                   onChange={(e) => cambiarAcento(e.target.value)}
                   className="flex-1 rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
@@ -511,8 +525,11 @@ export default function ConfigPage() {
               )}
             </div>
 
-            <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Logo</label>
+            {/* "Logo" no es una etiqueta de campo: cuando ya hay logo, abajo solo
+                queda un botón, y un <label> apuntando a un botón no existe. Va como
+                título del grupo — mismas clases, cero cambio visual. */}
+            <div role="group" aria-labelledby="config-logo-titulo">
+              <p id="config-logo-titulo" className="text-xs font-semibold dash-text-secondary block mb-1">Logo</p>
               {logoUrl ? (
                 <div className="flex items-center gap-3 rounded-xl dash-bg-surface px-3 py-2.5">
                   <Image
@@ -531,11 +548,12 @@ export default function ConfigPage() {
                   </button>
                 </div>
               ) : (
-                <label className={`flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity ${
+                <label htmlFor="config-logo-archivo" className={`flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity ${
                   subiendoLogo ? "opacity-60 pointer-events-none" : "hover:opacity-80"
                 } dash-text-muted`}>
                   {subiendoLogo ? "Subiendo…" : "Subir logo"}
                   <input
+                    id="config-logo-archivo"
                     type="file"
                     accept="image/*"
                     hidden
@@ -548,8 +566,11 @@ export default function ConfigPage() {
           </div>
 
           <div className="flex items-center justify-end gap-3 mt-6">
+            {/* El "guardado" se muestra al lado del botón y se va solo a los 3
+                segundos: sin anunciarlo, quien no ve la pantalla se queda sin saber
+                si el cambio quedó. Polite y no alert porque no urge nada. */}
             {savedMsg && (
-              <span className="text-xs font-semibold text-green-400">✓ Cambios guardados</span>
+              <span role="status" aria-live="polite" className="text-xs font-semibold text-green-400">✓ Cambios guardados</span>
             )}
             <button
               onClick={handleGuardar}
@@ -564,7 +585,7 @@ export default function ConfigPage() {
 
       {/* Toast de error, discreto y auto-ocultable */}
       {errorMsg && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
           ⚠️ {errorMsg}
         </div>
       )}

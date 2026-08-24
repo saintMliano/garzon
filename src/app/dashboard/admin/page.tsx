@@ -256,7 +256,10 @@ export default function AdminOnboardPage() {
           <h2 className="font-bold dash-text-primary text-base mb-4">Dar de alta un local</h2>
 
           {result ? (
-            <div className="space-y-4">
+            <div aria-live="polite" className="space-y-4">
+              {/* Crear el local es lo último que hace esta pantalla, y el foco se
+                  queda en el botón que ya no está. Sin anunciarlo, quien no ve la
+                  pantalla no se entera de que hay credenciales esperando. */}
               <div className="rounded-xl dash-bg-surface p-4 space-y-3">
                 <div>
                   <p className="text-[11px] dash-text-muted uppercase tracking-wider font-medium">Local creado</p>
@@ -342,8 +345,9 @@ export default function AdminOnboardPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Nombre del local</label>
+                <label htmlFor="alta-nombre-local" className="text-xs font-semibold dash-text-secondary block mb-1">Nombre del local</label>
                 <input
+                  id="alta-nombre-local"
                   value={nombre}
                   onChange={(e) => handleNombreChange(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -353,8 +357,9 @@ export default function AdminOnboardPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Slug (opcional)</label>
+                <label htmlFor="alta-slug" className="text-xs font-semibold dash-text-secondary block mb-1">Slug (opcional)</label>
                 <input
+                  id="alta-slug"
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
@@ -364,8 +369,9 @@ export default function AdminOnboardPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Email del dueño</label>
+                <label htmlFor="alta-email" className="text-xs font-semibold dash-text-secondary block mb-1">Email del dueño</label>
                 <input
+                  id="alta-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -376,7 +382,7 @@ export default function AdminOnboardPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Logo del local (opcional)</label>
+                <label htmlFor="alta-logo" className="text-xs font-semibold dash-text-secondary block mb-1">Logo del local (opcional)</label>
                 {logoPreviewUrl ? (
                   <div className="flex items-center gap-3 rounded-xl dash-bg-surface px-3 py-2.5">
                     <Image
@@ -396,9 +402,9 @@ export default function AdminOnboardPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity hover:opacity-80 dash-text-muted">
+                  <label htmlFor="alta-logo" className="flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity hover:opacity-80 dash-text-muted">
                     Subir logo
-                    <input type="file" accept="image/*" hidden onChange={handleLogoChange} />
+                    <input id="alta-logo" type="file" accept="image/*" hidden onChange={handleLogoChange} />
                   </label>
                 )}
               </div>
@@ -421,9 +427,11 @@ export default function AdminOnboardPage() {
         <SupresionTelefono onError={setErrorMsg} />
       </main>
 
-      {/* Toast de error, discreto y auto-ocultable */}
+      {/* Toast de error, discreto y auto-ocultable. Va con `role="alert"`
+          justamente porque se borra solo a los 4 segundos: si no se anuncia al
+          aparecer, no se anuncia nunca. */}
       {errorMsg && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
           ⚠️ {errorMsg}
         </div>
       )}

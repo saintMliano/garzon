@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import Modal from "@/componentes/modal";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice, normalizar } from "@/lib/utils";
@@ -220,7 +221,15 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    // `cerrarConEscape={!submitting}` repite en el teclado lo que el backdrop ya
+    // hacía con el dedo: mientras el pedido viaja, no hay forma de cerrar. Salir
+    // a media confirmación deja al comensal sin saber si su pedido entró.
+    <Modal
+      titulo="Confirmar pedido"
+      onClose={onClose}
+      cerrarConEscape={!submitting}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+    >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !submitting && onClose()} />
 
       <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md animate-slide-up shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -260,8 +269,12 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           </div>
 
           {/* Propina sugerida */}
-          <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-2">¿Quieres dejar propina?</label>
+          {/* No es un `label` porque no encabeza un campo: encabeza cinco botones
+              y una barra. Un `label` sin control al que apuntar no lo lee nadie;
+              como grupo etiquetado, el lector anuncia de qué va el conjunto al
+              entrar en él. La barra conserva su propio `aria-label`. */}
+          <div role="group" aria-labelledby="checkout-propina">
+            <p id="checkout-propina" className="block text-sm font-semibold text-stone-700 mb-2">¿Quieres dejar propina?</p>
 
             {/* Los botones y la barra escriben el mismo estado: tocar un botón
                 mueve la barra, y mover la barra apaga o enciende el botón que
@@ -306,7 +319,11 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               </div>
             </div>
 
+            {/* Estas dos cifras se recalculan solas al mover la barra. La barra
+                ya canta el porcentaje por `aria-valuetext`; lo que falta, y es
+                lo que importa, es cuánta plata termina siendo. */}
             <div
+              aria-live="polite"
               className="mt-3 rounded-xl px-3 py-2.5 border space-y-1"
               style={{
                 background: "color-mix(in srgb, var(--brand) 12%, white)",
@@ -330,8 +347,9 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Tu nombre *</label>
+            <label htmlFor="checkout-nombre" className="block text-sm font-semibold text-stone-700 mb-1.5">Tu nombre *</label>
             <input
+              id="checkout-nombre"
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
@@ -342,8 +360,11 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           </div>
 
           {/* Mesa quick select */}
-          <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-2">¿Dónde va tu pedido?</label>
+          {/* Mismo caso que la propina: acá tampoco hay un campo, hay botones.
+              El grupo va en el contenedor de afuera para que cubra las dos
+              ramas —la mesa que trajo el QR y la grilla— sin repetir nada. */}
+          <div role="group" aria-labelledby="checkout-mesa">
+            <p id="checkout-mesa" className="block text-sm font-semibold text-stone-700 mb-2">¿Dónde va tu pedido?</p>
             {mesaBloqueada ? (
               <div
                 className="flex flex-col items-start gap-1 border rounded-xl px-4 py-3"
@@ -446,9 +467,12 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               />
             </div>
 
+            {/* El `role="alert"` va en el span del error y no en el `p`, que en
+                reposo es texto de ayuda: si viviera arriba, cada vez que el
+                error se va el lector recitaría de nuevo el aviso de privacidad. */}
             <p id="telefono-ayuda" className="text-[11px] text-stone-500 mt-1.5 leading-snug">
               {telefonoTocado && telefonoInvalido ? (
-                <span className="text-red-600 font-medium">Son 9 números y parten con 9.</span>
+                <span role="alert" className="text-red-600 font-medium">Son 9 números y parten con 9.</span>
               ) : esRetiro ? (
                 <>
                   Lo usamos solo para avisarte cuando tu pedido esté listo. Lo ve únicamente este
@@ -470,8 +494,9 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Notas adicionales</label>
+            <label htmlFor="checkout-notas" className="block text-sm font-semibold text-stone-700 mb-1.5">Notas adicionales</label>
             <textarea
+              id="checkout-notas"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               placeholder="Indicaciones especiales..."
@@ -480,8 +505,11 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
             />
           </div>
 
+          {/* `alert` y no `aria-live="polite"`: acá algo falló y hay algo que
+              hacer, así que interrumpe. Además el bloque aparece arriba del botón
+              de enviar, o sea fuera de vista de quien acaba de tocarlo. */}
           {error && (
-            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 py-2.5 px-3 rounded-xl border border-red-100">
+            <div role="alert" className="flex items-center gap-2 text-sm text-red-600 bg-red-50 py-2.5 px-3 rounded-xl border border-red-100">
               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
@@ -513,6 +541,6 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

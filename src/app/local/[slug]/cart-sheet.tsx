@@ -1,5 +1,6 @@
 "use client";
 
+import Modal from "@/componentes/modal";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
 import { NOTAS_RAPIDAS, agregarNotaRapida } from "@/lib/notas-rapidas";
@@ -13,7 +14,11 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
   const { items, updateQuantity, updateNotes, removeItem, total, itemCount } = useCart();
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <Modal
+      titulo="Tu pedido"
+      onClose={onClose}
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+    >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
@@ -28,7 +33,11 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100">
           <div>
             <h2 className="text-lg font-bold text-stone-900">Tu Pedido</h2>
-            <p className="text-xs text-stone-500">{itemCount} producto{itemCount !== 1 && "s"}</p>
+            {/* Este contador cambia sin que nadie toque el header: lo mueven
+                los +/- y el "Eliminar" de la lista de abajo. El total del pie
+                sale del mismo toque, y marcarlo también haría que cada "+" se
+                leyera dos veces; con uno alcanza. */}
+            <p className="text-xs text-stone-500" aria-live="polite">{itemCount} producto{itemCount !== 1 && "s"}</p>
           </div>
           <button
             onClick={onClose}
@@ -91,6 +100,11 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                     {/* Notes */}
                     <input
                       type="text"
+                      // El `placeholder` no es un nombre accesible: desaparece al
+                      // escribir, así que con cinco líneas en el carrito un lector
+                      // de pantalla anunciaba cinco campos idénticos sin decir de
+                      // cuál producto era la nota.
+                      aria-label={`Nota para ${item.producto.nombre}`}
                       placeholder="Ej: sin mayo, extra queso..."
                       value={item.notas}
                       onChange={(e) => updateNotes(item.producto.id, e.target.value)}
@@ -151,6 +165,6 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }

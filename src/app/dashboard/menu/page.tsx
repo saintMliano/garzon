@@ -10,6 +10,8 @@ import AvisoSuscripcion from "../aviso-suscripcion";
 import { NavPanel } from "@/app/dashboard/nav-panel";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 import { puede } from "@/lib/roles";
+import Modal from "@/componentes/modal";
+import { useConfirmar } from "@/componentes/usar-confirmar";
 
 type ProductoForm = {
   id: string | null;
@@ -57,6 +59,11 @@ export default function MenuPage() {
   const puedeEditar = puede(rol, "editar_menu");
 
   const supabase = useMemo(() => createClient(), []);
+
+  // Borrar una categoría o un producto es de lo poco que no se deshace desde acá,
+  // así que va con diálogo propio y en rojo. `window.confirm()` avisaba, pero no
+  // se puede pintar y en Android se anuncia como "El sitio dice:".
+  const { confirmar, dialogo } = useConfirmar();
 
   const [localId, setLocalId] = useState<string | null>(null);
   const [localNombre, setLocalNombre] = useState("");
@@ -244,10 +251,15 @@ export default function MenuPage() {
 
   async function deleteCategoria(cat: Categoria) {
     const cantidad = productosDeCategoria(cat.id).length;
-    const advertencia = cantidad > 0
-      ? `¿Eliminar "${cat.nombre}"? Sus ${cantidad} producto(s) quedarán sin categoría.`
-      : `¿Eliminar "${cat.nombre}"?`;
-    if (!window.confirm(advertencia)) return;
+    // La misma advertencia de siempre, repartida: la pregunta arriba y la
+    // consecuencia abajo, que es la parte que conviene leer antes de tocar rojo.
+    const ok = await confirmar({
+      titulo: `¿Eliminar "${cat.nombre}"?`,
+      detalle: cantidad > 0 ? `Sus ${cantidad} producto(s) quedarán sin categoría.` : undefined,
+      aceptar: "Sí, eliminar",
+      destructivo: true,
+    });
+    if (!ok) return;
     if (!localId) return;
 
     const { error } = await supabase.from("categorias").delete().eq("id", cat.id);
@@ -336,7 +348,12 @@ export default function MenuPage() {
   }
 
   async function deleteProducto(prod: Producto) {
-    if (!window.confirm(`¿Eliminar "${prod.nombre}"?`)) return;
+    const ok = await confirmar({
+      titulo: `¿Eliminar "${prod.nombre}"?`,
+      aceptar: "Sí, eliminar",
+      destructivo: true,
+    });
+    if (!ok) return;
     if (!localId) return;
 
     const { error } = await supabase.from("productos").delete().eq("id", prod.id);
@@ -593,7 +610,11 @@ export default function MenuPage() {
 
       {/* ===== MODAL CATEGORÍA ===== */}
       {categoriaModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+        <Modal
+          titulo={categoriaForm.id ? "Editar categoría" : "Nueva categoría"}
+          onClose={() => setCategoriaModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+        >
           <div className="dash-card rounded-2xl border-2 p-5 w-full max-w-sm">
             <h3 className="font-bold dash-text-primary text-base mb-4">
               {categoriaForm.id ? "Editar categoría" : "Nueva categoría"}
@@ -601,8 +622,9 @@ export default function MenuPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
+                <label htmlFor="categoria-nombre" className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
                 <input
+                  id="categoria-nombre"
                   value={categoriaForm.nombre}
                   onChange={(e) => setCategoriaForm((f) => ({ ...f, nombre: e.target.value }))}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -612,8 +634,9 @@ export default function MenuPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Ícono (emoji)</label>
+                  <label htmlFor="categoria-icono" className="text-xs font-semibold dash-text-secondary block mb-1">Ícono (emoji)</label>
                   <input
+                    id="categoria-icono"
                     value={categoriaForm.icono}
                     onChange={(e) => setCategoriaForm((f) => ({ ...f, icono: e.target.value }))}
                     className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -622,8 +645,9 @@ export default function MenuPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Orden</label>
+                  <label htmlFor="categoria-orden" className="text-xs font-semibold dash-text-secondary block mb-1">Orden</label>
                   <input
+                    id="categoria-orden"
                     type="number"
                     value={categoriaForm.orden}
                     onChange={(e) => setCategoriaForm((f) => ({ ...f, orden: e.target.value }))}
@@ -649,12 +673,16 @@ export default function MenuPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ===== MODAL PRODUCTO ===== */}
       {productoModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+        <Modal
+          titulo={productoForm.id ? "Editar producto" : "Nuevo producto"}
+          onClose={() => setProductoModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+        >
           <div className="dash-card rounded-2xl border-2 p-5 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold dash-text-primary text-base mb-4">
               {productoForm.id ? "Editar producto" : "Nuevo producto"}
@@ -662,7 +690,7 @@ export default function MenuPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Imagen del producto</label>
+                <label htmlFor="producto-imagen" className="text-xs font-semibold dash-text-secondary block mb-1">Imagen del producto</label>
                 {productoForm.imagen_url ? (
                   <div className="flex items-center gap-3 rounded-xl dash-bg-surface px-3 py-2.5">
                     <Image
@@ -681,11 +709,12 @@ export default function MenuPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className={`flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity ${
+                  <label htmlFor="producto-imagen" className={`flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity ${
                     subiendoImagen ? "opacity-60 pointer-events-none" : "hover:opacity-80"
                   } dash-text-muted`}>
                     {subiendoImagen ? "Subiendo…" : "Subir imagen"}
                     <input
+                      id="producto-imagen"
                       type="file"
                       accept="image/*"
                       hidden
@@ -697,8 +726,9 @@ export default function MenuPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
+                <label htmlFor="producto-nombre" className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
                 <input
+                  id="producto-nombre"
                   value={productoForm.nombre}
                   onChange={(e) => setProductoForm((f) => ({ ...f, nombre: e.target.value }))}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -707,8 +737,9 @@ export default function MenuPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Descripción</label>
+                <label htmlFor="producto-descripcion" className="text-xs font-semibold dash-text-secondary block mb-1">Descripción</label>
                 <textarea
+                  id="producto-descripcion"
                   value={productoForm.descripcion}
                   onChange={(e) => setProductoForm((f) => ({ ...f, descripcion: e.target.value }))}
                   rows={2}
@@ -719,10 +750,11 @@ export default function MenuPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Precio (CLP)</label>
+                  <label htmlFor="producto-precio" className="text-xs font-semibold dash-text-secondary block mb-1">Precio (CLP)</label>
                   <div className="flex items-center rounded-lg dash-bg-surface px-3 focus-within:ring-2 focus-within:ring-orange-500">
                     <span className="text-sm dash-text-muted mr-1">$</span>
                     <input
+                      id="producto-precio"
                       type="number"
                       step="1"
                       value={productoForm.precio}
@@ -733,8 +765,9 @@ export default function MenuPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Orden</label>
+                  <label htmlFor="producto-orden" className="text-xs font-semibold dash-text-secondary block mb-1">Orden</label>
                   <input
+                    id="producto-orden"
                     type="number"
                     value={productoForm.orden}
                     onChange={(e) => setProductoForm((f) => ({ ...f, orden: e.target.value }))}
@@ -744,8 +777,9 @@ export default function MenuPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Categoría</label>
+                <label htmlFor="producto-categoria" className="text-xs font-semibold dash-text-secondary block mb-1">Categoría</label>
                 <select
+                  id="producto-categoria"
                   value={productoForm.categoria_id}
                   onChange={(e) => setProductoForm((f) => ({ ...f, categoria_id: e.target.value }))}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -790,15 +824,22 @@ export default function MenuPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
-      {/* Toast de error, discreto y auto-ocultable */}
+      {/* Toast de error, discreto y auto-ocultable. `role="alert"` porque aparece
+          solo, lejos del botón que falló y se va a los 4 segundos: sin eso, quien
+          usa lector de pantalla se queda esperando una respuesta que ya pasó. */}
       {errorMsg && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+        <div
+          role="alert"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm"
+        >
           ⚠️ {errorMsg}
         </div>
       )}
+
+      {dialogo}
     </div>
   );
 }

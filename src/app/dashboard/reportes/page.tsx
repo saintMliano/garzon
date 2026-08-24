@@ -316,6 +316,8 @@ export default function ReportesPage() {
   const [intento, setIntento] = useState(0); // lo incrementa "Reintentar"
   const [exportando, setExportando] = useState(false);
   const [errorExport, setErrorExport] = useState<string | null>(null);
+  /** Barra elegida en el gráfico de ventas. Ver el comentario del gráfico. */
+  const [barraElegida, setBarraElegida] = useState<string | null>(null);
 
   const rangoValido = desde <= hasta;
   const clave = `${localId ?? ""}|${desde}|${hasta}`;
@@ -710,8 +712,9 @@ export default function ReportesPage() {
             {preset === "personalizado" && (
               <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-stone-800">
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Desde</label>
+                  <label htmlFor="reportes-desde" className="text-xs font-semibold dash-text-secondary block mb-1">Desde</label>
                   <input
+                    id="reportes-desde"
                     type="date"
                     value={desde}
                     max={hoyChile()}
@@ -720,8 +723,9 @@ export default function ReportesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Hasta</label>
+                  <label htmlFor="reportes-hasta" className="text-xs font-semibold dash-text-secondary block mb-1">Hasta</label>
                   <input
+                    id="reportes-hasta"
                     type="date"
                     value={hasta}
                     max={hoyChile()}
@@ -895,20 +899,54 @@ export default function ReportesPage() {
                       Ventas por {agrupadoPorMes ? "mes" : "día"}{" "}
                       <span className="font-normal dash-text-muted text-[11px]">· sin rechazados</span>
                     </h2>
-                    <span className="text-[11px] dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
+                    {(() => {
+                      const elegida = serieGrafico.find((d) => d.clave === barraElegida);
+                      return elegida ? (
+                        <span className="text-[11px] dash-text-secondary tabular-nums" aria-live="polite">
+                          {elegida.etiqueta}: {formatPrice(elegida.venta)} · {elegida.pedidos} pedido(s)
+                        </span>
+                      ) : (
+                        <span className="text-[11px] dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
+                      );
+                    })()}
                   </div>
 
+                  {/* El valor de cada barra se mostraba solo con `group-hover` y un
+                      `title`. En una pantalla táctil —que es donde vive este panel,
+                      la tablet de la cocina— no hay ninguna de las dos cosas, así
+                      que el gráfico no tenía un solo número legible. Ahora cada
+                      barra es un botón: tocarla la fija y su dato sale en el
+                      encabezado. El hover se conserva para el notebook.
+
+                      Botones y no `role="img"` sobre el conjunto: `img` vuelve
+                      presentacional todo lo de adentro, y entonces las barras
+                      dejarían de poder tocarse. Cada botón lleva su propio
+                      `aria-label` con la cifra, que es el dato que antes no salía
+                      por ningún lado. */}
                   <div className="overflow-x-auto">
-                    <div className="flex items-end gap-1 md:gap-1.5 h-44 min-w-full">
+                    <div
+                      role="group"
+                      aria-label={`Ventas por ${agrupadoPorMes ? "mes" : "día"}, ${serieGrafico.length} ${agrupadoPorMes ? "meses" : "días"}, máximo ${formatPrice(maxVentaDia)}`}
+                      className="flex items-end gap-1 md:gap-1.5 h-44 min-w-full"
+                    >
                       {serieGrafico.map((d) => {
                         const alturaPct = maxVentaDia > 0 ? (d.venta / maxVentaDia) * 100 : 0;
+                        const elegida = barraElegida === d.clave;
                         return (
-                          <div
+                          <button
                             key={d.clave}
-                            className="flex-1 min-w-[14px] h-full flex flex-col justify-end items-center group"
+                            type="button"
+                            onClick={() => setBarraElegida(elegida ? null : d.clave)}
+                            aria-pressed={elegida}
+                            aria-label={`${d.etiqueta}: ${formatPrice(d.venta)} en ${d.pedidos} pedido(s)`}
+                            className="flex-1 min-w-[14px] h-full flex flex-col justify-end items-center group rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                             title={`${d.etiqueta} · ${d.pedidos} pedido(s) · ${formatPrice(d.venta)}`}
                           >
-                            <span className="text-[10px] dash-text-muted tabular-nums opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            <span
+                              className={`text-[10px] dash-text-secondary tabular-nums transition-opacity whitespace-nowrap ${
+                                elegida ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                              }`}
+                            >
                               {d.venta > 0 ? formatPrice(d.venta) : "—"}
                             </span>
                             <div
@@ -916,10 +954,10 @@ export default function ReportesPage() {
                                 d.venta > 0
                                   ? "bg-gradient-to-t from-orange-600 to-amber-400"
                                   : "bg-stone-800"
-                              }`}
+                              } ${elegida ? "ring-2 ring-white/70" : ""}`}
                               style={{ height: d.venta > 0 ? `max(4px, ${alturaPct}%)` : "3px" }}
                             />
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -1007,6 +1045,10 @@ export default function ReportesPage() {
       {errorExport && (
         <button
           onClick={() => setErrorExport(null)}
+          // El aviso aparece abajo del todo, lejos del botón de exportar que se
+          // acaba de tocar, y se va solo. Sin `alert` no se entera nadie que no
+          // esté mirando esa esquina.
+          role="alert"
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm"
         >
           ⚠️ {errorExport}

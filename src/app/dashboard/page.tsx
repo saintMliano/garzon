@@ -8,6 +8,7 @@ import { formatearTelefonoChileno } from "@/lib/telefono";
 import type { OrderStatus, PedidoConItems } from "@/types/database";
 import AvisoSuscripcion from "./aviso-suscripcion";
 import { NavPanel } from "@/app/dashboard/nav-panel";
+import { useConfirmar } from "@/componentes/usar-confirmar";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 import { puede } from "@/lib/roles";
 
@@ -108,6 +109,7 @@ export default function DashboardPage() {
   // El rol es por local: lo resuelve el hook compartido a partir del local
   // seleccionado. Solo decide qué se dibuja; quien niega es la base.
   const { rol } = useRolLocal();
+  const { confirmar, dialogo } = useConfirmar();
 
   const supabase = useMemo(() => createClient(), []);
   const [pedidos, setPedidos] = useState<PedidoConItems[]>([]);
@@ -443,7 +445,15 @@ export default function DashboardPage() {
   }
 
   async function handleReject(pedidoId: string, currentStatus: string) {
-    if (!window.confirm("¿Rechazar este pedido? El cliente será notificado.")) return;
+    // La misma advertencia de siempre, repartida: la pregunta arriba y la
+    // consecuencia abajo. Rechazar es terminal —no hay vuelta desde `cancelado`—
+    // así que va en rojo y no con el cuadro gris del navegador.
+    const ok = await confirmar({
+      titulo: "¿Rechazar este pedido?",
+      detalle: "El cliente será notificado.",
+      destructivo: true,
+    });
+    if (!ok) return;
     await updateStatus(pedidoId, currentStatus, "cancelado");
   }
 
@@ -574,8 +584,13 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Estado de la conexión: distingue "no hay pedidos" de "no llegan". */}
+            {/* Estado de la conexión: distingue "no hay pedidos" de "no llegan".
+                Cambia solo, sin que nadie toque nada, y dice si el sistema
+                sigue funcionando: exactamente el caso de `aria-live`. "Polite"
+                y no `alert` porque caerse del realtime no interrumpe el
+                servicio — el polling de 30 segundos sigue trayendo pedidos. */}
             <div
+              aria-live="polite"
               className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap ${
                 conexion === "en-vivo"
                   ? "text-green-400"
@@ -615,14 +630,27 @@ export default function DashboardPage() {
                 un botón discreto en el header pasaba desapercibido y la cocina
                 se quedaba muda sin enterarse. */}
 
-            {/* Notification bell */}
-            <div className="relative">
-              <div className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg">🔔</div>
+            {/* Contador de pedidos nuevos. NO es un botón: nunca tuvo `onClick`
+                y no hay ninguna pantalla de notificaciones adonde llevar. Tenía
+                el mismo fondo y tamaño que los dos botones de al lado, así que
+                se tocaba y no pasaba nada; sin `dash-bg-surface` se lee como lo
+                que es, un indicador.
+
+                El `aria-live` va acá y no en el globo rojo: el globo aparece y
+                desaparece con el contador, y una región viva que nace junto con
+                su contenido no anuncia nada. El envoltorio está siempre, así que
+                la llegada de un pedido —que es la única forma en que este
+                tablero se actualiza solo— sí se escucha. "Polite" para no
+                cortar a quien esté leyendo una comanda a mitad de servicio. */}
+            <div className="relative" aria-live="polite">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" aria-hidden="true">🔔</div>
               {nuevoCount > 0 && (
-                <>
-                  <div className="notification-dot" />
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{nuevoCount}</span>
-                </>
+                <span
+                  aria-label={nuevoCount === 1 ? "1 pedido nuevo" : `${nuevoCount} pedidos nuevos`}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+                >
+                  {nuevoCount}
+                </span>
               )}
             </div>
 
@@ -949,12 +977,17 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* `alert` y no "polite": este toast dice que el toque NO surtió efecto
+            y se borra solo a los 4 segundos. Si espera turno, se va antes de
+            que lo anuncien y el pedido queda clavado sin que nadie sepa. */}
         {errorMsg && (
-          <div className="px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+          <div role="alert" className="px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
             ⚠️ {errorMsg}
           </div>
         )}
       </div>
+
+      {dialogo}
     </div>
   );
 }

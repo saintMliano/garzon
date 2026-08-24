@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useConfirmar } from "@/componentes/usar-confirmar";
 import { formatearMientrasEscribe, normalizarTelefonoChileno } from "@/lib/telefono";
 
 /**
@@ -74,6 +75,7 @@ export default function SupresionTelefono({
   const [busqueda, setBusqueda] = useState<Busqueda | null>(null);
   const [borrando, setBorrando] = useState<string | null>(null);
   const [aviso, setAviso] = useState<Aviso | null>(null);
+  const { confirmar, dialogo } = useConfirmar();
 
   const telefonoE164 = normalizarTelefonoChileno(telefono);
 
@@ -129,11 +131,18 @@ export default function SupresionTelefono({
 
     // Es irreversible y toca datos de una persona real: se confirma siempre, y
     // la confirmación dice a cuántos pedidos alcanza y qué NO se lleva consigo.
-    const confirmado = window.confirm(
-      `¿Borrar el teléfono ${busqueda.enmascarado} ${donde}?\n\n` +
-        `Alcanza a ${pedidosTexto(pedidos)} y no se puede deshacer.\n` +
-        `Los pedidos y sus ventas se conservan: lo único que desaparece es el teléfono.`
-    );
+    // El texto es el de siempre, solo repartido: los saltos de línea que pedía
+    // `window.confirm()` para separar la pregunta de su consecuencia ya no hacen
+    // falta, porque el diálogo separa título y detalle por su cuenta. Y va en
+    // rojo: borrar el dato de una persona es lo que `destructivo` nombra.
+    const confirmado = await confirmar({
+      titulo: `¿Borrar el teléfono ${busqueda.enmascarado} ${donde}?`,
+      detalle:
+        `Alcanza a ${pedidosTexto(pedidos)} y no se puede deshacer. ` +
+        `Los pedidos y sus ventas se conservan: lo único que desaparece es el teléfono.`,
+      aceptar: "Sí, borrar",
+      destructivo: true,
+    });
     if (!confirmado) return;
 
     setBorrando(local ? local.localId : TODOS);
@@ -251,7 +260,10 @@ export default function SupresionTelefono({
       {/* Resultado del borrado. Va arriba de la lista porque es lo que se le
           responde a la persona que reclamó. */}
       {aviso && (
-        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+        /* Es la respuesta que se le da a quien reclamó, y aparece lejos del botón
+           que se acaba de tocar: sin anunciarla, la supresión termina en silencio
+           y no queda forma de saber que ocurrió. */
+        <div aria-live="polite" className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
           <p className="text-xs font-semibold text-emerald-300">
             Listo: se borró el teléfono {aviso.enmascarado} de {pedidosTexto(aviso.borrados)}
             {aviso.alcance ? ` en ${aviso.alcance}` : " en todos los locales"}.
@@ -339,6 +351,8 @@ export default function SupresionTelefono({
             </div>
           </div>
         ))}
+
+      {dialogo}
     </div>
   );
 }

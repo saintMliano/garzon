@@ -205,7 +205,7 @@ export default function Home() {
               className="stagger-card rounded-2xl bg-white border border-stone-200/80 p-5"
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <span className="inline-flex w-7 h-7 rounded-lg bg-orange-50 text-orange-600 text-[13px] font-black items-center justify-center tabular-nums">
+              <span className="inline-flex w-7 h-7 rounded-lg bg-orange-50 text-orange-700 text-[13px] font-black items-center justify-center tabular-nums">
                 {paso.n}
               </span>
               <p className="mt-3 text-[14px] font-medium text-stone-700 leading-snug">{paso.label}</p>
@@ -261,7 +261,7 @@ export default function Home() {
               Probar la carta demo
             </Link>
 
-            <p className="mt-4 text-[12.5px] text-stone-500 leading-relaxed">
+            <p className="mt-4 text-[12.5px] text-stone-400 leading-relaxed">
               La primera semana es gratis, con su fin de semana incluido. Si un pago se atrasa,
               tienes {DIAS_GRACIA} días más antes de que se pausen los pedidos: el servicio nunca se
               corta en medio de un turno.
