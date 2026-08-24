@@ -135,13 +135,13 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
           <h1 className="text-2xl font-black text-stone-900 leading-tight">
             {isCancelled ? "Pedido cancelado" : isComplete ? "¡Tu pedido está listo!" : "Pedido en proceso"}
           </h1>
-          <p className="text-stone-400 mt-2 text-sm font-medium">{localName}</p>
+          <p className="text-stone-500 mt-2 text-sm font-medium">{localName}</p>
           <div className="flex items-center justify-center gap-2 mt-2">
             <span className="px-3 py-1 rounded-full bg-stone-100 text-stone-600 text-xs font-bold">
               {orderNumber(orderNum)}
             </span>
             {createdAt && (
-              <span className="text-stone-300 text-xs">{timeAgo(createdAt)}</span>
+              <span className="text-stone-400 text-xs">{timeAgo(createdAt)}</span>
             )}
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                             ? "bg-green-50 text-green-600 border-green-100"
                             : isActive
                               ? ""
-                              : "bg-stone-50 text-stone-300 border-stone-100"
+                              : "bg-stone-50 text-stone-400 border-stone-100"
                         }`}
                         style={isDone || !isActive ? undefined : pasoActivoStyle}
                       >
@@ -203,7 +203,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                     <div className="pt-2.5">
                       <p
                         className={`font-semibold text-[14px] transition-colors ${
-                          isDone ? "text-green-600" : isActive ? "" : "text-stone-300"
+                          isDone ? "text-green-600" : isActive ? "" : "text-stone-400"
                         }`}
                         style={isDone || !isActive ? undefined : { color: MARCA_LEGIBLE }}
                       >
@@ -215,7 +215,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                             className="w-1.5 h-1.5 rounded-full animate-pulse"
                             style={{ backgroundColor: "var(--brand)" }}
                           />
-                          <p className="text-[11px] text-stone-400">{statusLabel(status)}...</p>
+                          <p className="text-[11px] text-stone-500">{statusLabel(status)}...</p>
                         </div>
                       )}
                     </div>
@@ -250,11 +250,11 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
           </button>
         ) : (
           <div className="text-center space-y-3">
-            <div className="flex items-center justify-center gap-2 text-stone-300">
+            <div className="flex items-center justify-center gap-2 text-stone-400">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               <p className="text-[13px]">Actualizaciones en tiempo real</p>
             </div>
-            <p className="text-[11px] text-stone-300">No cierres esta página</p>
+            <p className="text-[11px] text-stone-400">No cierres esta página</p>
           </div>
         )}
       </div>

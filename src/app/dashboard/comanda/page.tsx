@@ -415,7 +415,7 @@ export default function ComandaPage() {
   // Paso 1 — la mesa
   if (!exito && !mesa) {
     return (
-      <div className="flex flex-col min-h-screen dashboard-dark">
+      <div className="flex flex-col min-h-dvh dashboard-dark">
         {encabezado}
         <main className="flex-1 p-4 md:p-6">
           <div className="max-w-3xl mx-auto">
@@ -455,7 +455,7 @@ export default function ComandaPage() {
   // Paso 3 — confirmación
   if (exito) {
     return (
-      <div className="flex flex-col min-h-screen dashboard-dark">
+      <div className="flex flex-col min-h-dvh dashboard-dark">
         {encabezado}
         <main className="flex-1 p-4 md:p-6 flex items-center justify-center">
           <div className="max-w-sm w-full dash-card rounded-2xl border-2 p-6 text-center">
@@ -470,7 +470,7 @@ export default function ComandaPage() {
             <div className="flex flex-col gap-2 mt-5">
               <button
                 onClick={otroPedido}
-                className="w-full px-4 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+                className="w-full px-4 py-3 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
               >
                 Tomar otro pedido
               </button>
@@ -489,14 +489,14 @@ export default function ComandaPage() {
 
   // Paso 2 — la grilla
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       {encabezado}
 
       <div className="px-4 md:px-6 py-3 border-b border-stone-800 shrink-0">
         <div className="max-w-[1600px] mx-auto flex items-center gap-3 flex-wrap">
           <button
             onClick={() => setMesa(null)}
-            className="px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+            className="px-3 py-2 rounded-lg text-xs font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
           >
             {mesa} ▾
           </button>
@@ -518,7 +518,7 @@ export default function ComandaPage() {
                 onClick={() => setPestana(FRECUENTES)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   pestanaEfectiva === FRECUENTES
-                    ? "text-white bg-gradient-to-r from-orange-500 to-amber-500"
+                    ? "text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500"
                     : "dash-bg-surface dash-text-secondary"
                 }`}
               >
@@ -531,7 +531,7 @@ export default function ComandaPage() {
                 onClick={() => setPestana(c.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   pestanaEfectiva === c.id
-                    ? "text-white bg-gradient-to-r from-orange-500 to-amber-500"
+                    ? "text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500"
                     : "dash-bg-surface dash-text-secondary"
                 }`}
               >
@@ -648,7 +648,7 @@ export default function ComandaPage() {
                         <button
                           onClick={() => sumar(p.id, 1)}
                           aria-label={`Agregar uno de ${p.nombre}`}
-                          className="w-9 h-9 rounded-lg text-white bg-gradient-to-r from-orange-500 to-amber-500 text-lg font-bold active:scale-90 transition-transform"
+                          className="w-9 h-9 rounded-lg text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 text-lg font-bold active:scale-90 transition-transform"
                         >
                           +
                         </button>
@@ -688,7 +688,7 @@ export default function ComandaPage() {
             <button
               onClick={enviar}
               disabled={enviando || unidades === 0}
-              className="px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-40 active:scale-95 transition-transform"
+              className="px-6 py-3.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-40 active:scale-95 transition-transform"
             >
               {enviando ? "Enviando…" : "Enviar a cocina"}
             </button>
@@ -741,7 +741,7 @@ export default function ComandaPage() {
                       sumar(detalle.id, 1);
                       setDetalle(null);
                     }}
-                    className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+                    className="flex-1 py-3 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
                   >
                     Agregar al pedido
                   </button>
@@ -829,7 +829,7 @@ export default function ComandaPage() {
                 </button>
                 <button
                   onClick={confirmarNota}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 transition-transform"
                 >
                   Agregar
                 </button>
@@ -929,7 +929,7 @@ export default function ComandaPage() {
                     <button
                       onClick={() => cambiarCantidad(linea.id, 1)}
                       aria-label={`Agregar uno de ${producto.nombre}`}
-                      className="w-8 h-8 rounded-lg text-white bg-gradient-to-r from-orange-500 to-amber-500 font-bold active:scale-90 transition-transform"
+                      className="w-8 h-8 rounded-lg text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 font-bold active:scale-90 transition-transform"
                     >
                       +
                     </button>
@@ -992,7 +992,7 @@ export default function ComandaPage() {
                   enviar();
                 }}
                 disabled={enviando || unidades === 0}
-                className="px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-40 active:scale-95 transition-transform"
+                className="px-6 py-3 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-40 active:scale-95 transition-transform"
               >
                 Enviar a cocina
               </button>

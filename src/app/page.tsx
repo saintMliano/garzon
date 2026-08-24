@@ -94,7 +94,7 @@ export default function Home() {
   const demoSlug = process.env.NEXT_PUBLIC_DEMO_SLUG || "el-lalo";
 
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50">
+    <div className="flex flex-col min-h-dvh bg-stone-50">
       {/* ===== BARRA SUPERIOR ===== */}
       <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-stone-50/85 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
@@ -159,7 +159,7 @@ export default function Home() {
             >
               <Link
                 href={`/local/${demoSlug}`}
-                className="group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/25 active:scale-[0.99] transition-all"
+                className="group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-stone-900 font-bold text-[15px] shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/25 active:scale-[0.99] transition-all"
               >
                 Probar la carta demo
                 <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -256,7 +256,7 @@ export default function Home() {
 
             <Link
               href={`/local/${demoSlug}`}
-              className="mt-7 inline-flex w-full items-center justify-center h-12 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.99] transition-all"
+              className="mt-7 inline-flex w-full items-center justify-center h-12 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-stone-900 font-bold text-[15px] shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.99] transition-all"
             >
               Probar la carta demo
             </Link>

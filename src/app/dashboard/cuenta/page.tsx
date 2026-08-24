@@ -120,7 +120,7 @@ export default function CuentaPage() {
 
   if (cargando) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark">
         <div className="relative w-14 h-14">
           <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
           <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
@@ -130,7 +130,7 @@ export default function CuentaPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ export default function CuentaPage() {
               <div className="flex gap-2 mt-4">
                 <Link
                   href="/dashboard"
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
                 >
                   Volver al panel
                 </Link>
@@ -280,7 +280,7 @@ export default function CuentaPage() {
                 <button
                   type="submit"
                   disabled={!puedeGuardar}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
                 >
                   {guardando ? "Guardando…" : "Cambiar contraseña"}
                 </button>

@@ -226,7 +226,7 @@ export default function SupresionTelefono({
           <button
             type="submit"
             disabled={!puedeBuscar}
-            className="shrink-0 px-4 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+            className="shrink-0 px-4 py-2 rounded-lg text-xs font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
           >
             {buscando ? "Consultando…" : "Consultar"}
           </button>

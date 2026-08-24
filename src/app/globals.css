@@ -149,7 +149,12 @@ body {
 }
 .dashboard-dark .dash-text-primary { color: #fafaf9; }
 .dashboard-dark .dash-text-secondary { color: #a8a29e; }
-.dashboard-dark .dash-text-muted { color: #78716c; }
+/* `#78716c` daba 4,12:1 sobre el fondo del panel y 3,16:1 sobre `dash-bg-surface`:
+   por debajo del AA de la WCAG en el color con el que está escrito casi todo el
+   texto secundario del panel. `#9c948c` pasa en las tres superficies del tema
+   oscuro (6,61 / 5,85 / 5,08) sin acercarse tanto a `dash-text-secondary` como
+   para borrar el escalón entre los dos. */
+.dashboard-dark .dash-text-muted { color: #9c948c; }
 .dashboard-dark .dash-bg-surface { background: #292524; }
 
 /* ===== TIMER URGENCY ===== */
@@ -159,4 +164,27 @@ body {
 /* ===== SAFE AREA (notch phones) ===== */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .safe-bottom { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
+
+/* ===== MOVIMIENTO REDUCIDO =====
+   Va al final a propósito: tiene que ganarle a todo lo de arriba.
+
+   El sistema operativo expone una preferencia de accesibilidad —"reducir
+   movimiento"— que la gente con vértigo, migraña vestibular o trastornos de
+   atención activa para que las interfaces dejen de moverse. Hasta acá el sitio
+   la ignoraba: las tarjetas de la carta entraban escalonadas, el carrito subía,
+   el contador rebotaba y el punto de notificación latía en bucle infinito.
+
+   No se apaga la animación: se colapsa a un solo fotograma. Así el estado final
+   (opacidad 1, posición 0) igual se aplica y nada queda invisible, que es lo que
+   pasaría con `animation: none` sobre un `fade-in` que arranca en opacidad 0. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

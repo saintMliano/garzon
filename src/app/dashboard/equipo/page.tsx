@@ -164,7 +164,7 @@ export default function EquipoPage() {
   const claveCorta = clave.length > 0 && clave.length < LARGO_MINIMO_CLAVE;
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
@@ -222,7 +222,7 @@ export default function EquipoPage() {
               </div>
               <button
                 onClick={() => setAbrirAlta((v) => !v)}
-                className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
+                className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
               >
                 {abrirAlta ? "Cancelar" : "Agregar"}
               </button>
@@ -313,7 +313,7 @@ export default function EquipoPage() {
                 <button
                   type="submit"
                   disabled={ocupado === "alta" || claveCorta}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-transform"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-transform"
                 >
                   {ocupado === "alta" ? "Creando…" : "Crear la cuenta"}
                 </button>

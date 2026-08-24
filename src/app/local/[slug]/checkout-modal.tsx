@@ -238,7 +238,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               📋
             </div>
             <h2 className="text-xl font-bold text-stone-900">Confirmar Pedido</h2>
-            <p className="text-sm text-stone-400 mt-1">
+            <p className="text-sm text-stone-500 mt-1">
               {items.length} producto{items.length !== 1 && "s"} · {formatPrice(total)}
             </p>
           </div>
@@ -299,7 +299,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 className="w-full cursor-pointer"
                 style={{ accentColor: "var(--brand)" }}
               />
-              <div className="flex items-center justify-between text-[11px] text-stone-400 -mt-0.5">
+              <div className="flex items-center justify-between text-[11px] text-stone-500 -mt-0.5">
                 <span>0%</span>
                 <span className="font-bold" style={{ color: "var(--accent-legible)" }}>{propinaPct}%</span>
                 <span>{PROPINA_PCT_MAX}%</span>
@@ -323,7 +323,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               </div>
             </div>
 
-            <p className="text-[11px] text-stone-400 mt-1.5 leading-snug">
+            <p className="text-[11px] text-stone-500 mt-1.5 leading-snug">
               La propina es opcional. No se paga nada por la app: el local la cobra en caja, junto con la cuenta.
             </p>
           </div>
@@ -337,7 +337,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Juan"
               autoFocus
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all text-[15px]"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all text-[15px]"
             />
           </div>
 
@@ -353,7 +353,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 }}
               >
                 <span className="font-bold text-sm" style={{ color: "var(--accent-legible)" }}>📍 {mesa}</span>
-                <span className="text-[11px] text-stone-400">Detectada por el código QR</span>
+                <span className="text-[11px] text-stone-500">Detectada por el código QR</span>
               </div>
             ) : (
               <>
@@ -412,7 +412,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           {/* Teléfono */}
           <div>
             <label htmlFor="telefono" className="block text-sm font-semibold text-stone-700 mb-1.5">
-              Tu celular {esRetiro ? "*" : <span className="font-normal text-stone-400">(opcional)</span>}
+              Tu celular {esRetiro ? "*" : <span className="font-normal text-stone-500">(opcional)</span>}
             </label>
 
             {/* El +56 va impreso al lado, no dentro del input: el comensal
@@ -442,11 +442,11 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 placeholder="9 1234 5678"
                 aria-invalid={telefonoTocado && telefonoInvalido}
                 aria-describedby="telefono-ayuda"
-                className="flex-1 min-w-0 px-4 py-3 text-stone-800 placeholder:text-stone-300 focus:outline-none text-[15px] tabular-nums"
+                className="flex-1 min-w-0 px-4 py-3 text-stone-800 placeholder:text-stone-400 focus:outline-none text-[15px] tabular-nums"
               />
             </div>
 
-            <p id="telefono-ayuda" className="text-[11px] text-stone-400 mt-1.5 leading-snug">
+            <p id="telefono-ayuda" className="text-[11px] text-stone-500 mt-1.5 leading-snug">
               {telefonoTocado && telefonoInvalido ? (
                 <span className="text-red-600 font-medium">Son 9 números y parten con 9.</span>
               ) : esRetiro ? (
@@ -476,7 +476,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               onChange={(e) => setNotas(e.target.value)}
               placeholder="Indicaciones especiales..."
               rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all resize-none text-[14px]"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all resize-none text-[14px]"
             />
           </div>
 

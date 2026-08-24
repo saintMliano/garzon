@@ -245,7 +245,7 @@ export default function MenuCliente({
               <h1 className="font-extrabold text-stone-900 text-[17px] leading-tight truncate">
                 {local.nombre}
               </h1>
-              <p className="text-[11px] text-stone-400 truncate flex items-center gap-1">
+              <p className="text-[11px] text-stone-500 truncate flex items-center gap-1">
                 <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -253,7 +253,7 @@ export default function MenuCliente({
                 {local.direccion}
               </p>
               {local.slogan && (
-                <p className="text-[11px] text-stone-400 truncate">{local.slogan}</p>
+                <p className="text-[11px] text-stone-500 truncate">{local.slogan}</p>
               )}
             </div>
             {/* Cart icon in header */}
@@ -278,7 +278,7 @@ export default function MenuCliente({
 
           {/* Search bar */}
           <div className="mt-3 relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -286,7 +286,7 @@ export default function MenuCliente({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar en el menú..."
-              className="w-full h-10 pl-9 pr-4 rounded-xl bg-stone-100/80 border border-stone-200/60 text-sm text-stone-800 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] focus:bg-white transition-all"
+              className="w-full h-10 pl-9 pr-4 rounded-xl bg-stone-100/80 border border-stone-200/60 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] focus:bg-white transition-all"
             />
             {search && (
               <button
@@ -313,7 +313,7 @@ export default function MenuCliente({
                   }`}
                   style={
                     activeCategory === cat.id
-                      ? { background: "var(--brand)", color: "white", borderColor: "transparent" }
+                      ? { background: "var(--brand)", color: "var(--brand-texto)", borderColor: "transparent" }
                       : undefined
                   }
                 >
@@ -389,7 +389,7 @@ export default function MenuCliente({
         {/* Search results */}
         {filteredProducts ? (
           <section>
-            <p className="text-xs text-stone-400 mb-3 font-medium">
+            <p className="text-xs text-stone-500 mb-3 font-medium">
               {filteredProducts.length} resultado{filteredProducts.length !== 1 && "s"} para &quot;{search}&quot;
             </p>
             <div className="grid gap-3">
@@ -407,7 +407,7 @@ export default function MenuCliente({
                 />
               ))}
               {filteredProducts.length === 0 && (
-                <div className="text-center py-16 text-stone-300">
+                <div className="text-center py-16 text-stone-400">
                   <span className="text-4xl block mb-3">🔍</span>
                   <p className="text-sm">No encontramos ese producto</p>
                 </div>
@@ -544,7 +544,7 @@ function ProductCard({
       <div className="flex-1 min-w-0 py-0.5">
         <h3 className="font-semibold text-stone-800 text-[14px] leading-tight">{prod.nombre}</h3>
         {prod.descripcion && (
-          <p className="text-[11px] text-stone-400 mt-0.5 line-clamp-1 leading-snug">{prod.descripcion}</p>
+          <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1 leading-snug">{prod.descripcion}</p>
         )}
         <p className="text-[14px] font-bold mt-1" style={{ color: "var(--accent-legible)" }}>{formatPrice(prod.precio)}</p>
       </div>

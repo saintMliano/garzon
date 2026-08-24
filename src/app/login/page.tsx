@@ -27,7 +27,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 dashboard-dark">
+    <div className="flex min-h-dvh items-center justify-center px-4 dashboard-dark">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-2xl shadow-lg shadow-orange-500/20 mb-4">
@@ -75,7 +75,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-[50px] rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+            className="w-full h-[50px] rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-stone-900 font-bold shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
           >
             {submitting ? (
               <span className="flex items-center justify-center gap-2">

@@ -28,18 +28,18 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100">
           <div>
             <h2 className="text-lg font-bold text-stone-900">Tu Pedido</h2>
-            <p className="text-xs text-stone-400">{itemCount} producto{itemCount !== 1 && "s"}</p>
+            <p className="text-xs text-stone-500">{itemCount} producto{itemCount !== 1 && "s"}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 hover:bg-stone-200 hover:text-stone-600 transition-colors text-sm"
+            className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 hover:bg-stone-200 hover:text-stone-600 transition-colors text-sm"
           >✕</button>
         </div>
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {items.length === 0 ? (
-            <div className="text-center py-16 text-stone-300">
+            <div className="text-center py-16 text-stone-400">
               <span className="text-5xl block mb-4">🛒</span>
               <p className="font-medium">Tu carrito está vacío</p>
               <p className="text-xs mt-1">Agrega productos desde el menú</p>
@@ -66,7 +66,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                         <p className="text-[13px] font-bold mt-1" style={{ color: "var(--accent)" }}>
                           {formatPrice(item.producto.precio * item.cantidad)}
                           {item.cantidad > 1 && (
-                            <span className="text-[11px] text-stone-400 font-normal ml-1">
+                            <span className="text-[11px] text-stone-500 font-normal ml-1">
                               ({formatPrice(item.producto.precio)} c/u)
                             </span>
                           )}
@@ -94,7 +94,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                       placeholder="Ej: sin mayo, extra queso..."
                       value={item.notas}
                       onChange={(e) => updateNotes(item.producto.id, e.target.value)}
-                      className="w-full mt-2.5 px-3 py-2 rounded-lg bg-white border border-stone-150 text-[12px] text-stone-700 placeholder:text-stone-300 focus:outline-none focus:ring-1 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all"
+                      className="w-full mt-2.5 px-3 py-2 rounded-lg bg-white border border-stone-150 text-[12px] text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all"
                     />
 
                     {/* Atajos: los mismos que usa el garzón en su comanda.
@@ -120,7 +120,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                     {/* Remove */}
                     <button
                       onClick={() => removeItem(item.producto.id)}
-                      className="mt-2 text-[11px] text-stone-400 hover:text-red-500 transition-colors flex items-center gap-1"
+                      className="mt-2 text-[11px] text-stone-500 hover:text-red-500 transition-colors flex items-center gap-1"
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

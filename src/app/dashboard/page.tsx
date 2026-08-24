@@ -473,7 +473,7 @@ export default function DashboardPage() {
 
   if (resolvingLocal || (localId && loading)) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark">
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-14 h-14">
             <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
@@ -487,7 +487,7 @@ export default function DashboardPage() {
 
   if (noLocal) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark px-6">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
           <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
           <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
@@ -504,7 +504,7 @@ export default function DashboardPage() {
   const nuevoCount = pedidos.filter((p) => p.estado === "nuevo").length;
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       {/* ===== HEADER ===== */}
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
@@ -546,7 +546,7 @@ export default function DashboardPage() {
             {puede(rol, "tomar_comanda") && (
               <Link
                 href="/dashboard/comanda"
-                className="px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform whitespace-nowrap"
+                className="px-3.5 py-2 rounded-lg text-xs font-bold text-stone-900 bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform whitespace-nowrap"
               >
                 + Tomar pedido
               </Link>

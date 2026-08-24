@@ -83,7 +83,7 @@ function Seccion({
 
 export default function Privacidad() {
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50">
+    <div className="flex flex-col min-h-dvh bg-stone-50">
       {/* ===== BARRA SUPERIOR ===== */}
       <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-stone-50/85 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
