@@ -94,7 +94,7 @@ export default function Home() {
   const demoSlug = process.env.NEXT_PUBLIC_DEMO_SLUG || "el-lalo";
 
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50">
+    <div className="flex flex-col min-h-dvh bg-stone-50">
       {/* ===== BARRA SUPERIOR ===== */}
       <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-stone-50/85 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
@@ -102,25 +102,25 @@ export default function Home() {
             <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-base shadow-sm">
               🍔
             </span>
-            <span className="font-bold text-stone-900 text-[15px] tracking-tight">Garzón Digital</span>
+            <span className="font-bold text-stone-900 text-base tracking-tight">Garzón Digital</span>
           </Link>
 
           <nav className="flex items-center gap-1">
             <a
               href="#funciones"
-              className="hidden sm:flex px-3 py-2 rounded-lg text-[13px] font-medium text-stone-600 hover:text-stone-900 transition-colors"
+              className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
             >
               Qué hace
             </a>
             <a
               href="#precio"
-              className="hidden sm:flex px-3 py-2 rounded-lg text-[13px] font-medium text-stone-600 hover:text-stone-900 transition-colors"
+              className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
             >
               Precio
             </a>
             <Link
               href="/dashboard"
-              className="px-3.5 py-2 rounded-lg text-[13px] font-semibold text-stone-700 border border-stone-300 hover:border-stone-400 hover:bg-white transition-colors"
+              className="px-3.5 py-2 rounded-lg text-sm font-semibold text-stone-700 border border-stone-300 hover:border-stone-400 hover:bg-white transition-colors"
             >
               Entrar
             </Link>
@@ -132,7 +132,7 @@ export default function Home() {
       <section className="bg-stone-950 border-b border-stone-900">
         <div className="max-w-5xl mx-auto px-5 py-16 md:py-24">
           <div className="max-w-2xl">
-            <p className="animate-fade-in text-[12px] font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
+            <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
               Pedidos por QR para locales de comida
             </p>
 
@@ -144,7 +144,7 @@ export default function Home() {
             </h1>
 
             <p
-              className="animate-fade-in mt-5 text-[16px] md:text-lg text-stone-400 leading-relaxed max-w-xl"
+              className="animate-fade-in mt-5 text-base md:text-lg text-stone-400 leading-relaxed max-w-xl"
               style={{ animationDelay: "160ms" }}
             >
               Sin comisión por venta y sin apps de por medio.{" "}
@@ -157,9 +157,13 @@ export default function Home() {
               className="animate-fade-in mt-8 flex flex-col sm:flex-row gap-3"
               style={{ animationDelay: "240ms" }}
             >
+              {/* El único `btn-primario` de la página. La landing existe para que el
+                  dueño toque acá: ver la carta funcionando es lo que convence, no el
+                  texto. Los otros dos botones dicen casi lo mismo más abajo; si los
+                  tres gritan igual, el hero deja de ser el primero que se mira. */}
               <Link
                 href={`/local/${demoSlug}`}
-                className="group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/25 active:scale-[0.99] transition-all"
+                className="group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl btn-primario font-bold text-base shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/25 active:scale-[0.99] transition-all"
               >
                 Probar la carta demo
                 <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -168,14 +172,14 @@ export default function Home() {
               </Link>
               <a
                 href="#precio"
-                className="inline-flex items-center justify-center h-12 px-7 rounded-xl border border-stone-700 text-stone-300 font-semibold text-[15px] hover:border-stone-500 hover:text-white transition-colors"
+                className="inline-flex items-center justify-center h-12 px-7 rounded-xl border border-stone-700 text-stone-300 font-semibold text-base hover:border-stone-500 hover:text-white transition-colors"
               >
                 Ver el plan
               </a>
             </div>
 
             <ul
-              className="animate-fade-in mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-stone-400"
+              className="animate-fade-in mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-400"
               style={{ animationDelay: "320ms" }}
             >
               <li className="flex items-center gap-2">
@@ -205,10 +209,10 @@ export default function Home() {
               className="stagger-card rounded-2xl bg-white border border-stone-200/80 p-5"
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <span className="inline-flex w-7 h-7 rounded-lg bg-orange-50 text-orange-600 text-[13px] font-black items-center justify-center tabular-nums">
+              <span className="inline-flex w-7 h-7 rounded-lg bg-orange-50 text-orange-700 text-sm font-black items-center justify-center tabular-nums">
                 {paso.n}
               </span>
-              <p className="mt-3 text-[14px] font-medium text-stone-700 leading-snug">{paso.label}</p>
+              <p className="mt-3 text-sm font-medium text-stone-700 leading-snug">{paso.label}</p>
             </li>
           ))}
         </ol>
@@ -227,8 +231,8 @@ export default function Home() {
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
             {FUNCIONES.map((f, i) => (
               <div key={f.titulo} className="stagger-card" style={{ animationDelay: `${i * 60}ms` }}>
-                <h3 className="font-bold text-stone-900 text-[15px] leading-snug">{f.titulo}</h3>
-                <p className="mt-1.5 text-[13.5px] text-stone-500 leading-relaxed">{f.desc}</p>
+                <h3 className="font-bold text-stone-900 text-base leading-snug">{f.titulo}</h3>
+                <p className="mt-1.5 text-sm text-stone-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -242,26 +246,31 @@ export default function Home() {
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-4">
           {/* Tarjeta de precio */}
-          <div className="rounded-2xl bg-stone-950 text-white p-7 md:p-8">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-orange-400">
+          <div className="sobre-oscuro rounded-2xl bg-stone-950 text-white p-7 md:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-400">
               Plan único
             </p>
             <div className="mt-4 flex items-baseline gap-2 flex-wrap">
               <span className="text-4xl md:text-5xl font-black tracking-tight tabular-nums">$29.900</span>
               <span className="text-stone-400 text-sm">al mes, por local</span>
             </div>
-            <p className="mt-2 text-[13.5px] text-stone-400">
+            <p className="mt-2 text-sm text-stone-400">
               O <strong className="text-stone-200 tabular-nums">$249.900 al año</strong> — dos meses gratis.
             </p>
 
+            {/* Mismo destino que el botón del hero, pero acá el que lee ya vino a ver
+                el precio: el botón acompaña, no arrastra. Por eso baja a secundario.
+                La tarjeta lleva `sobre-oscuro` porque el naranja legible sobre claro
+                (#c2410c) cae a 3,81:1 sobre este negro; esa clase le pasa al botón la
+                variante clara, igual que hace `.dashboard-dark` en el panel. */}
             <Link
               href={`/local/${demoSlug}`}
-              className="mt-7 inline-flex w-full items-center justify-center h-12 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[15px] shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.99] transition-all"
+              className="mt-7 inline-flex w-full items-center justify-center h-12 rounded-xl btn-secundario font-bold text-base shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.99] transition-all"
             >
               Probar la carta demo
             </Link>
 
-            <p className="mt-4 text-[12.5px] text-stone-500 leading-relaxed">
+            <p className="mt-4 text-xs text-stone-400 leading-relaxed">
               La primera semana es gratis, con su fin de semana incluido. Si un pago se atrasa,
               tienes {DIAS_GRACIA} días más antes de que se pausen los pedidos: el servicio nunca se
               corta en medio de un turno.
@@ -270,10 +279,10 @@ export default function Home() {
 
           {/* Qué incluye + comparación honesta */}
           <div className="rounded-2xl bg-white border border-stone-200/80 p-7 md:p-8">
-            <h3 className="font-bold text-stone-900 text-[15px]">Incluido en el plan</h3>
+            <h3 className="font-bold text-stone-900 text-base">Incluido en el plan</h3>
             <ul className="mt-4 flex flex-col gap-2.5">
               {INCLUYE.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-[14px] text-stone-700">
+                <li key={item} className="flex items-start gap-2.5 text-sm text-stone-700">
                   <svg className="w-4 h-4 mt-0.5 shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
@@ -283,12 +292,12 @@ export default function Home() {
             </ul>
 
             <div className="mt-6 pt-6 border-t border-stone-200/80">
-              <p className="text-[13.5px] text-stone-600 leading-relaxed">
+              <p className="text-sm text-stone-600 leading-relaxed">
                 <strong className="text-stone-900">Sin comisión por venta.</strong> Los sistemas que
                 cobran un porcentaje se llevan entre un 2 % y un 5 % de todo lo que vendes. Acá pagas
                 lo mismo vendas lo que vendas.
               </p>
-              <p className="mt-3 text-[13.5px] text-stone-600 leading-relaxed">
+              <p className="mt-3 text-sm text-stone-600 leading-relaxed">
                 <strong className="text-stone-900">Sin permanencia.</strong> Cancelas cuando quieras y
                 tus reportes se exportan a CSV, incluso después.
               </p>
@@ -309,7 +318,7 @@ export default function Home() {
 
           <ul className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
             {LIMITES.map((limite) => (
-              <li key={limite} className="flex items-start gap-2.5 text-[13.5px] text-stone-500">
+              <li key={limite} className="flex items-start gap-2.5 text-sm text-stone-500">
                 <span aria-hidden className="mt-2 w-3 h-px bg-stone-300 shrink-0" />
                 {limite}
               </li>
@@ -324,13 +333,13 @@ export default function Home() {
           <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight text-balance">
             Estamos eligiendo los primeros locales
           </h2>
-          <p className="mt-3 text-[14.5px] text-stone-600 max-w-lg mx-auto leading-relaxed">
+          <p className="mt-3 text-sm text-stone-600 max-w-lg mx-auto leading-relaxed">
             Instalación acompañada, carta cargada por nosotros y los QR de las mesas incluidos.
             Pruébalo una semana completa, con su fin de semana. Si no te sirve, no pagas nada.
           </p>
           <Link
             href={`/local/${demoSlug}`}
-            className="mt-7 inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl bg-stone-900 text-white font-bold text-[14.5px] hover:bg-stone-800 active:scale-[0.99] transition-all"
+            className="mt-7 inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl bg-stone-900 text-white font-bold text-sm hover:bg-stone-800 active:scale-[0.99] transition-all"
           >
             Ver la carta demo
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -342,12 +351,12 @@ export default function Home() {
 
       <footer className="border-t border-stone-200/80 py-7">
         <div className="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[13px] text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
+          <p className="text-sm text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
           <div className="flex items-center gap-5">
-            <Link href="/privacidad" className="text-[13px] font-medium text-stone-500 hover:text-stone-800 transition-colors">
+            <Link href="/privacidad" className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors">
               Privacidad
             </Link>
-            <Link href="/dashboard" className="text-[13px] font-medium text-stone-500 hover:text-stone-800 transition-colors">
+            <Link href="/dashboard" className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors">
               Entrar a mi local
             </Link>
           </div>

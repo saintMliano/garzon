@@ -178,7 +178,7 @@ export default function AdminOnboardPage() {
 
   if (checkingAdmin) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark">
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-14 h-14">
             <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
@@ -192,7 +192,7 @@ export default function AdminOnboardPage() {
 
   if (!isAdmin) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark px-6">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
           <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">🔒</div>
           <h2 className="font-bold dash-text-primary text-base">No autorizado</h2>
@@ -209,7 +209,7 @@ export default function AdminOnboardPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       {/* ===== HEADER ===== */}
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
@@ -219,7 +219,7 @@ export default function AdminOnboardPage() {
             </div>
             <div className="min-w-0">
               <h1 className="font-bold dash-text-primary text-base">Garzón Digital</h1>
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -256,10 +256,13 @@ export default function AdminOnboardPage() {
           <h2 className="font-bold dash-text-primary text-base mb-4">Dar de alta un local</h2>
 
           {result ? (
-            <div className="space-y-4">
+            <div aria-live="polite" className="space-y-4">
+              {/* Crear el local es lo último que hace esta pantalla, y el foco se
+                  queda en el botón que ya no está. Sin anunciarlo, quien no ve la
+                  pantalla no se entera de que hay credenciales esperando. */}
               <div className="rounded-xl dash-bg-surface p-4 space-y-3">
                 <div>
-                  <p className="text-[11px] dash-text-muted uppercase tracking-wider font-medium">Local creado</p>
+                  <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Local creado</p>
                   <p className="font-bold dash-text-primary text-sm">{result.nombre}</p>
                   <p className="text-xs dash-text-muted font-mono">/{result.slug}</p>
                 </div>
@@ -268,7 +271,7 @@ export default function AdminOnboardPage() {
 
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] dash-text-muted uppercase tracking-wider font-medium">Email del dueño</p>
+                    <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Email del dueño</p>
                     <p className="font-semibold dash-text-primary text-sm truncate">{result.email}</p>
                   </div>
                   <button
@@ -281,7 +284,7 @@ export default function AdminOnboardPage() {
 
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] dash-text-muted uppercase tracking-wider font-medium">Contraseña temporal</p>
+                    <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Contraseña temporal</p>
                     <p className="font-semibold dash-text-primary text-sm font-mono truncate">{result.tempPassword}</p>
                   </div>
                   <button
@@ -330,10 +333,14 @@ export default function AdminOnboardPage() {
                 </a>
               </div>
 
+              {/* Secundario y no primario: acá el local ya se creó y lo que
+                  importa de esta pantalla son las credenciales de arriba, que
+                  hay que copiar antes de irse. "Crear otro" vacía el formulario;
+                  el primario de la pantalla es el alta misma. */}
               <div className="flex justify-end pt-2">
                 <button
                   onClick={resetForm}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold btn-secundario hover:scale-[1.02] active:scale-95 transition-transform"
                 >
                   Crear otro
                 </button>
@@ -342,8 +349,9 @@ export default function AdminOnboardPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Nombre del local</label>
+                <label htmlFor="alta-nombre-local" className="text-xs font-semibold dash-text-secondary block mb-1">Nombre del local</label>
                 <input
+                  id="alta-nombre-local"
                   value={nombre}
                   onChange={(e) => handleNombreChange(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -353,19 +361,21 @@ export default function AdminOnboardPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Slug (opcional)</label>
+                <label htmlFor="alta-slug" className="text-xs font-semibold dash-text-secondary block mb-1">Slug (opcional)</label>
                 <input
+                  id="alta-slug"
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
                   placeholder="completos-lalo"
                 />
-                <p className="text-[11px] dash-text-muted mt-1">Se genera del nombre si lo dejas vacío.</p>
+                <p className="text-xs dash-text-muted mt-1">Se genera del nombre si lo dejas vacío.</p>
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Email del dueño</label>
+                <label htmlFor="alta-email" className="text-xs font-semibold dash-text-secondary block mb-1">Email del dueño</label>
                 <input
+                  id="alta-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -376,7 +386,7 @@ export default function AdminOnboardPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Logo del local (opcional)</label>
+                <label htmlFor="alta-logo" className="text-xs font-semibold dash-text-secondary block mb-1">Logo del local (opcional)</label>
                 {logoPreviewUrl ? (
                   <div className="flex items-center gap-3 rounded-xl dash-bg-surface px-3 py-2.5">
                     <Image
@@ -396,9 +406,9 @@ export default function AdminOnboardPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity hover:opacity-80 dash-text-muted">
+                  <label htmlFor="alta-logo" className="flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity hover:opacity-80 dash-text-muted">
                     Subir logo
-                    <input type="file" accept="image/*" hidden onChange={handleLogoChange} />
+                    <input id="alta-logo" type="file" accept="image/*" hidden onChange={handleLogoChange} />
                   </label>
                 )}
               </div>
@@ -407,7 +417,7 @@ export default function AdminOnboardPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold btn-primario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
                 >
                   {submitting ? "Creando…" : "Crear local"}
                 </button>
@@ -421,9 +431,11 @@ export default function AdminOnboardPage() {
         <SupresionTelefono onError={setErrorMsg} />
       </main>
 
-      {/* Toast de error, discreto y auto-ocultable */}
+      {/* Toast de error, discreto y auto-ocultable. Va con `role="alert"`
+          justamente porque se borra solo a los 4 segundos: si no se anuncia al
+          aparecer, no se anuncia nunca. */}
       {errorMsg && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
           ⚠️ {errorMsg}
         </div>
       )}

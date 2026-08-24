@@ -41,14 +41,14 @@ function ChipContraste({
 }) {
   if (!completo) {
     return (
-      <p className="mt-1.5 text-[11px] dash-text-muted">
+      <p className="mt-1.5 text-xs dash-text-muted">
         Escribe el color completo (#rgb o #rrggbb) para ver el contraste.
       </p>
     );
   }
   const pasa = razon >= CONTRASTE_AA;
   return (
-    <p className={`mt-1.5 text-[11px] font-medium ${pasa ? "text-green-400" : "text-amber-400"}`}>
+    <p className={`mt-1.5 text-xs font-medium ${pasa ? "text-green-400" : "text-amber-400"}`}>
       <span aria-hidden>{pasa ? "✓" : "⚠"}</span> {razon.toFixed(1)}:1 · {detalle}
     </p>
   );
@@ -262,7 +262,7 @@ export default function ConfigPage() {
 
   if (resolvingLocal) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark">
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-14 h-14">
             <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
@@ -276,7 +276,7 @@ export default function ConfigPage() {
 
   if (noLocal) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark px-6">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
           <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
           <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
@@ -291,7 +291,7 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       {/* ===== HEADER ===== */}
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
@@ -317,7 +317,7 @@ export default function ConfigPage() {
               ) : (
                 <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -357,8 +357,9 @@ export default function ConfigPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
+              <label htmlFor="config-nombre" className="text-xs font-semibold dash-text-secondary block mb-1">Nombre</label>
               <input
+                id="config-nombre"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -367,8 +368,9 @@ export default function ConfigPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Eslogan</label>
+              <label htmlFor="config-eslogan" className="text-xs font-semibold dash-text-secondary block mb-1">Eslogan</label>
               <input
+                id="config-eslogan"
                 value={slogan}
                 onChange={(e) => setSlogan(e.target.value)}
                 className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -378,8 +380,9 @@ export default function ConfigPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Dirección</label>
+                <label htmlFor="config-direccion" className="text-xs font-semibold dash-text-secondary block mb-1">Dirección</label>
                 <input
+                  id="config-direccion"
                   value={direccion}
                   onChange={(e) => setDireccion(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -387,8 +390,9 @@ export default function ConfigPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold dash-text-secondary block mb-1">Teléfono</label>
+                <label htmlFor="config-telefono" className="text-xs font-semibold dash-text-secondary block mb-1">Teléfono</label>
                 <input
+                  id="config-telefono"
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
                   className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
@@ -398,15 +402,22 @@ export default function ConfigPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Color primario</label>
+              {/* Son dos controles para un mismo color y la etiqueta solo puede
+                  apuntar a uno: va al selector, que es por donde entra casi todo
+                  el mundo. El campo hex se nombra solo con aria-label para que no
+                  quede anónimo en el lector de pantalla. */}
+              <label htmlFor="config-color-primario" className="text-xs font-semibold dash-text-secondary block mb-1">Color primario</label>
               <div className="flex items-center gap-3">
                 <input
+                  id="config-color-primario"
                   type="color"
                   value={aColorInput(primarioVista)}
                   onChange={(e) => cambiarPrimario(e.target.value)}
                   className="w-11 h-10 rounded-lg dash-bg-surface cursor-pointer border-0 p-1"
                 />
                 <input
+                  id="config-color-primario-hex"
+                  aria-label="Color primario en hexadecimal"
                   value={colorPrimario}
                   onChange={(e) => cambiarPrimario(e.target.value)}
                   className="flex-1 rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
@@ -429,15 +440,18 @@ export default function ConfigPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Color de acento (precios y detalles)</label>
+              <label htmlFor="config-color-acento" className="text-xs font-semibold dash-text-secondary block mb-1">Color de acento (precios y detalles)</label>
               <div className="flex items-center gap-3">
                 <input
+                  id="config-color-acento"
                   type="color"
                   value={aColorInput(acentoVista)}
                   onChange={(e) => cambiarAcento(e.target.value)}
                   className="w-11 h-10 rounded-lg dash-bg-surface cursor-pointer border-0 p-1"
                 />
                 <input
+                  id="config-color-acento-hex"
+                  aria-label="Color de acento en hexadecimal"
                   value={colorAcento}
                   onChange={(e) => cambiarAcento(e.target.value)}
                   className="flex-1 rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500 font-mono"
@@ -460,7 +474,7 @@ export default function ConfigPage() {
             {/* ===== Vista previa real: lo que va a ver el cliente ===== */}
             <div className="rounded-xl border border-stone-800 bg-stone-950/40 p-4">
               <p className="text-xs font-semibold dash-text-secondary">Vista previa del menú</p>
-              <p className="text-[11px] dash-text-muted mt-0.5">
+              <p className="text-xs dash-text-muted mt-0.5">
                 Así se ven tus colores sobre el fondo claro que ve el cliente.
               </p>
 
@@ -472,9 +486,13 @@ export default function ConfigPage() {
                   Ver pedido · $12.500
                 </div>
 
+                {/* Los dos rótulos de esta comparación van en el piso de la
+                    escala y en versalitas: nombran las dos muestras de color,
+                    que es lo que hay que mirar. Si uno subiera a `xs` y el otro
+                    no, dejarían de leerse como el mismo par. */}
                 <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
                       Tu acento
                     </p>
                     <p className="text-lg font-bold" style={{ color: acentoVista }}>
@@ -482,7 +500,7 @@ export default function ConfigPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                    <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
                       {acentoNecesitaAjuste ? "Corregido para el menú" : "En el menú"}
                     </p>
                     <p className="text-lg font-bold" style={{ color: acentoLegible }}>
@@ -500,7 +518,7 @@ export default function ConfigPage() {
               {acentoNecesitaAjuste && (
                 <div className="mt-3 flex gap-2 rounded-xl dash-bg-surface px-3 py-2.5 dash-text-secondary">
                   <span aria-hidden>ℹ</span>
-                  <p className="text-[11px] leading-relaxed">
+                  <p className="text-xs leading-relaxed">
                     Tu color de acento contrasta {contrasteAcento.toFixed(1)}:1 sobre blanco y el
                     mínimo para que un precio se lea es {CONTRASTE_AA}:1. En el menú los precios se
                     van a pintar en{" "}
@@ -511,8 +529,11 @@ export default function ConfigPage() {
               )}
             </div>
 
-            <div>
-              <label className="text-xs font-semibold dash-text-secondary block mb-1">Logo</label>
+            {/* "Logo" no es una etiqueta de campo: cuando ya hay logo, abajo solo
+                queda un botón, y un <label> apuntando a un botón no existe. Va como
+                título del grupo — mismas clases, cero cambio visual. */}
+            <div role="group" aria-labelledby="config-logo-titulo">
+              <p id="config-logo-titulo" className="text-xs font-semibold dash-text-secondary block mb-1">Logo</p>
               {logoUrl ? (
                 <div className="flex items-center gap-3 rounded-xl dash-bg-surface px-3 py-2.5">
                   <Image
@@ -531,11 +552,12 @@ export default function ConfigPage() {
                   </button>
                 </div>
               ) : (
-                <label className={`flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity ${
+                <label htmlFor="config-logo-archivo" className={`flex items-center justify-center rounded-xl border-2 border-dashed border-stone-700 text-xs text-center py-6 cursor-pointer transition-opacity ${
                   subiendoLogo ? "opacity-60 pointer-events-none" : "hover:opacity-80"
                 } dash-text-muted`}>
                   {subiendoLogo ? "Subiendo…" : "Subir logo"}
                   <input
+                    id="config-logo-archivo"
                     type="file"
                     accept="image/*"
                     hidden
@@ -548,13 +570,16 @@ export default function ConfigPage() {
           </div>
 
           <div className="flex items-center justify-end gap-3 mt-6">
+            {/* El "guardado" se muestra al lado del botón y se va solo a los 3
+                segundos: sin anunciarlo, quien no ve la pantalla se queda sin saber
+                si el cambio quedó. Polite y no alert porque no urge nada. */}
             {savedMsg && (
-              <span className="text-xs font-semibold text-green-400">✓ Cambios guardados</span>
+              <span role="status" aria-live="polite" className="text-xs font-semibold text-green-400">✓ Cambios guardados</span>
             )}
             <button
               onClick={handleGuardar}
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold btn-primario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
             >
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>
@@ -564,7 +589,7 @@ export default function ConfigPage() {
 
       {/* Toast de error, discreto y auto-ocultable */}
       {errorMsg && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
           ⚠️ {errorMsg}
         </div>
       )}

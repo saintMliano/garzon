@@ -74,7 +74,7 @@ function Seccion({
       <h2 className="text-lg md:text-xl font-black text-stone-900 tracking-tight text-balance">
         {titulo}
       </h2>
-      <div className="mt-3.5 flex flex-col gap-3.5 text-[14.5px] text-stone-600 leading-relaxed">
+      <div className="mt-3.5 flex flex-col gap-3.5 text-sm text-stone-600 leading-relaxed">
         {children}
       </div>
     </section>
@@ -83,7 +83,7 @@ function Seccion({
 
 export default function Privacidad() {
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50">
+    <div className="flex flex-col min-h-dvh bg-stone-50">
       {/* ===== BARRA SUPERIOR ===== */}
       <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-stone-50/85 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
@@ -91,12 +91,12 @@ export default function Privacidad() {
             <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-base shadow-sm">
               🍔
             </span>
-            <span className="font-bold text-stone-900 text-[15px] tracking-tight">Garzón Digital</span>
+            <span className="font-bold text-stone-900 text-base tracking-tight">Garzón Digital</span>
           </Link>
 
           <Link
             href="/"
-            className="px-3.5 py-2 rounded-lg text-[13px] font-semibold text-stone-700 border border-stone-300 hover:border-stone-400 hover:bg-white transition-colors"
+            className="px-3.5 py-2 rounded-lg text-sm font-semibold text-stone-700 border border-stone-300 hover:border-stone-400 hover:bg-white transition-colors"
           >
             Volver al inicio
           </Link>
@@ -106,7 +106,7 @@ export default function Privacidad() {
       {/* ===== ENCABEZADO ===== */}
       <section className="bg-stone-950 border-b border-stone-900">
         <div className="max-w-3xl mx-auto px-5 py-14 md:py-20">
-          <p className="animate-fade-in text-[12px] font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
+          <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
             Tus datos, en simple
           </p>
           <h1
@@ -116,14 +116,14 @@ export default function Privacidad() {
             Política de privacidad
           </h1>
           <p
-            className="animate-fade-in mt-5 text-[16px] text-stone-400 leading-relaxed max-w-xl"
+            className="animate-fade-in mt-5 text-base text-stone-400 leading-relaxed max-w-xl"
             style={{ animationDelay: "160ms" }}
           >
             Esta página explica qué pasa con los datos que dejas al pedir por QR. Está escrita para
             que la entiendas de una sola lectura, sin abogado al lado.
           </p>
           <p
-            className="animate-fade-in mt-6 text-[13px] text-stone-500"
+            className="animate-fade-in mt-6 text-sm text-stone-500"
             style={{ animationDelay: "240ms" }}
           >
             Última actualización: {ULTIMA_ACTUALIZACION}
@@ -134,10 +134,10 @@ export default function Privacidad() {
       {/* ===== RESUMEN ===== */}
       <section className="max-w-3xl mx-auto w-full px-5 pt-10 md:pt-14">
         <div className="rounded-2xl bg-white border border-stone-200/80 p-6 md:p-7">
-          <h2 className="font-bold text-stone-900 text-[15px]">Lo importante, en cuatro líneas</h2>
+          <h2 className="font-bold text-stone-900 text-base">Lo importante, en cuatro líneas</h2>
           <ul className="mt-4 flex flex-col gap-2.5">
             {RESUMEN.map((linea) => (
-              <li key={linea} className="flex items-start gap-2.5 text-[14px] text-stone-700 leading-relaxed">
+              <li key={linea} className="flex items-start gap-2.5 text-sm text-stone-700 leading-relaxed">
                 <svg
                   aria-hidden
                   className="w-4 h-4 mt-1 shrink-0 text-orange-500"
@@ -195,20 +195,20 @@ export default function Privacidad() {
             ))}
           </ul>
           <div className="mt-2 rounded-xl bg-white border border-stone-200/80 p-5">
-            <p className="text-[14px] text-stone-700">
+            <p className="text-sm text-stone-700">
               <strong className="text-stone-900">Y nada más.</strong> No te pedimos:
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
               {NO_PEDIMOS.map((item) => (
                 <li
                   key={item}
-                  className="px-2.5 py-1 rounded-lg bg-stone-100 border border-stone-200 text-[13px] text-stone-500 line-through decoration-stone-400"
+                  className="px-2.5 py-1 rounded-lg bg-stone-100 border border-stone-200 text-sm text-stone-500 line-through decoration-stone-400"
                 >
                   {item}
                 </li>
               ))}
             </ul>
-            <p className="mt-3.5 text-[13px] text-stone-500 leading-relaxed">
+            <p className="mt-3.5 text-sm text-stone-500 leading-relaxed">
               Tampoco necesitas crear una cuenta ni descargar nada para pedir.
             </p>
           </div>
@@ -312,7 +312,7 @@ export default function Privacidad() {
             responsable. Garzón Digital lo asiste: si el local nos lo pide, buscamos y borramos el
             dato por él.
           </p>
-          <p className="text-[13.5px] text-stone-500">
+          <p className="text-sm text-stone-500">
             Si no sabes cómo contactar al local o prefieres escribirnos a nosotros, hazlo a{" "}
             <strong className="text-stone-700">[CONTACTO POR DEFINIR]</strong> y te ayudamos a
             encaminarlo.
@@ -352,7 +352,7 @@ export default function Privacidad() {
             Si tu duda es sobre el sistema, escríbenos a{" "}
             <strong className="text-stone-900">[CONTACTO POR DEFINIR]</strong>.
           </p>
-          <p className="text-[13.5px] text-stone-500">
+          <p className="text-sm text-stone-500">
             Si esta política cambia, cambia también la fecha de última actualización que aparece
             arriba.
           </p>
@@ -361,10 +361,10 @@ export default function Privacidad() {
 
       <footer className="border-t border-stone-200/80 py-7 mt-auto">
         <div className="max-w-3xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[13px] text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
+          <p className="text-sm text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
           <Link
             href="/"
-            className="text-[13px] font-medium text-stone-500 hover:text-stone-800 transition-colors"
+            className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors"
           >
             Volver al inicio
           </Link>

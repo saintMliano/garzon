@@ -104,9 +104,9 @@ export default function AvisoSuscripcion({ localId }: { localId: string | null }
   return (
     <div className="px-4 md:px-6 pt-3">
       <div className={`max-w-[1600px] mx-auto rounded-xl border px-4 py-3 ${tono}`}>
-        <p className="text-[13px] font-bold">{titulo}</p>
-        <p className="text-[12px] opacity-90 mt-0.5">{detalle}</p>
-        <p className="text-[12px] opacity-90 mt-1">
+        <p className="text-sm font-bold">{titulo}</p>
+        <p className="text-xs opacity-90 mt-0.5">{detalle}</p>
+        <p className="text-xs opacity-90 mt-1">
           Tus pedidos, tu historial y tus reportes siguen disponibles siempre.
         </p>
       </div>

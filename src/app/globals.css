@@ -25,6 +25,28 @@
   --color-success: var(--success);
   --color-danger: var(--danger);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ===== ESCALA TIPOGRÁFICA =====
+     Hasta el 2026-08-24 convivían 198 tamaños arbitrarios en píxeles, repartidos
+     en 12 valores —tres de ellos de medio píxel: 12.5, 13.5, 14.5— con 398 usos
+     de la escala de Tailwind. Veintiún tamaños distintos en circulación no son
+     una escala, son sedimento: cada pantalla nueva elegía el suyo a ojo.
+
+     Queda la escala de Tailwind más un escalón abajo. `2xs` es el piso y tiene
+     una regla de uso, no es "xs pero más chico":
+
+       - `text-2xs` (11px) SOLO en el panel, y solo para rótulos de una o dos
+         palabras, normalmente en versalitas. Nunca para prosa.
+       - En la carta del comensal el piso es `text-xs` (12px). Esa pantalla se
+         lee en un teléfono, en un local que puede estar con media luz, por
+         alguien que no eligió la aplicación. No es el mismo lector que el del
+         panel, que trabaja en su pantalla todos los días.
+
+     Y un umbral que no es estético: los campos de formulario van en `text-base`
+     (16px). Por debajo de 16px, Safari de iOS hace zoom solo al enfocar un
+     input y deja al comensal con la página descuadrada en pleno checkout. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.45;
 }
 
 /* ===== BASE ===== */
@@ -42,6 +64,54 @@ body {
 ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 999px; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ===== JERARQUÍA DE BOTONES =====
+   El gradiente naranja era el único recurso para decir "esto es importante", y
+   estaba 39 veces. Cuando todo lo relevante se ve igual deja de haber jerarquía:
+   en la comanda llegaban a convivir once gradientes en una misma pantalla, y el
+   ojo no tenía dónde caer primero.
+
+   Tres niveles. La regla al elegir: **uno solo `btn-primario` por pantalla o por
+   diálogo** —la acción por la que esa pantalla existe—, el resto secundario.
+
+   `btn-primario` lleva `text-stone-900` y no blanco: sobre este naranja el
+   blanco da 2,80:1 y el ámbar 2,15:1, cuando el AA de la WCAG pide 4,5:1. Es lo
+   que devuelve `textoSobre()` para los dos extremos del gradiente. */
+.btn-primario {
+  background-image: linear-gradient(to right, #f97316, #f59e0b);
+  color: #1c1917;
+}
+.btn-primario:hover { filter: brightness(1.05); }
+
+/* Secundario: mismo peso de acción, sin gritar. El contorno se apoya en el color
+   del texto, así que basta con cambiar el color para que sirva en cualquier
+   superficie.
+
+   El color va por variable y no fijo porque el naranja legible sobre claro
+   (#c2410c, 4,96:1 sobre el fondo del sitio) sobre una superficie oscura cae a
+   3,81:1 y deja de cumplir AA. Y no alcanza con contemplar `.dashboard-dark`:
+   la landing es clara pero tiene dos bloques oscuros —el hero y la tarjeta del
+   plan—, que no son el panel y necesitan lo mismo. De ahí `.sobre-oscuro`, que
+   se pone en cualquier contenedor de fondo oscuro fuera del panel. */
+.btn-secundario {
+  background: transparent;
+  border: 1px solid currentColor;
+  color: var(--btn-secundario-texto, #c2410c);
+}
+.dashboard-dark,
+.sobre-oscuro {
+  --btn-secundario-texto: #d6d3d1;
+}
+.btn-secundario:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+
+/* Terciario: lo que se ofrece pero no se empuja (cancelar, volver, ver más). */
+.btn-terciario {
+  background: transparent;
+  color: var(--muted);
+}
+.btn-terciario:hover { color: var(--foreground); }
+.dashboard-dark .btn-terciario { color: #9c948c; }
+.dashboard-dark .btn-terciario:hover { color: #fafaf9; }
 
 /* ===== CATEGORY PILLS ===== */
 .category-active {
@@ -78,11 +148,6 @@ body {
 }
 .animate-pop { animation: pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 
-@keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 1; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-
 @keyframes bounce-subtle {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
@@ -104,23 +169,12 @@ body {
   -webkit-backdrop-filter: saturate(180%) blur(16px);
 }
 
-/* ===== NOTIFICATION DOT ===== */
-.notification-dot {
-  position: absolute;
-  top: -2px; right: -2px;
-  width: 12px; height: 12px;
-  background: #ef4444;
-  border-radius: 50%;
-  border: 2px solid white;
-}
-.notification-dot::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background: rgba(239, 68, 68, 0.4);
-  animation: pulse-ring 2s ease-out infinite;
-}
+/* `.notification-dot` y su `@keyframes pulse-ring` vivieron acá hasta el
+   2026-08-24. El punto medía 12px en la esquina de la campana del panel, y
+   encima —misma esquina, 20px— iba el globo con el número de pedidos nuevos,
+   que lo tapaba entero, anillo incluido. Era CSS invisible con una animación
+   infinita repintando debajo, en una tablet que queda encendida todo el turno.
+   El globo comunica más que el punto: quedó el globo. */
 
 /* ===== DASHBOARD DARK MODE ===== */
 .dashboard-dark {
@@ -149,7 +203,12 @@ body {
 }
 .dashboard-dark .dash-text-primary { color: #fafaf9; }
 .dashboard-dark .dash-text-secondary { color: #a8a29e; }
-.dashboard-dark .dash-text-muted { color: #78716c; }
+/* `#78716c` daba 4,12:1 sobre el fondo del panel y 3,16:1 sobre `dash-bg-surface`:
+   por debajo del AA de la WCAG en el color con el que está escrito casi todo el
+   texto secundario del panel. `#9c948c` pasa en las tres superficies del tema
+   oscuro (6,61 / 5,85 / 5,08) sin acercarse tanto a `dash-text-secondary` como
+   para borrar el escalón entre los dos. */
+.dashboard-dark .dash-text-muted { color: #9c948c; }
 .dashboard-dark .dash-bg-surface { background: #292524; }
 
 /* ===== TIMER URGENCY ===== */
@@ -159,4 +218,27 @@ body {
 /* ===== SAFE AREA (notch phones) ===== */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .safe-bottom { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
+
+/* ===== MOVIMIENTO REDUCIDO =====
+   Va al final a propósito: tiene que ganarle a todo lo de arriba.
+
+   El sistema operativo expone una preferencia de accesibilidad —"reducir
+   movimiento"— que la gente con vértigo, migraña vestibular o trastornos de
+   atención activa para que las interfaces dejen de moverse. Hasta acá el sitio
+   la ignoraba: las tarjetas de la carta entraban escalonadas, el carrito subía,
+   el contador rebotaba y el punto de notificación latía en bucle infinito.
+
+   No se apaga la animación: se colapsa a un solo fotograma. Así el estado final
+   (opacidad 1, posición 0) igual se aplica y nada queda invisible, que es lo que
+   pasaría con `animation: none` sobre un `fade-in` que arranca en opacidad 0. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

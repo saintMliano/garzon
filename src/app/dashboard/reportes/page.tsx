@@ -316,6 +316,8 @@ export default function ReportesPage() {
   const [intento, setIntento] = useState(0); // lo incrementa "Reintentar"
   const [exportando, setExportando] = useState(false);
   const [errorExport, setErrorExport] = useState<string | null>(null);
+  /** Barra elegida en el gráfico de ventas. Ver el comentario del gráfico. */
+  const [barraElegida, setBarraElegida] = useState<string | null>(null);
 
   const rangoValido = desde <= hasta;
   const clave = `${localId ?? ""}|${desde}|${hasta}`;
@@ -583,7 +585,7 @@ export default function ReportesPage() {
   // ===== Pantallas de espera / sin local =====
   if (resolvingLocal) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark">
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-14 h-14">
             <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
@@ -597,7 +599,7 @@ export default function ReportesPage() {
 
   if (noLocal) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark px-6">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
           <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
           <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
@@ -617,7 +619,7 @@ export default function ReportesPage() {
   const rangoEsUnDia = desde === hasta;
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       {/* ===== HEADER ===== */}
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
@@ -643,7 +645,7 @@ export default function ReportesPage() {
               ) : (
                 <h1 className="font-bold dash-text-primary text-base">{localNombre || "Garzón Digital"}</h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -681,6 +683,11 @@ export default function ReportesPage() {
           {/* ===== SELECTOR DE RANGO ===== */}
           <div className="dash-card rounded-2xl border-2 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* El rango elegido es un indicador de qué estás mirando, no una
+                  acción: por eso naranja de marca plano y no el gradiente, que
+                  acá quedaba prometiendo una acción importante que no existe.
+                  Esta pantalla es para leer; el dueño no viene a apretar nada.
+                  `text-stone-900` sobre `orange-500` es lo que pide el contraste. */}
               <div className="flex flex-wrap items-center gap-1.5">
                 {PRESETS.map((p) => (
                   <button
@@ -688,7 +695,7 @@ export default function ReportesPage() {
                     onClick={() => aplicarPreset(p.id)}
                     className={`px-3 py-2 rounded-xl text-xs font-semibold transition-transform hover:scale-[1.03] active:scale-95 ${
                       preset === p.id
-                        ? "text-white bg-gradient-to-r from-orange-500 to-amber-500"
+                        ? "text-stone-900 bg-orange-500"
                         : "dash-bg-surface dash-text-secondary"
                     }`}
                   >
@@ -710,8 +717,9 @@ export default function ReportesPage() {
             {preset === "personalizado" && (
               <div className="flex flex-wrap items-end gap-3 mt-3 pt-3 border-t border-stone-800">
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Desde</label>
+                  <label htmlFor="reportes-desde" className="text-xs font-semibold dash-text-secondary block mb-1">Desde</label>
                   <input
+                    id="reportes-desde"
                     type="date"
                     value={desde}
                     max={hoyChile()}
@@ -720,8 +728,9 @@ export default function ReportesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold dash-text-secondary block mb-1">Hasta</label>
+                  <label htmlFor="reportes-hasta" className="text-xs font-semibold dash-text-secondary block mb-1">Hasta</label>
                   <input
+                    id="reportes-hasta"
                     type="date"
                     value={hasta}
                     max={hoyChile()}
@@ -732,7 +741,7 @@ export default function ReportesPage() {
               </div>
             )}
 
-            <p className="text-[11px] dash-text-muted mt-3">
+            <p className="text-xs dash-text-muted mt-3">
               {rangoEsUnDia
                 ? fechaLarga(desde)
                 : `Del ${fechaLarga(desde)} al ${fechaLarga(hasta)}`}
@@ -779,7 +788,7 @@ export default function ReportesPage() {
                   <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
                     {formatPrice(resumen.venta_total)}
                   </p>
-                  <p className="text-[11px] dash-text-muted mt-1">No incluye pedidos rechazados.</p>
+                  <p className="text-xs dash-text-muted mt-1">No incluye pedidos rechazados.</p>
                 </div>
 
                 <div className="dash-card rounded-2xl border-2 p-5">
@@ -787,7 +796,7 @@ export default function ReportesPage() {
                   <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
                     {resumen.pedidos_total.toLocaleString("es-CL")}
                   </p>
-                  <p className="text-[11px] dash-text-muted mt-1">Total recibidos en el período.</p>
+                  <p className="text-xs dash-text-muted mt-1">Total recibidos en el período.</p>
                 </div>
 
                 <div className="dash-card rounded-2xl border-2 p-5">
@@ -795,7 +804,7 @@ export default function ReportesPage() {
                   <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
                     {formatPrice(resumen.ticket_promedio)}
                   </p>
-                  <p className="text-[11px] dash-text-muted mt-1">Promedio por pedido no rechazado.</p>
+                  <p className="text-xs dash-text-muted mt-1">Promedio por pedido no rechazado.</p>
                 </div>
               </div>
 
@@ -809,7 +818,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {formatPrice(resumen.venta_entregada)}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       {resumen.pedidos_entregados} pedido(s) · esto es lo que debería estar en la caja
                     </p>
                   </div>
@@ -819,7 +828,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {formatPrice(ventaPendiente)}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       {resumen.pedidos_pendientes} pedido(s) · todavía en curso, aún no cobrados
                     </p>
                   </div>
@@ -829,7 +838,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {resumen.pedidos_cancelados.toLocaleString("es-CL")}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       No suman a la venta ni al ticket promedio
                     </p>
                   </div>
@@ -842,7 +851,7 @@ export default function ReportesPage() {
                     <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
                       {formatPrice(resumen.propinas_total)}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">
+                    <p className="text-xs dash-text-muted mt-0.5">
                       Aparte de la venta · las cobra el local en caja y son del personal
                     </p>
                   </div>
@@ -858,7 +867,7 @@ export default function ReportesPage() {
                 <div className="dash-card rounded-2xl border-2 p-4">
                   <div className="flex items-baseline justify-between mb-4">
                     <h2 className="font-bold dash-text-primary text-sm">Tiempos de cocina</h2>
-                    <span className="text-[11px] dash-text-muted">
+                    <span className="text-xs dash-text-muted">
                       mediana de {tiempos.pedidos_medidos} pedido{tiempos.pedidos_medidos !== 1 && "s"}
                     </span>
                   </div>
@@ -870,13 +879,13 @@ export default function ReportesPage() {
                       { etiqueta: "Hasta entregar", seg: tiempos.seg_hasta_entregado, detalle: "el ciclo completo" },
                     ].map((t) => (
                       <div key={t.etiqueta} className="dash-bg-surface rounded-xl p-3">
-                        <p className="text-[11px] dash-text-muted uppercase tracking-wide font-medium">
+                        <p className="text-2xs dash-text-muted uppercase tracking-wide font-medium">
                           {t.etiqueta}
                         </p>
                         <p className="text-xl font-bold dash-text-primary tabular-nums mt-0.5">
                           {duracion(t.seg)}
                         </p>
-                        <p className="text-[11px] dash-text-muted mt-1 leading-snug">{t.detalle}</p>
+                        <p className="text-xs dash-text-muted mt-1 leading-snug">{t.detalle}</p>
                       </div>
                     ))}
                   </div>
@@ -893,22 +902,56 @@ export default function ReportesPage() {
                         en la misma pantalla y no sabría cuál creer. */}
                     <h2 className="font-bold dash-text-primary text-sm">
                       Ventas por {agrupadoPorMes ? "mes" : "día"}{" "}
-                      <span className="font-normal dash-text-muted text-[11px]">· sin rechazados</span>
+                      <span className="font-normal dash-text-muted text-2xs">· sin rechazados</span>
                     </h2>
-                    <span className="text-[11px] dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
+                    {(() => {
+                      const elegida = serieGrafico.find((d) => d.clave === barraElegida);
+                      return elegida ? (
+                        <span className="text-xs dash-text-secondary tabular-nums" aria-live="polite">
+                          {elegida.etiqueta}: {formatPrice(elegida.venta)} · {elegida.pedidos} pedido(s)
+                        </span>
+                      ) : (
+                        <span className="text-xs dash-text-muted">Máximo: {formatPrice(maxVentaDia)}</span>
+                      );
+                    })()}
                   </div>
 
+                  {/* El valor de cada barra se mostraba solo con `group-hover` y un
+                      `title`. En una pantalla táctil —que es donde vive este panel,
+                      la tablet de la cocina— no hay ninguna de las dos cosas, así
+                      que el gráfico no tenía un solo número legible. Ahora cada
+                      barra es un botón: tocarla la fija y su dato sale en el
+                      encabezado. El hover se conserva para el notebook.
+
+                      Botones y no `role="img"` sobre el conjunto: `img` vuelve
+                      presentacional todo lo de adentro, y entonces las barras
+                      dejarían de poder tocarse. Cada botón lleva su propio
+                      `aria-label` con la cifra, que es el dato que antes no salía
+                      por ningún lado. */}
                   <div className="overflow-x-auto">
-                    <div className="flex items-end gap-1 md:gap-1.5 h-44 min-w-full">
+                    <div
+                      role="group"
+                      aria-label={`Ventas por ${agrupadoPorMes ? "mes" : "día"}, ${serieGrafico.length} ${agrupadoPorMes ? "meses" : "días"}, máximo ${formatPrice(maxVentaDia)}`}
+                      className="flex items-end gap-1 md:gap-1.5 h-44 min-w-full"
+                    >
                       {serieGrafico.map((d) => {
                         const alturaPct = maxVentaDia > 0 ? (d.venta / maxVentaDia) * 100 : 0;
+                        const elegida = barraElegida === d.clave;
                         return (
-                          <div
+                          <button
                             key={d.clave}
-                            className="flex-1 min-w-[14px] h-full flex flex-col justify-end items-center group"
+                            type="button"
+                            onClick={() => setBarraElegida(elegida ? null : d.clave)}
+                            aria-pressed={elegida}
+                            aria-label={`${d.etiqueta}: ${formatPrice(d.venta)} en ${d.pedidos} pedido(s)`}
+                            className="flex-1 min-w-[14px] h-full flex flex-col justify-end items-center group rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                             title={`${d.etiqueta} · ${d.pedidos} pedido(s) · ${formatPrice(d.venta)}`}
                           >
-                            <span className="text-[10px] dash-text-muted tabular-nums opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            <span
+                              className={`text-2xs dash-text-secondary tabular-nums transition-opacity whitespace-nowrap ${
+                                elegida ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                              }`}
+                            >
                               {d.venta > 0 ? formatPrice(d.venta) : "—"}
                             </span>
                             <div
@@ -916,10 +959,10 @@ export default function ReportesPage() {
                                 d.venta > 0
                                   ? "bg-gradient-to-t from-orange-600 to-amber-400"
                                   : "bg-stone-800"
-                              }`}
+                              } ${elegida ? "ring-2 ring-white/70" : ""}`}
                               style={{ height: d.venta > 0 ? `max(4px, ${alturaPct}%)` : "3px" }}
                             />
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -931,7 +974,7 @@ export default function ReportesPage() {
                         const mostrar = i % paso === 0 || i === serieGrafico.length - 1;
                         return (
                           <div key={d.clave} className="flex-1 min-w-[14px] text-center">
-                            <span className="text-[10px] dash-text-muted tabular-nums whitespace-nowrap">
+                            <span className="text-2xs dash-text-muted tabular-nums whitespace-nowrap">
                               {mostrar ? (agrupadoPorMes ? d.etiqueta.slice(0, 3) : d.clave.slice(8, 10)) : ""}
                             </span>
                           </div>
@@ -941,7 +984,7 @@ export default function ReportesPage() {
                   </div>
 
                   {!agrupadoPorMes && serieGrafico.length >= MAX_DIAS_GRAFICO && (
-                    <p className="text-[11px] dash-text-muted mt-2">
+                    <p className="text-xs dash-text-muted mt-2">
                       Se muestran los primeros {MAX_DIAS_GRAFICO} días del rango.
                     </p>
                   )}
@@ -1007,6 +1050,10 @@ export default function ReportesPage() {
       {errorExport && (
         <button
           onClick={() => setErrorExport(null)}
+          // El aviso aparece abajo del todo, lejos del botón de exportar que se
+          // acaba de tocar, y se va solo. Sin `alert` no se entera nadie que no
+          // esté mirando esa esquina.
+          role="alert"
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm"
         >
           ⚠️ {errorExport}

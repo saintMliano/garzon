@@ -12,7 +12,18 @@ Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquite
 - **Garzón Digital:** Es una solución de digitalización de pedidos para restaurantes y fuentes de soda. Permite a los clientes pedir desde la mesa escaneando un código QR y al local gestionar todo desde una pantalla en la cocina sin intermediarios ni comisiones.
 - **Estilo Visual:**
   - **Modo Oscuro del Dashboard (`dashboard-dark`):** Diseñado específicamente para pantallas de cocina y tablets. Reduce la fatiga visual bajo luces intensas y destaca los pedidos con colores semánticos.
-  - **Acento Energizante:** Degradados cálidos de naranja a ámbar (`from-orange-500 to-amber-500`) que evocan dinamismo, velocidad y apetito.
+  - **Acento Energizante:** Degradado cálido de naranja a ámbar (`from-orange-500 to-amber-500`), que evoca dinamismo, velocidad y apetito. **Desde el 2026-08-24 no se escribe suelto:** vive en `.btn-primario` y se usa una sola vez por pantalla. Antes estaba 39 veces —once de ellas en la comanda— y cuando todo lo relevante se ve igual, deja de haber jerarquía.
+
+### Sistema de diseño (consolidado el 2026-08-24)
+
+Lo que antes se decidía a ojo en cada pantalla ahora tiene reglas escritas, después de la auditoría de frontend. Las cuatro que importan:
+
+- **Contraste.** `src/lib/color.ts` deriva el texto legible sobre el color de cada local por contraste WCAG. Esa misma regla rige ahora para el naranja de la plataforma, que no lo hacía: los botones primarios llevan `text-stone-900`, no `text-white`. En la carta el piso de gris es `text-stone-500`; en el panel, `dash-text-muted` (`#9c948c`).
+- **Escala tipográfica.** La de Tailwind más `text-2xs` (11px), que es solo del panel y solo para rótulos. En la carta el piso es `text-xs` (12px), y los campos de formulario van en `text-base` (16px) para que Safari de iOS no haga zoom al enfocarlos. **No se escribe `text-[Npx]`.**
+- **Tres niveles de botón.** `btn-primario` / `btn-secundario` / `btn-terciario`, uno solo primario por pantalla o diálogo.
+- **Diálogos.** `src/componentes/modal.tsx` (rol, foco atrapado, Escape, devolución del foco) y `src/componentes/usar-confirmar.tsx`, que reemplazó a `window.confirm()`. No se abre una ventana con `fixed inset-0` a mano.
+
+Los bloques comentados de `src/app/globals.css` tienen el detalle y el porqué de cada uno.
 
 ### Detalles de Micro-UX e Interacción en el Dashboard
 El panel de cocina cuenta con detalles interactivos avanzados para simular un sistema nativo de punto de venta:
@@ -228,6 +239,86 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-24 — Auditoría de frontend: contraste, diálogos, identidad y escala
+
+Una revisión completa del frontend —8.777 líneas, 25 archivos `.tsx`— encontró 26
+hallazgos. Se aplicaron los seis puntos del plan, en cuatro commits.
+
+**El hallazgo que ordena a los demás.** El proyecto tenía desde F9 una biblioteca
+de contraste WCAG (`src/lib/color.ts`) que garantiza que el texto se lea sobre el
+color que elija cada local. El naranja de la plataforma nunca pasaba por ella:
+los botones primarios llevaban `text-white`, que sobre `#f97316` da **2,80:1** y
+sobre `#f59e0b` **2,15:1**, cuando el AA de la WCAG pide 4,5:1. Alimentada con
+esos mismos dos colores, `textoSobre()` devuelve `#1c1917`. Es decir: si un local
+hubiera elegido exactamente ese naranja como su marca, la carta le habría dado
+texto oscuro automáticamente; la plataforma se daba a sí misma texto blanco.
+
+De la misma familia: `text-stone-400` (2,52:1) era el color de la descripción de
+los productos y de la dirección del local, a 11px, en un teléfono; los
+placeholders estaban en `text-stone-300` (1,49:1); y la píldora de categoría
+activa era el único punto de la carta que ponía `color: "white"` sobre
+`var(--brand)`, contra la regla explícita del white-label. Todo eso se corrigió.
+
+**Dos incumplimientos más aparecieron midiendo la página corriendo y no leyendo
+el código**, porque no eran grises: los numeritos de "Cómo funciona"
+(`orange-600` sobre `orange-50`, 3,35:1) y el párrafo del plan sobre la tarjeta
+oscura (4,12:1). Vale la pena recordarlo: el grep encuentra lo que sabés buscar.
+
+**Accesibilidad.** Los cuatro modales del producto eran un `div` con
+`fixed inset-0`: sin rol, sin foco atrapado, sin Escape, y al cerrarlos el foco se
+perdía. Ahora los ocho pasan por `src/componentes/modal.tsx`. Los seis
+`window.confirm()` pasaron a `src/componentes/usar-confirmar.tsx`, que es lo que
+por fin permite que **agotar se vea rojo** —la regla estaba escrita hacía meses y
+el cuadro del navegador la hacía imposible—. Las 39 etiquetas de formulario
+quedaron todas asociadas a su campo (había 8 de 41). Y se pasó de **cero a 30
+regiones vivas**: la que más pesa es la de la cocina, donde el tablero se
+actualiza solo al entrar un pedido y eso no se anunciaba de ninguna forma.
+
+El gráfico de ventas mostraba sus valores solo con `group-hover` y un `title`, o
+sea que en la tablet táctil —donde vive el panel— no tenía un solo número
+legible. Cada barra es ahora un botón: tocarla la fija y su dato sale en el
+encabezado.
+
+**Identidad.** El favicon era el de `create-next-app`, sin tocar desde el día que
+se creó el proyecto; con él se fueron los cinco SVG del andamio. El manifiesto
+declaraba dos iconos que no existían desde siempre, así que la instalación como
+app nunca había funcionado. Y la landing no tenía `og:image` pese a que el canal
+de venta declarado es WhatsApp, donde un link sin imagen llega como una línea de
+texto gris. Los tres iconos salen de `npm run iconos`; las dos imágenes de
+compartir se componen con `ImageResponse`, y la del local usa `variablesDeMarca()`
+para elegir su texto por contraste. **El dibujo de la marca es provisorio y está
+marcado como tal**: la identidad visual es decisión del dueño.
+
+**Escala tipográfica.** Convivían 198 tamaños arbitrarios en 12 valores —tres de
+medio píxel— con 398 de la escala de Tailwind: veintiún tamaños en circulación.
+Ahora hay una escala y una regla de piso por pantalla, y los campos de formulario
+van en 16px para que Safari de iOS no haga zoom al enfocarlos. El gradiente
+naranja dejó de ser el único recurso de énfasis: tres niveles de botón, uno solo
+primario por pantalla.
+
+**Un bug de theming que llevaba desde F9 y salió midiendo la pantalla.** La carta
+no escribe los precios sobre blanco puro: los escribe sobre superficies teñidas
+con la marca del local —`color-mix(in srgb, var(--brand) 12%, white)` en el
+resumen del checkout, 10% en el control de cantidad—. Pero `--accent-legible` se
+calculaba contra **blanco**, y un fondo teñido es más oscuro: el número del
+control de cantidad daba **4,17:1**. Ahora `variablesDeMarca()` mide contra el
+tinte real y hay un test que barre marcas y acentos exigiendo AA sobre él. Es el
+tipo de defecto que no aparece leyendo el código —las dos piezas son correctas
+por separado— sino abriendo la pantalla con algo en el carrito.
+
+**Un hallazgo que no era de diseño.** `vitest` descubría los tests dos veces —los
+propios y los del worktree de git que vive dentro del repo— y corría la suite
+duplicada contra la misma base, hasta que Supabase cortaba por límite de tasa.
+Fallaban cinco pruebas de aislamiento que no tenían nada roto, con un síntoma que
+engañaba. Se agregó el `exclude` correspondiente.
+
+Las reglas que quedan vigentes están en `CLAUDE.md` y comentadas en
+`src/app/globals.css`. **Lo que sigue pendiente de la auditoría** son los
+hallazgos medios y bajos que no entraron en el plan: los dos sistemas de iconos
+conviviendo (SVG a mano y emoji), la falta de un 404 propio, Inter cargado por
+`@import` en vez de `next/font`, el emoji 🍔 como logo por defecto de cualquier
+local, los esqueletos de carga y el enlace para saltar al contenido.
 
 ### 2026-08-20 — Atajos de nota, compartidos con la carta pública
 

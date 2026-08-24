@@ -6,7 +6,7 @@
  */
 export default function LocalNoEncontrado() {
   return (
-    <div className="flex flex-1 items-center justify-center p-8 text-center min-h-screen">
+    <div className="flex flex-1 items-center justify-center p-8 text-center min-h-dvh">
       <div className="animate-fade-in">
         <div className="w-20 h-20 mx-auto rounded-3xl bg-stone-100 flex items-center justify-center text-4xl mb-5">🔍</div>
         <h2 className="text-xl font-bold text-stone-800">Local no encontrado</h2>

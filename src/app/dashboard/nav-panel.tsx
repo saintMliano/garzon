@@ -32,8 +32,17 @@ const ENTRADAS: Entrada[] = [
   { seccion: "equipo", etiqueta: "Equipo", href: "/dashboard/equipo", capacidad: "gestionar_equipo" },
 ];
 
+// La pestaña activa NO es un botón: es un `<span>` sin `onClick` y sin destino,
+// y lo único que dice es "estás acá". Por eso no lleva `btn-primario` aunque
+// antes usara el mismo gradiente naranja: el gradiente pasó a significar "la
+// acción por la que esta pantalla existe", y en el panel esa acción es mover un
+// pedido, no la pestaña que ya estás mirando. Queda el color de marca plano —
+// suficiente para que el ojo encuentre dónde está parado, y visiblemente
+// distinto del degradado, que ahora es siempre pulsable.
+// El texto sigue en `text-stone-900`: sobre `#f97316` el blanco da 2,80:1 y no
+// llega al AA de la WCAG.
 const CLASE_ACTIVA =
-  "shrink-0 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500";
+  "shrink-0 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-semibold text-stone-900 bg-orange-500";
 const CLASE_INACTIVA =
   "shrink-0 whitespace-nowrap px-3 py-2 rounded-lg text-xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity";
 

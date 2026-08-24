@@ -120,7 +120,7 @@ export default function CuentaPage() {
 
   if (cargando) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-screen dashboard-dark">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark">
         <div className="relative w-14 h-14">
           <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
           <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
@@ -130,7 +130,7 @@ export default function CuentaPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function CuentaPage() {
             </div>
             <div className="min-w-0">
               <h1 className="font-bold dash-text-primary text-base">Tu cuenta</h1>
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Panel de control</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Panel de control</p>
             </div>
           </div>
 
@@ -155,7 +155,7 @@ export default function CuentaPage() {
       <main className="flex-1 p-3 md:p-5">
         <div className="max-w-md mx-auto dash-card rounded-2xl border-2 p-5">
           <h2 className="font-bold dash-text-primary text-base">Cambiar contraseña</h2>
-          <p className="text-[11px] dash-text-muted mt-1 leading-relaxed">
+          <p className="text-xs dash-text-muted mt-1 leading-relaxed">
             Es la contraseña de tu cuenta <strong className="dash-text-secondary">{email}</strong>, no
             la de un local. Si atiendes más de uno, es la misma para todos.
           </p>
@@ -164,15 +164,18 @@ export default function CuentaPage() {
             <div className="mt-4">
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
                 <p className="text-xs font-semibold text-emerald-300">Contraseña actualizada</p>
-                <p className="text-[11px] dash-text-muted mt-1 leading-relaxed">
+                <p className="text-xs dash-text-muted mt-1 leading-relaxed">
                   Las demás pantallas donde esta cuenta estaba abierta se cerraron por seguridad.
                   Vuelve a entrar en ellas con la contraseña nueva.
                 </p>
               </div>
               <div className="flex gap-2 mt-4">
+                {/* Secundario aunque acá sea lo más probable que se toque: el
+                    primario de esta pantalla es cambiar la contraseña, que es
+                    por lo que existe. Volver al panel es salida, no acción. */}
                 <Link
                   href="/dashboard"
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold btn-secundario hover:scale-[1.02] active:scale-95 transition-transform"
                 >
                   Volver al panel
                 </Link>
@@ -190,13 +193,17 @@ export default function CuentaPage() {
                 <label htmlFor="actual" className="text-xs font-semibold dash-text-secondary block mb-1">
                   Contraseña actual
                 </label>
+                {/* Los tres campos van en `text-base` y no en `text-sm`: por
+                    debajo de 16px, Safari de iOS hace zoom solo al enfocar y
+                    deja la pantalla descuadrada. Esta se abre desde el teléfono
+                    tanto como desde la tablet de la cocina. */}
                 <input
                   id="actual"
                   type={verClaves ? "text" : "password"}
                   value={actual}
                   onChange={(e) => setActual(e.target.value)}
                   autoComplete="current-password"
-                  className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full rounded-lg dash-bg-surface px-3 py-2 text-base dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
               </div>
@@ -212,10 +219,10 @@ export default function CuentaPage() {
                   onChange={(e) => setNueva(e.target.value)}
                   autoComplete="new-password"
                   aria-describedby="ayuda-nueva"
-                  className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full rounded-lg dash-bg-surface px-3 py-2 text-base dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
-                <p id="ayuda-nueva" className="text-[11px] mt-1 leading-relaxed">
+                <p id="ayuda-nueva" className="text-xs mt-1 leading-relaxed">
                   {cortaDemas ? (
                     <span className="text-red-400 font-medium">
                       Muy corta: al menos {LARGO_MINIMO} caracteres.
@@ -240,13 +247,13 @@ export default function CuentaPage() {
                   value={confirmacion}
                   onChange={(e) => setConfirmacion(e.target.value)}
                   autoComplete="new-password"
-                  className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full rounded-lg dash-bg-surface px-3 py-2 text-base dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
                 {/* Se pide dos veces por una razón concreta: un error de tipeo en
                     una clave que no se ve deja al dueño fuera de su propio panel. */}
                 {noCoinciden && (
-                  <p className="text-[11px] text-red-400 font-medium mt-1">Las dos no coinciden.</p>
+                  <p className="text-xs text-red-400 font-medium mt-1">Las dos no coinciden.</p>
                 )}
               </div>
 
@@ -254,13 +261,13 @@ export default function CuentaPage() {
                   tiene dos tablets abiertas, esto decide si lo hace ahora o
                   entre turnos. */}
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
-                <p className="text-[11px] text-amber-200 leading-relaxed">
+                <p className="text-xs text-amber-200 leading-relaxed">
                   Al cambiarla, las demás pantallas donde esta cuenta esté abierta se van a cerrar y
                   habrá que entrar de nuevo. Si estás en pleno servicio, mejor hazlo después.
                 </p>
               </div>
 
-              <label className="flex items-center gap-2 text-[11px] dash-text-muted cursor-pointer">
+              <label className="flex items-center gap-2 text-xs dash-text-muted cursor-pointer">
                 <input
                   type="checkbox"
                   checked={verClaves}
@@ -280,7 +287,7 @@ export default function CuentaPage() {
                 <button
                   type="submit"
                   disabled={!puedeGuardar}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold btn-primario hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-40 disabled:hover:scale-100"
                 >
                   {guardando ? "Guardando…" : "Cambiar contraseña"}
                 </button>

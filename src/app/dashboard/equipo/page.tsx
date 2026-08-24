@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { NavPanel } from "@/app/dashboard/nav-panel";
+import { useConfirmar } from "@/componentes/usar-confirmar";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 import { DESCRIPCION_ROL, NOMBRE_ROL, ROLES, type Rol } from "@/lib/roles";
 
@@ -29,6 +30,7 @@ type Miembro = {
 
 export default function EquipoPage() {
   const { cargando: cargandoRol, rol, localId, localNombre, locales, esPlatformAdmin } = useRolLocal();
+  const { confirmar, dialogo } = useConfirmar();
 
   const [equipo, setEquipo] = useState<Miembro[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -135,11 +137,16 @@ export default function EquipoPage() {
 
   async function sacar(m: Miembro) {
     if (!localId) return;
-    const confirmado = window.confirm(
-      `¿Sacar a ${m.email} de ${localNombre ?? "el local"}?\n\n` +
+    // La misma advertencia de siempre, repartida: la pregunta arriba y la
+    // consecuencia abajo. El salto de línea doble que pedía `window.confirm()`
+    // ya no hace falta: el diálogo separa título y detalle por su cuenta.
+    const confirmado = await confirmar({
+      titulo: `¿Sacar a ${m.email} de ${localNombre ?? "el local"}?`,
+      detalle:
         "Deja de ver los pedidos de inmediato. Su cuenta no se borra: si trabaja " +
-        "en otro local, sigue entrando ahí."
-    );
+        "en otro local, sigue entrando ahí.",
+      destructivo: true,
+    });
     if (!confirmado) return;
 
     setOcupado(m.user_id);
@@ -164,7 +171,7 @@ export default function EquipoPage() {
   const claveCorta = clave.length > 0 && clave.length < LARGO_MINIMO_CLAVE;
 
   return (
-    <div className="flex flex-col min-h-screen dashboard-dark">
+    <div className="flex flex-col min-h-dvh dashboard-dark">
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
@@ -189,7 +196,7 @@ export default function EquipoPage() {
                   {localNombre ?? "Equipo"}
                 </h1>
               )}
-              <p className="text-[11px] dash-text-muted">Garzón Digital · Equipo</p>
+              <p className="text-xs dash-text-muted">Garzón Digital · Equipo</p>
             </div>
           </div>
 
@@ -215,14 +222,17 @@ export default function EquipoPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="font-bold dash-text-primary text-base">Quién trabaja acá</h2>
-                <p className="text-[11px] dash-text-muted mt-1 leading-relaxed max-w-lg">
+                <p className="text-xs dash-text-muted mt-1 leading-relaxed max-w-lg">
                   Cada persona entra con su propia cuenta. El rol es de este local: si alguien
                   trabaja en dos, puede ser dueño en uno y personal en el otro.
                 </p>
               </div>
+              {/* Abre y cierra el formulario, no da de alta a nadie: si fuera
+                  primario, con el formulario abierto habría dos naranjas
+                  compitiendo y el de abajo es el que crea la cuenta. */}
               <button
                 onClick={() => setAbrirAlta((v) => !v)}
-                className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95 transition-transform"
+                className="shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold btn-secundario hover:scale-[1.02] active:scale-95 transition-transform"
               >
                 {abrirAlta ? "Cancelar" : "Agregar"}
               </button>
@@ -243,7 +253,7 @@ export default function EquipoPage() {
                     required
                     className="w-full rounded-lg dash-bg-surface px-3 py-2 text-sm dash-text-primary outline-none focus:ring-2 focus:ring-orange-500"
                   />
-                  <p className="text-[11px] dash-text-muted mt-1">
+                  <p className="text-xs dash-text-muted mt-1">
                     No hace falta que sea un correo real ni que lo revise: es su nombre de usuario
                     para entrar. No existe &quot;olvidé mi contraseña&quot;, así que si se pierde
                     tenés que darle una nueva vos.
@@ -273,7 +283,7 @@ export default function EquipoPage() {
                     </button>
                   </div>
                   {claveCorta && (
-                    <p className="text-[11px] text-amber-400 mt-1">
+                    <p className="text-xs text-amber-400 mt-1">
                       Necesita al menos {LARGO_MINIMO_CLAVE} caracteres.
                     </p>
                   )}
@@ -285,11 +295,13 @@ export default function EquipoPage() {
                     {ROLES.map((r) => (
                       <label
                         key={r}
+                        htmlFor={`rol-${r}`}
                         className={`flex gap-3 items-start rounded-xl border-2 p-3 cursor-pointer transition-colors ${
                           rolNuevo === r ? "border-orange-500 bg-orange-500/10" : "border-stone-800"
                         }`}
                       >
                         <input
+                          id={`rol-${r}`}
                           type="radio"
                           name="rol"
                           value={r}
@@ -301,7 +313,7 @@ export default function EquipoPage() {
                           <span className="block text-sm font-semibold dash-text-primary">
                             {NOMBRE_ROL[r]}
                           </span>
-                          <span className="block text-[11px] dash-text-muted leading-relaxed">
+                          <span className="block text-xs dash-text-muted leading-relaxed">
                             {DESCRIPCION_ROL[r]}
                           </span>
                         </span>
@@ -313,7 +325,7 @@ export default function EquipoPage() {
                 <button
                   type="submit"
                   disabled={ocupado === "alta" || claveCorta}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-transform"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-bold btn-primario disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-transform"
                 >
                   {ocupado === "alta" ? "Creando…" : "Crear la cuenta"}
                 </button>
@@ -321,13 +333,19 @@ export default function EquipoPage() {
             )}
           </div>
 
+          {/* El alta cierra el formulario al terminar, así que el resultado
+              aparece lejos de donde estaba el foco. Sin anunciarlo, quien usa
+              lector de pantalla no se entera de que la cuenta se creó —ni de la
+              contraseña que hay que anotar— y vuelve a apretar "Agregar".
+              El aviso es "polite" (buena noticia, puede esperar el turno); el
+              error es `alert` porque interrumpe: nada de lo pedido pasó. */}
           {aviso && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+            <div aria-live="polite" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
               <p className="text-xs text-emerald-300 leading-relaxed">{aviso}</p>
             </div>
           )}
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
+            <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
               <p className="text-xs text-red-300 leading-relaxed">{error}</p>
             </div>
           )}
@@ -343,9 +361,9 @@ export default function EquipoPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-semibold dash-text-primary truncate">
                       {m.email}
-                      {m.es_vos && <span className="text-[11px] dash-text-muted font-normal"> · vos</span>}
+                      {m.es_vos && <span className="text-2xs dash-text-muted font-normal"> · vos</span>}
                     </p>
-                    <p className="text-[11px] dash-text-muted mt-0.5">{DESCRIPCION_ROL[m.rol]}</p>
+                    <p className="text-xs dash-text-muted mt-0.5">{DESCRIPCION_ROL[m.rol]}</p>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -374,12 +392,14 @@ export default function EquipoPage() {
             )}
           </div>
 
-          <p className="text-[11px] dash-text-muted leading-relaxed px-1">
+          <p className="text-xs dash-text-muted leading-relaxed px-1">
             El local necesita siempre al menos un dueño: si intentás degradar o sacar al último, el
             sistema no te va a dejar. Nombrá a otro primero.
           </p>
         </div>
       </main>
+
+      {dialogo}
     </div>
   );
 }
