@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { getMenuPublico } from "@/lib/menu-publico";
 import { variablesDeMarca } from "@/lib/color";
@@ -49,14 +49,39 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
     description: descripcion,
     // El caso real de uso: el dueño manda el link del menú por WhatsApp o lo
     // pone en su Instagram. Sin esto se veía el metadata genérico de Next.
+    //
+    // `images` NO va acá: lo pone `opengraph-image.tsx`, que compone una portada
+    // de 1200x630 con el nombre y los colores del local. El logo suelto que había
+    // antes llegaba recortado (es cuadrado) y el local sin logo no tenía imagen
+    // ninguna. Declararlo en los dos lados emitiría dos `og:image`.
     openGraph: {
       title: `${local.nombre} — Menú`,
       description: descripcion,
       type: "website",
-      images: local.logo_url ? [{ url: local.logo_url }] : undefined,
     },
     robots: { index: true, follow: true },
   };
+}
+
+/**
+ * El color de la barra del navegador, por local.
+ *
+ * En el layout raíz `themeColor` está fijo en el naranja de la plataforma, así
+ * que la carta de un local con marca azul pintaba de naranja el borde del
+ * navegador en Android. Acá se sobrescribe con el color del dueño, que es de
+ * quien es esta pantalla.
+ */
+export async function generateViewport({ params }: Pick<Props, "params">): Promise<Viewport> {
+  const { slug } = await params;
+
+  let menu = null;
+  try {
+    menu = await getMenuPublico(slug);
+  } catch {
+    menu = null;
+  }
+
+  return { themeColor: variablesDeMarca(menu?.local.color_primario, menu?.local.color_acento)["--brand"] };
 }
 
 export default async function LocalPage({ params, searchParams }: Props) {

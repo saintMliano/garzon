@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "iconos": "node scripts/generar-iconos.mjs",
     "db:backup": "node scripts/respaldo-db.mjs",
     "db:push": "node scripts/con-env.mjs npx supabase db push",
     "db:diff": "node scripts/con-env.mjs npx supabase db diff --linked",
