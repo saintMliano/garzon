@@ -2,6 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import {
+  ArrowDownTrayIcon,
+  ArrowRightOnRectangleIcon,
+  DocumentTextIcon,
+  ExclamationTriangleIcon,
+  KeyIcon,
+} from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { OrderStatus } from "@/types/database";
@@ -289,6 +297,104 @@ function duracion(segundos: number): string {
 
 function campoCsv(valor: string): string {
   return `"${valor.replace(/"/g, '""')}"`;
+}
+
+// ============================================================
+// Esqueleto de carga
+// ============================================================
+
+/**
+ * Alturas de las barras del gráfico falso. Van escritas y no sorteadas con
+ * `Math.random()` a propósito: el servidor y el navegador tienen que pintar lo
+ * mismo o React tira un error de hidratación. Además, un perfil fijo con altos
+ * y bajos se lee como un gráfico y no como una escalera.
+ */
+const ALTURAS_ESQUELETO = [38, 62, 45, 88, 54, 71, 33, 96, 60, 44, 79, 50, 67, 41, 85];
+
+/**
+ * Esta pantalla tiene una forma que se conoce antes de tener un solo dato:
+ * cifras arriba, desglose de cuatro, gráfico y tabla. Dibujarla vacía y
+ * reemplazarla por los números evita que todo salte cuando llegan las RPC,
+ * que es lo que pasaba con el aro girando en el medio de una tarjeta chica.
+ *
+ * La animación es `animate-pulse` de CSS y nada más: la regla global de
+ * `globals.css` la deja quieta cuando el sistema pide movimiento reducido, y
+ * eso no funcionaría si el latido lo manejara JS.
+ */
+function EsqueletoReporte() {
+  return (
+    <div role="status" aria-busy="true" className="space-y-4">
+      <span className="sr-only">Calculando el período…</span>
+
+      {/* Cifras principales: mismo reparto 2fr/1fr que el contenido real, para
+          que la venta total no se corra de lugar al aparecer. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4" aria-hidden="true">
+        <div className="dash-card rounded-2xl border-2 p-5 md:p-6">
+          <div className="h-3 w-24 rounded dash-bg-surface animate-pulse" />
+          <div className="h-12 md:h-14 w-3/4 rounded-lg dash-bg-surface animate-pulse mt-3" />
+          <div className="h-3 w-40 rounded dash-bg-surface animate-pulse mt-3" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+          {[0, 1].map((i) => (
+            <div key={i} className="dash-card rounded-2xl border-2 p-5">
+              <div className="h-3 w-20 rounded dash-bg-surface animate-pulse" />
+              <div className="h-7 w-28 rounded dash-bg-surface animate-pulse mt-2" />
+              <div className="h-3 w-32 rounded dash-bg-surface animate-pulse mt-2" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Desglose del período */}
+      <div className="dash-card rounded-2xl border-2 p-4" aria-hidden="true">
+        <div className="h-3.5 w-40 rounded dash-bg-surface animate-pulse mb-3" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl dash-bg-surface px-4 py-3 border-l-4 border-stone-700">
+              <div className="h-3 w-20 rounded bg-stone-700/60 animate-pulse" />
+              <div className="h-6 w-24 rounded bg-stone-700/60 animate-pulse mt-2" />
+              <div className="h-3 w-full rounded bg-stone-700/60 animate-pulse mt-2" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Gráfico de ventas: la altura `h-44` es la misma de las barras reales. */}
+      <div className="dash-card rounded-2xl border-2 p-4" aria-hidden="true">
+        <div className="flex items-baseline justify-between mb-4">
+          <div className="h-3.5 w-36 rounded dash-bg-surface animate-pulse" />
+          <div className="h-3 w-24 rounded dash-bg-surface animate-pulse" />
+        </div>
+        <div className="flex items-end gap-1 md:gap-1.5 h-44">
+          {ALTURAS_ESQUELETO.map((alto, i) => (
+            <div
+              key={i}
+              className="flex-1 min-w-[14px] rounded-t-md dash-bg-surface animate-pulse"
+              style={{ height: `${alto}%` }}
+            />
+          ))}
+        </div>
+        <div className="h-3 w-full rounded dash-bg-surface animate-pulse mt-3" />
+      </div>
+
+      {/* Tabla de productos: cinco filas alcanzan para reservar el alto sin
+          prometer diez productos que quizá no existan en el período. */}
+      <div className="dash-card rounded-2xl border-2 p-4" aria-hidden="true">
+        <div className="h-3.5 w-44 rounded dash-bg-surface animate-pulse mb-4" />
+        <div className="space-y-3">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="h-3.5 flex-1 rounded dash-bg-surface animate-pulse" />
+              <div className="h-2 w-[35%] rounded-full dash-bg-surface animate-pulse" />
+              <div className="h-3.5 w-12 rounded dash-bg-surface animate-pulse" />
+              <div className="h-3.5 w-20 rounded dash-bg-surface animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function ReportesPage() {
@@ -601,7 +707,9 @@ export default function ReportesPage() {
     return (
       <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
-          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
+          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center">
+            <ExclamationTriangleIcon aria-hidden className="w-7 h-7 text-amber-400" />
+          </div>
           <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
           <p className="text-stone-500 text-sm">Tu cuenta no está vinculada a ningún local. Contacta al administrador.</p>
           <button
@@ -624,9 +732,15 @@ export default function ReportesPage() {
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-              🍔
-            </div>
+            {/* Misma marca que el favicon y las imagenes de compartir. */}
+            <Image
+              src="/icon-192.png"
+              alt=""
+              aria-hidden
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-xl shadow-lg shadow-orange-500/20"
+            />
             <div className="min-w-0">
               {localesList.length > 1 ? (
                 <div className="flex items-center gap-2">
@@ -657,16 +771,18 @@ export default function ReportesPage() {
               href="/dashboard/cuenta"
               className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
               title="Tu cuenta"
+              aria-label="Tu cuenta"
             >
-              🔑
+              <KeyIcon aria-hidden className="w-5 h-5 dash-text-secondary" />
             </Link>
 
             <button
               onClick={handleSignOut}
               className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
               title="Cerrar sesión"
+              aria-label="Cerrar sesión"
             >
-              🚪
+              <ArrowRightOnRectangleIcon aria-hidden className="w-5 h-5 dash-text-secondary" />
             </button>
           </div>
         </div>
@@ -710,7 +826,7 @@ export default function ReportesPage() {
                 className="px-3 py-2 rounded-xl text-xs font-semibold dash-bg-surface dash-text-primary hover:opacity-80 transition-opacity disabled:opacity-40"
                 title="Descargar el detalle de pedidos del período"
               >
-                {exportando ? "Preparando…" : "⬇ Exportar CSV"}
+                {exportando ? "Preparando…" : <span className="inline-flex items-center gap-1.5"><ArrowDownTrayIcon aria-hidden className="w-4 h-4" />Exportar CSV</span>}
               </button>
             </div>
 
@@ -756,16 +872,10 @@ export default function ReportesPage() {
               </p>
             </div>
           ) : loading ? (
-            <div className="dash-card rounded-2xl border-2 p-16 flex flex-col items-center gap-4">
-              <div className="relative w-12 h-12">
-                <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
-                <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
-              </div>
-              <p className="text-stone-500 text-sm font-medium">Calculando el período...</p>
-            </div>
+            <EsqueletoReporte />
           ) : errorMsg ? (
             <div className="dash-card rounded-2xl border-2 p-10 text-center space-y-3">
-              <p className="text-red-300 text-sm font-semibold">⚠️ {errorMsg}</p>
+              <p className="text-red-300 text-sm font-semibold inline-flex items-center gap-1.5"><ExclamationTriangleIcon aria-hidden className="w-4 h-4 shrink-0" />{errorMsg}</p>
               <button
                 onClick={() => { setErrorCarga(null); setIntento((n) => n + 1); }}
                 className="px-4 py-2 rounded-xl dash-bg-surface dash-text-secondary text-sm font-semibold hover:opacity-80 transition-opacity"
@@ -775,36 +885,50 @@ export default function ReportesPage() {
             </div>
           ) : sinPedidos ? (
             <div className="dash-card rounded-2xl border-2 p-16 text-center">
-              <div className="text-3xl mb-3">🧾</div>
+              <DocumentTextIcon aria-hidden className="w-10 h-10 mx-auto mb-3 dash-text-muted" />
               <p className="dash-text-secondary text-sm font-semibold">Sin pedidos en este período</p>
               <p className="dash-text-muted text-xs mt-1">Prueba con otro rango de fechas.</p>
             </div>
           ) : resumen ? (
             <>
-              {/* ===== TARJETAS PRINCIPALES ===== */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="dash-card rounded-2xl border-2 p-5">
+              {/* ===== TARJETAS PRINCIPALES =====
+                  Las tres cifras estaban en tres columnas idénticas, y eso decía
+                  que pesan lo mismo. No es cierto: la venta total es el número
+                  por el que el dueño abre esta pantalla, y los pedidos y el
+                  ticket son el contexto para leerla. La venta se lleva dos
+                  tercios del ancho y una cifra que se ve desde lejos; las otras
+                  dos se apilan al lado, más chicas.
+
+                  Es retícula y no flexbox con porcentajes porque las dos
+                  columnas tienen que quedar igual de altas sin que nadie calcule
+                  nada, y porque en móvil una sola columna es cambiar un número. */}
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+                <div className="dash-card rounded-2xl border-2 p-5 md:p-6 flex flex-col justify-center">
                   <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Venta total</p>
-                  <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
+                  <p className="text-4xl md:text-6xl font-bold dash-text-primary tabular-nums mt-2 leading-none">
                     {formatPrice(resumen.venta_total)}
                   </p>
-                  <p className="text-xs dash-text-muted mt-1">No incluye pedidos rechazados.</p>
+                  <p className="text-xs dash-text-muted mt-3">No incluye pedidos rechazados.</p>
                 </div>
 
-                <div className="dash-card rounded-2xl border-2 p-5">
-                  <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Pedidos</p>
-                  <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
-                    {resumen.pedidos_total.toLocaleString("es-CL")}
-                  </p>
-                  <p className="text-xs dash-text-muted mt-1">Total recibidos en el período.</p>
-                </div>
+                {/* En tablet apaisada estas dos van lado a lado; recién en `lg`,
+                    cuando la venta ya tiene su ancho, se apilan en la columna. */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                  <div className="dash-card rounded-2xl border-2 p-5">
+                    <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Pedidos</p>
+                    <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
+                      {resumen.pedidos_total.toLocaleString("es-CL")}
+                    </p>
+                    <p className="text-xs dash-text-muted mt-1">Total recibidos en el período.</p>
+                  </div>
 
-                <div className="dash-card rounded-2xl border-2 p-5">
-                  <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Ticket promedio</p>
-                  <p className="text-3xl md:text-4xl font-bold dash-text-primary tabular-nums mt-2">
-                    {formatPrice(resumen.ticket_promedio)}
-                  </p>
-                  <p className="text-xs dash-text-muted mt-1">Promedio por pedido no rechazado.</p>
+                  <div className="dash-card rounded-2xl border-2 p-5">
+                    <p className="text-xs font-semibold dash-text-muted uppercase tracking-wide">Ticket promedio</p>
+                    <p className="text-2xl font-bold dash-text-primary tabular-nums mt-1">
+                      {formatPrice(resumen.ticket_promedio)}
+                    </p>
+                    <p className="text-xs dash-text-muted mt-1">Promedio por pedido no rechazado.</p>
+                  </div>
                 </div>
               </div>
 
@@ -1056,7 +1180,7 @@ export default function ReportesPage() {
           role="alert"
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm"
         >
-          ⚠️ {errorExport}
+          <span className="inline-flex items-center gap-1.5"><ExclamationTriangleIcon aria-hidden className="w-4 h-4 shrink-0" />{errorExport}</span>
         </button>
       )}
     </div>

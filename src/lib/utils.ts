@@ -9,13 +9,25 @@ export function normalizar(s: string): string {
 }
 
 /** Map order status to display label */
+/**
+ * La etiqueta del estado, en texto y nada más.
+ *
+ * Traía el emoji incrustado (`"🔥 Preparando"`). Eso lo volvía intocable desde
+ * la pantalla: el dibujo llegaba pegado a la palabra, así que no se podía teñir
+ * con el color del local, no acompañaba al tamaño del texto y lo dibujaba el
+ * sistema operativo de cada comensal. Y como es una función de `lib/`, el emoji
+ * viajaba a cualquier pantalla que la llamara sin que esa pantalla lo decidiera.
+ *
+ * El icono ahora lo pone quien renderiza —`order-status.tsx` ya tiene el suyo
+ * por paso—, que es donde se sabe de qué tamaño y de qué color va.
+ */
 export function statusLabel(status: string): string {
     const labels: Record<string, string> = {
-        nuevo: "🆕 Nuevo",
-        aceptado: "✅ Aceptado",
-        preparando: "🔥 Preparando",
-        listo: "🔔 Listo",
-        entregado: "📦 Entregado",
+        nuevo: "Nuevo",
+        aceptado: "Aceptado",
+        preparando: "Preparando",
+        listo: "Listo",
+        entregado: "Entregado",
     };
     return labels[status] ?? status;
 }

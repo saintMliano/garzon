@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { BuildingStorefrontIcon, KeyIcon } from "@heroicons/react/24/outline";
 import { NavPanel } from "@/app/dashboard/nav-panel";
 import { useConfirmar } from "@/componentes/usar-confirmar";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
@@ -175,8 +176,10 @@ export default function EquipoPage() {
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-              🍔
+            {/* Sobre el gradiente naranja el trazo va `stone-900`: es lo que
+                devuelve `textoSobre()` para ese fondo. */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <BuildingStorefrontIcon className="w-5 h-5 text-stone-900" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               {locales.length > 1 ? (
@@ -203,10 +206,11 @@ export default function EquipoPage() {
           <div className="flex items-center gap-2.5 md:gap-3 flex-wrap justify-end min-w-0">
             <Link
               href="/dashboard/cuenta"
-              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center hover:opacity-80 transition-opacity"
               title="Tu cuenta"
+              aria-label="Tu cuenta"
             >
-              🔑
+              <KeyIcon className="w-5 h-5 dash-text-secondary" aria-hidden="true" />
             </Link>
           </div>
         </div>

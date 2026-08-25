@@ -4,12 +4,63 @@ import type React from "react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import {
+  BuildingStorefrontIcon,
+  ClockIcon,
+  MagnifyingGlassIcon,
+  MapPinIcon,
+  MegaphoneIcon,
+  PlusIcon,
+  ShoppingCartIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { useCart, type CambiosCarrito } from "@/lib/cart-context";
 import { formatPrice, normalizar } from "@/lib/utils";
 import type { LocalPublico, Categoria, Producto } from "@/types/database";
 import CartSheet from "./cart-sheet";
 import CheckoutModal from "./checkout-modal";
 import OrderStatus from "./order-status";
+
+/**
+ * Artículos que no distinguen nada: "El Lalo" y "El Rincón" darían los dos una
+ * "E". La inicial útil es la de la primera palabra que sí nombra al local.
+ */
+const ARTICULOS = new Set(["el", "la", "los", "las", "le", "the"]);
+
+/**
+ * ¿Sirve este carácter como inicial? Vale si tiene mayúscula y minúscula
+ * distintas —o sea, si es una letra en cualquier alfabeto con caja— o si es un
+ * dígito ("3 Monos"). Deja afuera comillas, emoji y signos, que dibujados
+ * grandes dentro del cuadrito no dicen nada.
+ */
+function sirveDeInicial(c: string): boolean {
+  return c.toLocaleLowerCase("es") !== c.toLocaleUpperCase("es") || /[0-9]/.test(c);
+}
+
+/**
+ * Inicial para el marcador de los locales que todavía no subieron logo.
+ *
+ * Va NFC antes de cortar porque el nombre puede venir guardado descompuesto ("A"
+ * + tilde suelta) y partirlo por índice dejaría la tilde huérfana. Recorre
+ * palabra por palabra y carácter por carácter en vez de tomar el primero y
+ * listo: "El Lalo" tiene que dar "L" y no una "E" que no distingue nada, y
+ * "🍔 Burger" tiene que dar "B" en lugar de rendirse en el emoji.
+ *
+ * Si nada sirve devuelve "" y la pantalla cae al icono de local, que es mejor
+ * que un cuadrito con un tofu adentro.
+ */
+function inicialDe(nombre: string): string {
+  const palabras = nombre.normalize("NFC").trim().split(/\s+/).filter(Boolean);
+  // Las palabras sin artículo primero, y todas después como red de contención:
+  // un local que se llama solo "El" igual tiene que mostrar algo.
+  const orden = [...palabras.filter((p) => !ARTICULOS.has(normalizar(p))), ...palabras];
+  for (const palabra of orden) {
+    for (const c of palabra) {
+      if (sirveDeInicial(c)) return c.toLocaleUpperCase("es");
+    }
+  }
+  return "";
+}
 
 /**
  * Parte interactiva del menú. Los datos llegan por props desde el Server
@@ -35,6 +86,7 @@ export default function MenuCliente({
   // local— pero no se puede pedir. Esto solo ordena la pantalla; el corte de
   // verdad lo hace `crear_pedido` en el servidor.
   const pedidosHabilitados = local.pedidos_habilitados;
+  const inicial = inicialDe(local.nombre);
   const [activeCategory, setActiveCategory] = useState<string | null>(categorias[0]?.id ?? null);
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -225,9 +277,18 @@ export default function MenuCliente({
         <div className="max-w-lg mx-auto px-4 pt-3 pb-2">
           <div className="flex items-center gap-3">
             {/* Local branding */}
+            {/* Sin logo cargado va la inicial sobre el color del local, no una
+                hamburguesa: el único cliente de hoy es un café y la carta se
+                abría con el dibujo de otro rubro. La pareja `--brand` /
+                `--brand-texto` ya viene resuelta por contraste desde el
+                servidor, así que el marcador se lee con cualquier marca. */}
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-white/60 overflow-hidden"
-              style={{ background: `${local.color_primario}18` }}
+              style={
+                local.logo_url
+                  ? { background: `${local.color_primario}18` }
+                  : { background: "var(--brand)", color: "var(--brand-texto)" }
+              }
             >
               {local.logo_url ? (
                 <Image
@@ -237,8 +298,12 @@ export default function MenuCliente({
                   height={48}
                   className="w-full h-full object-cover rounded-2xl"
                 />
+              ) : inicial ? (
+                /* El nombre completo está en el `h1` de al lado: repetir la
+                   letra suelta solo agrega ruido a un lector de pantalla. */
+                <span aria-hidden className="font-black leading-none select-none">{inicial}</span>
               ) : (
-                "🍔"
+                <BuildingStorefrontIcon aria-hidden className="w-6 h-6" />
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -246,10 +311,7 @@ export default function MenuCliente({
                 {local.nombre}
               </h1>
               <p className="text-xs text-stone-500 truncate flex items-center gap-1">
-                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <MapPinIcon aria-hidden className="w-3 h-3 shrink-0" />
                 {local.direccion}
               </p>
               {local.slogan && (
@@ -260,12 +322,13 @@ export default function MenuCliente({
             {pedidosHabilitados && itemCount > 0 && (
               <button
                 onClick={() => setShowCart(true)}
+                // El botón es solo el icono: sin nombre, un lector de pantalla
+                // anunciaba nada más que el número del globito.
+                aria-label={`Ver pedido (${itemCount} producto${itemCount !== 1 ? "s" : ""})`}
                 className="relative w-11 h-11 rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-transform"
                 style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8l-1.35-6.73M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-                </svg>
+                <ShoppingCartIcon aria-hidden className="w-5 h-5" />
                 <span
                   className="absolute -top-1 -right-1 w-5 h-5 bg-white text-xs font-black rounded-full flex items-center justify-center shadow-sm animate-pop"
                   style={{ color: "var(--accent-legible)" }}
@@ -278,9 +341,7 @@ export default function MenuCliente({
 
           {/* Search bar */}
           <div className="mt-3 relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <MagnifyingGlassIcon aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             {/* `text-base` y no `text-sm`: por debajo de 16px iOS hace zoom solo
                 al enfocar el buscador y deja la carta descuadrada, con el header
                 pegajoso tapando media pantalla. */}
@@ -294,8 +355,11 @@ export default function MenuCliente({
             {search && (
               <button
                 onClick={() => setSearch("")}
+                aria-label="Limpiar la búsqueda"
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 text-xs"
-              >✕</button>
+              >
+                <XMarkIcon aria-hidden className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
         </div>
@@ -335,7 +399,7 @@ export default function MenuCliente({
         <div className="max-w-lg mx-auto w-full px-4 pt-3">
           <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3">
             <div className="flex items-start gap-2">
-              <span className="text-base leading-none mt-0.5">🕐</span>
+              <ClockIcon aria-hidden className="w-5 h-5 shrink-0 mt-0.5 text-stone-400" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-stone-800">
                   Por ahora no se puede pedir desde acá
@@ -357,7 +421,7 @@ export default function MenuCliente({
         <div className="max-w-lg mx-auto w-full px-4 pt-3">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 animate-fade-in">
             <div className="flex items-start gap-2">
-              <span className="text-base leading-none mt-0.5">📣</span>
+              <MegaphoneIcon aria-hidden className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-amber-900">
                   Actualizamos tu pedido con la carta de hoy
@@ -380,7 +444,7 @@ export default function MenuCliente({
                 className="text-amber-500 hover:text-amber-700 text-sm font-bold px-1"
                 aria-label="Cerrar aviso"
               >
-                ✕
+                <XMarkIcon aria-hidden className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -411,7 +475,7 @@ export default function MenuCliente({
               ))}
               {filteredProducts.length === 0 && (
                 <div className="text-center py-16 text-stone-400">
-                  <span className="text-4xl block mb-3">🔍</span>
+                  <MagnifyingGlassIcon aria-hidden className="w-10 h-10 mx-auto mb-3" />
                   <p className="text-sm">No encontramos ese producto</p>
                 </div>
               )}
@@ -576,12 +640,13 @@ function ProductCard({
       ) : (
         <button
           onClick={onAdd}
+          // Con diez tarjetas en pantalla, diez botones que dicen solo "más" no
+          // le sirven a nadie que no esté mirando: el nombre va en el botón.
+          aria-label={`Agregar ${prod.nombre}`}
           className="w-10 h-10 rounded-xl active:scale-90 flex items-center justify-center transition-all shadow-sm"
           style={{ background: "var(--brand)", color: "var(--brand-texto)" }}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
+          <PlusIcon aria-hidden className="w-5 h-5" />
         </button>
       )}
     </div>

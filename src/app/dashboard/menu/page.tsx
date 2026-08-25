@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  ArrowRightOnRectangleIcon,
+  BuildingStorefrontIcon,
+  ExclamationTriangleIcon,
+  KeyIcon,
+  PencilSquareIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import type { Categoria, Producto } from "@/types/database";
@@ -382,7 +390,9 @@ export default function MenuPage() {
     return (
       <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
-          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
+          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center">
+            <ExclamationTriangleIcon className="w-7 h-7 text-amber-400" aria-hidden="true" />
+          </div>
           <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
           <p className="text-stone-500 text-sm">Tu cuenta no está vinculada a ningún local. Contacta al administrador.</p>
           <button
@@ -403,8 +413,11 @@ export default function MenuPage() {
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-              🍔
+            {/* El logo va sobre el gradiente naranja, así que el trazo es
+                `stone-900` por la misma razón que el texto de los primarios: es
+                lo que devuelve `textoSobre()` para ese fondo. */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <BuildingStorefrontIcon className="w-5 h-5 text-stone-900" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               {localesList.length > 1 ? (
@@ -434,18 +447,20 @@ export default function MenuPage() {
                 local: la contraseña es de la persona, no del local. */}
             <Link
               href="/dashboard/cuenta"
-              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center hover:opacity-80 transition-opacity"
               title="Tu cuenta"
+              aria-label="Tu cuenta"
             >
-              🔑
+              <KeyIcon className="w-5 h-5 dash-text-secondary" aria-hidden="true" />
             </Link>
 
             <button
               onClick={handleSignOut}
-              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center hover:opacity-80 transition-opacity"
               title="Cerrar sesión"
+              aria-label="Cerrar sesión"
             >
-              🚪
+              <ArrowRightOnRectangleIcon className="w-5 h-5 dash-text-secondary" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -498,6 +513,10 @@ export default function MenuPage() {
                       cat.id === selectedCategoriaId ? "dash-bg-surface" : "hover:dash-bg-surface"
                     }`}
                   >
+                    {/* Este emoji NO es un icono de interfaz: lo elige el dueño
+                        para su categoría y viaja a la carta del comensal por
+                        `get_menu_publico`. Es contenido, y se dibuja tal cual
+                        lo escribió. */}
                     <span className="text-lg">{cat.icono || "🍽️"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold dash-text-primary text-sm truncate">{cat.nombre}</p>
@@ -509,17 +528,19 @@ export default function MenuPage() {
                     <div className={`flex items-center gap-1 opacity-0 transition-opacity ${puedeEditar ? "group-hover:opacity-100" : "hidden"}`}>
                       <button
                         onClick={(e) => { e.stopPropagation(); openEditCategoria(cat); }}
-                        className="w-7 h-7 rounded-lg dash-bg-surface flex items-center justify-center text-xs hover:opacity-80"
+                        className="w-7 h-7 rounded-lg dash-bg-surface flex items-center justify-center hover:opacity-80"
                         title="Editar categoría"
+                        aria-label={`Editar categoría ${cat.nombre}`}
                       >
-                        ✏️
+                        <PencilSquareIcon className="w-4 h-4 dash-text-secondary" aria-hidden="true" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteCategoria(cat); }}
-                        className="w-7 h-7 rounded-lg dash-bg-surface flex items-center justify-center text-xs hover:opacity-80"
+                        className="w-7 h-7 rounded-lg dash-bg-surface flex items-center justify-center hover:opacity-80"
                         title="Eliminar categoría"
+                        aria-label={`Eliminar categoría ${cat.nombre}`}
                       >
-                        🗑️
+                        <TrashIcon className="w-4 h-4 dash-text-secondary" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -593,17 +614,19 @@ export default function MenuPage() {
                     <div className={`items-center gap-1 ${puedeEditar ? "flex" : "hidden"}`}>
                       <button
                         onClick={() => openEditProducto(prod)}
-                        className="w-8 h-8 rounded-lg dash-bg-surface flex items-center justify-center text-xs hover:opacity-80"
+                        className="w-8 h-8 rounded-lg dash-bg-surface flex items-center justify-center hover:opacity-80"
                         title="Editar producto"
+                        aria-label={`Editar ${prod.nombre}`}
                       >
-                        ✏️
+                        <PencilSquareIcon className="w-4 h-4 dash-text-secondary" aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => deleteProducto(prod)}
-                        className="w-8 h-8 rounded-lg dash-bg-surface flex items-center justify-center text-xs hover:opacity-80"
+                        className="w-8 h-8 rounded-lg dash-bg-surface flex items-center justify-center hover:opacity-80"
                         title="Eliminar producto"
+                        aria-label={`Eliminar ${prod.nombre}`}
                       >
-                        🗑️
+                        <TrashIcon className="w-4 h-4 dash-text-secondary" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -839,9 +862,10 @@ export default function MenuPage() {
       {errorMsg && (
         <div
           role="alert"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm"
         >
-          ⚠️ {errorMsg}
+          <ExclamationTriangleIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
+          {errorMsg}
         </div>
       )}
 

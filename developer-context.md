@@ -22,6 +22,8 @@ Lo que antes se decidía a ojo en cada pantalla ahora tiene reglas escritas, des
 - **Escala tipográfica.** La de Tailwind más `text-2xs` (11px), que es solo del panel y solo para rótulos. En la carta el piso es `text-xs` (12px), y los campos de formulario van en `text-base` (16px) para que Safari de iOS no haga zoom al enfocarlos. **No se escribe `text-[Npx]`.**
 - **Tres niveles de botón.** `btn-primario` / `btn-secundario` / `btn-terciario`, uno solo primario por pantalla o diálogo.
 - **Diálogos.** `src/componentes/modal.tsx` (rol, foco atrapado, Escape, devolución del foco) y `src/componentes/usar-confirmar.tsx`, que reemplazó a `window.confirm()`. No se abre una ventana con `fixed inset-0` a mano.
+- **Iconos.** `@heroicons/react` (`24/outline` por defecto). Antes convivían trazados copiados a mano y emoji haciendo de interfaz. **El emoji de las categorías es contenido del cliente y no se toca:** lo elige el dueño en `/dashboard/menu` y se guarda en `categorias.icono`.
+- **Tipografía.** Inter la carga `next/font/google` desde el layout, autoalojada. No vuelve a entrar por `@import` de Google Fonts.
 
 Los bloques comentados de `src/app/globals.css` tienen el detalle y el porqué de cada uno.
 
@@ -239,6 +241,70 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-24 — Auditoría de frontend, cierre: iconos, esqueletos y las últimas retículas
+
+Los nueve hallazgos que habían quedado fuera del plan de seis puntos. Con esto la
+auditoría queda cerrada: **26 de 26**.
+
+**Un solo sistema de iconos (A-12).** Convivían dos: trazados de Heroicons
+copiados a mano en `<svg>` —con `strokeWidth` alternando 2 y 2.5 sin criterio— y
+emoji haciendo de interfaz. El emoji lo dibuja el sistema operativo, así que el
+🔥 de Android no es el que se probó en el iPhone; además no se puede teñir y no
+acompaña al tamaño del texto. Ahora hay una dependencia, `@heroicons/react`.
+
+La distinción que importa y que quedó escrita en `CLAUDE.md`: **el emoji que el
+dueño elige para sus categorías es contenido del cliente**, se guarda en
+`categorias.icono`, se edita en `/dashboard/menu` y viaja por `get_menu_publico`.
+No se toca. Solo se reemplazó lo que estaba fijo en el JSX como decoración.
+
+**El logo por defecto (A-17).** Un local sin logo se veía con el emoji de
+hamburguesa. El único cliente cargado hoy es un café. Ahora es la inicial del
+local sobre `var(--brand)`, con `var(--brand-texto)` encima — neutro respecto del
+rubro y calculado por contraste. De paso, los dos headers del panel dejaron de
+usar 🍔 como marca del producto: usan el mismo archivo que el favicon.
+
+**Tipografía y navegación (A-16, A-20).** Inter dejó de pedirse con un `@import`
+de Google Fonts, que encadenaba dos descargas antes de poder pintar y no ajustaba
+las métricas del sustituto; la carga `next/font/google`, autoalojada. Y hay
+enlace de "saltar al contenido": la cabecera de la carta tiene logo, buscador y
+una fila de píldoras de categoría, así que con doce categorías eran doce paradas
+de teclado antes del primer producto, en cada carga.
+
+**Pantallas que faltaban (A-15).** `app/not-found.tsx` y `app/error.tsx`. Había
+versiones para la carta del comensal, pero cualquier ruta fuera de `/local/` caía
+en la pantalla por defecto de Next, en inglés.
+
+**Esqueleto en reportes (A-19).** Esa pantalla tiene una estructura conocida de
+antemano, así que se dibuja antes de tener los datos y el contenido no salta al
+llegar. El aro girando se quedó donde la estructura **no** se conoce (mientras se
+resuelve qué local es), que es donde sí corresponde.
+
+**Retículas (A-23).** En reportes, las tres cifras dejaron de ser tres columnas
+idénticas: la venta total ocupa dos tercios y lleva la cifra grande, porque es el
+número por el que el dueño abre la pantalla. En la landing, los cuatro pasos de
+"Cómo funciona" dejaron de ser cuatro tarjetas iguales y pasaron a ser un hilo
+numerado — el contenido *es* una secuencia, y ahora se lee como tal.
+
+**Y dos restos del defecto de contraste original**, que el barrido anterior no
+alcanzó porque no llevaban el gradiente de marca:
+
+- El botón "Reintentar" de la carta (`bg-orange-500` + `text-white`, 2,80:1) y la
+  clase muerta `.category-active`, que no usaba nadie y arrastraba `color: white`
+  sobre el color del local.
+- **Las columnas del Kanban.** Los contadores y los botones de avance llevaban
+  `text-white` sobre los gradientes de columna, y en siete de los ocho tonos eso
+  no llegaba a AA: 2,15:1 sobre `amber-500`, 2,28:1 sobre `green-500`, 2,80:1
+  sobre `orange-500`. El color del texto pasó a vivir junto al del fondo. El azul
+  era el único donde ninguna de las dos opciones cruzaba el umbral en los dos
+  extremos, así que se oscureció un escalón (`blue-600→700`): es un cambio de
+  tono, no de significado.
+
+También se corrigió que la barra de estadísticas móvil mostrara la venta del día
+sin la guarda `ver_reportes` que sí tenía su copia del header. Sigue siendo
+cosmético —el personal lee `pedidos.total` porque lo necesita para trabajar—,
+pero que las dos copias del mismo bloque digan cosas distintas es cómo se pierde
+una regla.
 
 ### 2026-08-24 — Auditoría de frontend: contraste, diálogos, identidad y escala
 

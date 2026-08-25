@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { BuildingStorefrontIcon } from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -134,8 +135,10 @@ export default function CuentaPage() {
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-              🍔
+            {/* Sobre el gradiente naranja el trazo va `stone-900`: es lo que
+                devuelve `textoSobre()` para ese fondo. */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <BuildingStorefrontIcon className="w-5 h-5 text-stone-900" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h1 className="font-bold dash-text-primary text-base">Tu cuenta</h1>

@@ -2,6 +2,14 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import {
+  BuildingStorefrontIcon,
+  ClipboardDocumentListIcon,
+  ExclamationTriangleIcon,
+  MapPinIcon,
+  PaperAirplaneIcon,
+  ShoppingBagIcon,
+} from "@heroicons/react/24/outline";
 import Modal from "@/componentes/modal";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
@@ -242,9 +250,14 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
           <div className="text-center">
             <div
               className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-lg mb-3"
-              style={{ background: "linear-gradient(135deg, var(--brand), var(--accent))" }}
+              // El degradado arranca en `--brand`, así que el texto que va
+              // encima es el que el servidor calculó para ese color.
+              style={{
+                background: "linear-gradient(135deg, var(--brand), var(--accent))",
+                color: "var(--brand-texto)",
+              }}
             >
-              📋
+              <ClipboardDocumentListIcon aria-hidden className="w-7 h-7" />
             </div>
             <h2 className="text-xl font-bold text-stone-900">Confirmar Pedido</h2>
             <p className="text-sm text-stone-500 mt-1">
@@ -373,7 +386,10 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                   borderColor: "color-mix(in srgb, var(--brand) 25%, white)",
                 }}
               >
-                <span className="font-bold text-sm" style={{ color: "var(--accent-legible)" }}>📍 {mesa}</span>
+                <span className="font-bold text-sm flex items-center gap-1.5" style={{ color: "var(--accent-legible)" }}>
+                  <MapPinIcon aria-hidden className="w-4 h-4 shrink-0" />
+                  {mesa}
+                </span>
                 <span className="text-xs text-stone-500">Detectada por el código QR</span>
               </div>
             ) : (
@@ -381,9 +397,9 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                 {/* Comer acá o llevar: decide si el teléfono hace falta. */}
                 <div className="grid grid-cols-2 gap-2">
                   {([
-                    ["mesa", "🍽️ Como acá"],
-                    ["retiro", "🛍️ Para llevar"],
-                  ] as const).map(([valor, etiqueta]) => {
+                    ["mesa", "Como acá", BuildingStorefrontIcon],
+                    ["retiro", "Para llevar", ShoppingBagIcon],
+                  ] as const).map(([valor, etiqueta, Icono]) => {
                     const activo = tipoEntrega === valor;
                     return (
                       <button
@@ -396,11 +412,12 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
                           // puesta mandaría "Mesa 3" en una comanda para llevar.
                           if (valor === "retiro") setMesa("");
                         }}
-                        className={`py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
+                        className={`py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 inline-flex items-center justify-center gap-1.5 ${
                           activo ? "shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                         }`}
                         style={activo ? { background: "var(--brand)", color: "var(--brand-texto)" } : undefined}
                       >
+                        <Icono aria-hidden className="w-4 h-4 shrink-0" />
                         {etiqueta}
                       </button>
                     );
@@ -513,9 +530,7 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
               de enviar, o sea fuera de vista de quien acaba de tocarlo. */}
           {error && (
             <div role="alert" className="flex items-center gap-2 text-sm text-red-600 bg-red-50 py-2.5 px-3 rounded-xl border border-red-100">
-              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
+              <ExclamationTriangleIcon aria-hidden className="w-4 h-4 shrink-0" />
               {error}
             </div>
           )}
@@ -536,10 +551,18 @@ export default function CheckoutModal({ localId, slug, mesas, initialMesa, onClo
             >
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {/* El aro sale de `currentColor`, que acá es `--brand-texto`:
+                      en blanco fijo desaparecía sobre una marca clara, el mismo
+                      problema que ya tenía resuelto el texto del botón. */}
+                  <div className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   Enviando...
                 </span>
-              ) : "Enviar Pedido 🚀"}
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  Enviar Pedido
+                  <PaperAirplaneIcon aria-hidden className="w-5 h-5" />
+                </span>
+              )}
             </button>
           </div>
         </form>
