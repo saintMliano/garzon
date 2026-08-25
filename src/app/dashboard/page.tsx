@@ -155,6 +155,64 @@ function TimerBadge({ createdAt }: { createdAt: string }) {
   );
 }
 
+/**
+ * El esqueleto del tablero mientras cargan los pedidos.
+ *
+ * El aro girando se queda para `resolvingLocal`, que es cuando todavia no se
+ * sabe que local es ni si hay algo que mostrar: ahi la estructura no se conoce
+ * y dibujarla seria inventarla. Pero una vez resuelto el local, la forma de esta
+ * pantalla esta decidida —cuatro columnas, con su cabecera y sus tarjetas—, asi
+ * que se puede pintar antes de tener los datos y el contenido no salta al
+ * llegar. Es la pantalla que la cocina abre todos los dias y deja abierta todo
+ * el turno: el salto se paga en cada recarga de la tablet.
+ *
+ * Las cantidades de tarjetas por columna van escritas y no sorteadas: con
+ * `Math.random()` el servidor y el navegador pintarian distinto y React tiraria
+ * un error de hidratacion.
+ */
+const TARJETAS_POR_COLUMNA = [3, 2, 2, 1];
+
+function EsqueletoTablero() {
+  return (
+    <main className="flex-1 p-3 md:p-5 overflow-x-auto" role="status" aria-busy="true">
+      <span className="sr-only">Cargando los pedidos del turno…</span>
+      <div
+        aria-hidden
+        className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-w-0"
+      >
+        {COLUMNS.map((col, i) => (
+          <div key={col.key} className="flex flex-col min-w-0">
+            {/* Cabecera de columna: el icono y el titulo son los de verdad, que
+                se conocen sin datos. Solo el contador es un bloque. */}
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-2">
+                <col.Icono className="w-5 h-5 shrink-0 dash-text-muted" />
+                <h2 className="font-bold dash-text-muted text-base">{col.label}</h2>
+              </div>
+              <span className="w-7 h-5 rounded-full dash-bg-surface animate-pulse" />
+            </div>
+
+            <div className="flex-1 space-y-3">
+              {Array.from({ length: TARJETAS_POR_COLUMNA[i] }).map((_, j) => (
+                <div key={j} className="dash-card rounded-2xl border-2 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="w-16 h-4 rounded bg-stone-700/60 animate-pulse" />
+                    <span className="w-12 h-4 rounded bg-stone-700/60 animate-pulse" />
+                  </div>
+                  <span className="block w-32 h-3.5 rounded bg-stone-700/60 animate-pulse" />
+                  <span className="block w-full h-3 rounded bg-stone-700/60 animate-pulse" />
+                  <span className="block w-3/4 h-3 rounded bg-stone-700/60 animate-pulse" />
+                  <span className="block w-full h-10 rounded-xl bg-stone-700/60 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
+
 export default function DashboardPage() {
   // El rol es por local: lo resuelve el hook compartido a partir del local
   // seleccionado. Solo decide qué se dibuja; quien niega es la base.
@@ -531,16 +589,26 @@ export default function DashboardPage() {
     window.location.href = "/login";
   }
 
-  if (resolvingLocal || (localId && loading)) {
+  // Todavia no se sabe que local es: la estructura no se conoce, va el aro.
+  if (resolvingLocal) {
     return (
-      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark">
+      <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark" role="status">
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-14 h-14">
+          <div className="relative w-14 h-14" aria-hidden>
             <div className="absolute inset-0 border-4 border-stone-800 rounded-full" />
             <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin" />
           </div>
           <p className="text-stone-500 text-sm font-medium">Cargando dashboard...</p>
         </div>
+      </div>
+    );
+  }
+
+  // El local ya esta resuelto: la forma del tablero se conoce, va el esqueleto.
+  if (localId && loading) {
+    return (
+      <div className="flex flex-col min-h-dvh dashboard-dark">
+        <EsqueletoTablero />
       </div>
     );
   }
