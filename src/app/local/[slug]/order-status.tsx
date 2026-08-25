@@ -1,6 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
+import {
+  ArrowPathIcon,
+  BellAlertIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
+  FireIcon,
+  PaperAirplaneIcon,
+  SparklesIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 import { supabase } from "@/lib/supabase";
 import { statusLabel, timeAgo, orderNumber } from "@/lib/utils";
 import type { OrderStatus as OrderStatusType } from "@/types/database";
@@ -25,11 +36,17 @@ interface OrderStatusProps {
   onDelivered?: () => void;
 }
 
-const STEPS: { key: OrderStatusType; label: string; icon: string; activeIcon: string }[] = [
-  { key: "nuevo", label: "Pedido enviado", icon: "📤", activeIcon: "📤" },
-  { key: "aceptado", label: "Aceptado por el local", icon: "✅", activeIcon: "✅" },
-  { key: "preparando", label: "Preparando tu pedido", icon: "👨‍🍳", activeIcon: "🔥" },
-  { key: "listo", label: "¡Listo para retirar!", icon: "🔔", activeIcon: "🎉" },
+/** Firma de los iconos de Heroicons: se guardan como componente, no como texto. */
+type Icono = ComponentType<SVGProps<SVGSVGElement>>;
+
+// Antes eran emoji, y esta pantalla es justo la que el comensal mira fijo
+// mientras espera: el mismo pedido se veía distinto en el Android de uno y en el
+// iPhone del de al lado, y el dibujo no se podía teñir con el color del local.
+const STEPS: { key: OrderStatusType; label: string; icon: Icono; activeIcon: Icono }[] = [
+  { key: "nuevo", label: "Pedido enviado", icon: PaperAirplaneIcon, activeIcon: PaperAirplaneIcon },
+  { key: "aceptado", label: "Aceptado por el local", icon: CheckCircleIcon, activeIcon: CheckCircleIcon },
+  { key: "preparando", label: "Preparando tu pedido", icon: FireIcon, activeIcon: FireIcon },
+  { key: "listo", label: "¡Listo para retirar!", icon: BellAlertIcon, activeIcon: SparklesIcon },
 ];
 
 export default function OrderStatus({ orderId, localName, onNewOrder, onDelivered }: OrderStatusProps) {
@@ -123,14 +140,23 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
           <div
             className={`w-24 h-24 mx-auto rounded-[28px] flex items-center justify-center text-5xl mb-6 shadow-xl transition-all duration-700 ${
               isCancelled
-                ? "bg-gradient-to-br from-red-300 to-red-400 shadow-red-100/50"
+                ? "bg-gradient-to-br from-red-300 to-red-400 shadow-red-100/50 text-red-900"
                 : isComplete
-                  ? "bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-200/50"
+                  ? "bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-200/50 text-emerald-950"
                   : ""
             }`}
-            style={enProcesoBadgeStyle}
+            // Rojo y verde son semánticos y llevan su propio tono oscuro encima;
+            // el "en proceso" es el único que se pinta con la marca, así que su
+            // icono va en el color que el servidor calculó para ella.
+            style={enProcesoBadgeStyle && { ...enProcesoBadgeStyle, color: "var(--brand-texto)" }}
           >
-            {isCancelled ? "❌" : isComplete ? "🎉" : "⏳"}
+            {isCancelled ? (
+              <XCircleIcon aria-hidden className="w-12 h-12" />
+            ) : isComplete ? (
+              <SparklesIcon aria-hidden className="w-12 h-12" />
+            ) : (
+              <ClockIcon aria-hidden className="w-12 h-12" />
+            )}
           </div>
           <h1 className="text-2xl font-black text-stone-900 leading-tight">
             {isCancelled ? "Pedido cancelado" : isComplete ? "¡Tu pedido está listo!" : "Pedido en proceso"}
@@ -177,6 +203,7 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
               {STEPS.map((step, i) => {
                 const isActive = i === currentStepIndex;
                 const isDone = i < currentStepIndex || isComplete;
+                const IconoDelPaso = isActive ? step.activeIcon : step.icon;
 
                 return (
                   <div key={step.key} className="flex items-start gap-4">
@@ -191,7 +218,11 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
                         }`}
                         style={isDone || !isActive ? undefined : pasoActivoStyle}
                       >
-                        {isDone ? "✓" : isActive ? step.activeIcon : step.icon}
+                        {isDone ? (
+                          <CheckIcon aria-hidden className="w-5 h-5" />
+                        ) : (
+                          <IconoDelPaso aria-hidden className="w-5 h-5" />
+                        )}
                       </div>
                       {i < STEPS.length - 1 && (
                         <div className={`w-0.5 h-6 transition-all duration-500 my-1 rounded-full ${
@@ -230,14 +261,15 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
         {isCancelled ? (
           <button
             onClick={onNewOrder}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-stone-600 to-stone-700 text-white font-bold text-base shadow-xl shadow-stone-200/40 hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-stone-600 to-stone-700 text-white font-bold text-base shadow-xl shadow-stone-200/40 hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in inline-flex items-center justify-center gap-2"
           >
-            Hacer otro pedido 🍔
+            Hacer otro pedido
+            <ArrowPathIcon aria-hidden className="w-5 h-5" />
           </button>
         ) : isComplete ? (
           <button
             onClick={onNewOrder}
-            className="w-full h-14 rounded-2xl font-bold text-base hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in"
+            className="w-full h-14 rounded-2xl font-bold text-base hover:shadow-2xl active:scale-[0.98] transition-all animate-fade-in inline-flex items-center justify-center gap-2"
             style={{
               background: `linear-gradient(90deg, var(--brand), ${MARCA_TONO_2})`,
               // `--brand-texto` ya viene calculado para leerse sobre la marca:
@@ -246,7 +278,8 @@ export default function OrderStatus({ orderId, localName, onNewOrder, onDelivere
               boxShadow: `0 20px 25px -5px color-mix(in srgb, var(--brand) 25%, transparent)`,
             }}
           >
-            Hacer otro pedido 🍔
+            Hacer otro pedido
+            <ArrowPathIcon aria-hidden className="w-5 h-5" />
           </button>
         ) : (
           <div className="text-center space-y-3">

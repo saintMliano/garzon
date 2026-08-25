@@ -19,6 +19,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Política de privacidad | Garzón Digital",
@@ -88,9 +89,18 @@ export default function Privacidad() {
       <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-stone-50/85 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-base shadow-sm">
-              🍔
-            </span>
+            {/* La marca del producto. Era el emoji de hamburguesa, que se dibuja
+                distinto en cada sistema operativo y le prometia un rubro al
+                lector. Ahora es el mismo archivo que el favicon y las imagenes
+                de compartir, generado por `npm run iconos`. */}
+            <Image
+              src="/icon-192.png"
+              alt=""
+              aria-hidden
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-xl shadow-sm"
+            />
             <span className="font-bold text-stone-900 text-base tracking-tight">Garzón Digital</span>
           </Link>
 
@@ -155,7 +165,7 @@ export default function Privacidad() {
       </section>
 
       {/* ===== CUERPO ===== */}
-      <main className="max-w-3xl mx-auto w-full px-5 py-10 md:py-14 flex flex-col gap-9">
+      <main id="contenido" className="max-w-3xl mx-auto w-full px-5 py-10 md:py-14 flex flex-col gap-9">
         <Seccion id="quien" titulo="¿Quién responde por tus datos?">
           <p>
             El <strong className="text-stone-900">local donde hiciste el pedido</strong> es el

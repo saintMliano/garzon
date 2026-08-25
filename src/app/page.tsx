@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 
 /**
@@ -99,9 +100,18 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-stone-50/85 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-base shadow-sm">
-              🍔
-            </span>
+            {/* La marca del producto. Era el emoji de hamburguesa, que se dibuja
+                distinto en cada sistema operativo y le prometia un rubro al
+                lector. Ahora es el mismo archivo que el favicon y las imagenes
+                de compartir, generado por `npm run iconos`. */}
+            <Image
+              src="/icon-192.png"
+              alt=""
+              aria-hidden
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-xl shadow-sm"
+            />
             <span className="font-bold text-stone-900 text-base tracking-tight">Garzón Digital</span>
           </Link>
 
@@ -128,8 +138,13 @@ export default function Home() {
         </div>
       </header>
 
+      {/* El `<main>` envuelve todo lo que no es barra ni pie: es el destino del
+          enlace "saltar al contenido" del layout, y sin él la landing era la
+          única pantalla del sitio sin punto de aterrizaje para el teclado. */}
+      <main id="contenido">
+
       {/* ===== HERO ===== */}
-      <section className="bg-stone-950 border-b border-stone-900">
+      <section className="sobre-oscuro bg-stone-950 border-b border-stone-900">
         <div className="max-w-5xl mx-auto px-5 py-16 md:py-24">
           <div className="max-w-2xl">
             <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
@@ -202,17 +217,29 @@ export default function Home() {
         <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">Cómo funciona</h2>
         <p className="text-stone-500 text-sm mt-1.5">Cuatro pasos, sin nada que instalar.</p>
 
-        <ol className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Esto eran cuatro tarjetas iguales en fila, y cuatro cajas equivalentes
+            dicen "elegí una", no "esto pasa después de esto otro". Pero acá el
+            contenido sí es un recorrido —el cliente escanea, elige, la cocina lo
+            ve, se marca listo—, así que la forma elegida es un hilo: una línea
+            fina que enhebra los cuatro números y no se corta. Baja vertical en el
+            teléfono, que es como se recorre con el pulgar, y se acuesta en
+            escritorio, donde se lee de izquierda a derecha. El conector lo dibuja
+            cada paso con un `::before` y el último no lo dibuja, porque después
+            del cuarto no viene nada. Sin borde ni sombra alrededor de cada paso:
+            lo que tiene que leerse es la secuencia, no cuatro contenedores. */}
+        <ol className="mt-8 lg:grid lg:grid-cols-4 lg:gap-x-6">
           {PASOS.map((paso, i) => (
             <li
               key={paso.n}
-              className="stagger-card rounded-2xl bg-white border border-stone-200/80 p-5"
+              className="stagger-card relative flex gap-4 pb-8 last:pb-0 lg:block lg:pb-0 before:absolute before:left-4 before:top-9 before:bottom-0 before:w-px before:-translate-x-1/2 before:bg-stone-200 last:before:hidden lg:before:top-4 lg:before:bottom-auto lg:before:-right-10 lg:before:h-px lg:before:w-auto lg:before:translate-x-0"
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <span className="inline-flex w-7 h-7 rounded-lg bg-orange-50 text-orange-700 text-sm font-black items-center justify-center tabular-nums">
+              <span className="relative z-10 inline-flex w-8 h-8 shrink-0 rounded-full bg-orange-50 text-orange-700 text-sm font-black items-center justify-center tabular-nums">
                 {paso.n}
               </span>
-              <p className="mt-3 text-sm font-medium text-stone-700 leading-snug">{paso.label}</p>
+              <p className="pt-1.5 text-sm font-medium text-stone-700 leading-snug lg:pt-0 lg:mt-4">
+                {paso.label}
+              </p>
             </li>
           ))}
         </ol>
@@ -348,6 +375,8 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      </main>
 
       <footer className="border-t border-stone-200/80 py-7">
         <div className="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">

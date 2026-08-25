@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  ArrowRightOnRectangleIcon,
+  BuildingStorefrontIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+  KeyIcon,
+} from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import type { Local } from "@/types/database";
 import {
@@ -29,7 +37,7 @@ function aColorInput(color: string): string {
   return `#${dos(rgb.r)}${dos(rgb.g)}${dos(rgb.b)}`;
 }
 
-/** Razón de contraste junto a cada selector: ✓ si pasa AA, ⚠ si no. */
+/** Razón de contraste junto a cada selector: visto bueno si pasa AA, triángulo si no. */
 function ChipContraste({
   razon,
   detalle,
@@ -48,8 +56,16 @@ function ChipContraste({
   }
   const pasa = razon >= CONTRASTE_AA;
   return (
-    <p className={`mt-1.5 text-xs font-medium ${pasa ? "text-green-400" : "text-amber-400"}`}>
-      <span aria-hidden>{pasa ? "✓" : "⚠"}</span> {razon.toFixed(1)}:1 · {detalle}
+    <p className={`mt-1.5 flex items-start gap-1 text-xs font-medium ${pasa ? "text-green-400" : "text-amber-400"}`}>
+      {/* `items-start` y no `items-center`: el detalle ocupa dos o tres líneas y
+          el icono tiene que quedar junto a la primera, no centrado contra todo
+          el párrafo. */}
+      {pasa ? (
+        <CheckIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+      ) : (
+        <ExclamationTriangleIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+      )}
+      <span>{razon.toFixed(1)}:1 · {detalle}</span>
     </p>
   );
 }
@@ -278,7 +294,9 @@ export default function ConfigPage() {
     return (
       <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
-          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
+          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center">
+            <ExclamationTriangleIcon className="w-7 h-7 text-amber-400" aria-hidden="true" />
+          </div>
           <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
           <p className="text-stone-500 text-sm">Tu cuenta no está vinculada a ningún local. Contacta al administrador.</p>
           <button
@@ -296,8 +314,12 @@ export default function ConfigPage() {
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-              🍔
+            {/* Este logo es chrome del panel, no la marca del local: el logo del
+                dueño se sube más abajo y se ve en la carta. Sobre el gradiente
+                naranja el trazo va `stone-900`, que es lo que devuelve
+                `textoSobre()` para ese fondo. */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <BuildingStorefrontIcon className="w-5 h-5 text-stone-900" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               {localesList.length > 1 ? (
@@ -327,18 +349,20 @@ export default function ConfigPage() {
                 local: la contraseña es de la persona, no del local. */}
             <Link
               href="/dashboard/cuenta"
-              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center hover:opacity-80 transition-opacity"
               title="Tu cuenta"
+              aria-label="Tu cuenta"
             >
-              🔑
+              <KeyIcon className="w-5 h-5 dash-text-secondary" aria-hidden="true" />
             </Link>
 
             <button
               onClick={handleSignOut}
-              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center hover:opacity-80 transition-opacity"
               title="Cerrar sesión"
+              aria-label="Cerrar sesión"
             >
-              🚪
+              <ArrowRightOnRectangleIcon className="w-5 h-5 dash-text-secondary" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -351,7 +375,7 @@ export default function ConfigPage() {
       <AvisoSuscripcion localId={localId} />
 
       {/* ===== PANEL DE IDENTIDAD ===== */}
-      <main className="flex-1 p-3 md:p-5">
+      <main id="contenido" className="flex-1 p-3 md:p-5">
         <div className="max-w-2xl mx-auto dash-card rounded-2xl border-2 p-5">
           <h2 className="font-bold dash-text-primary text-base mb-4">Identidad del local</h2>
 
@@ -517,7 +541,7 @@ export default function ConfigPage() {
                   nada — y una alerta que sale siempre es una alerta que nadie lee. */}
               {acentoNecesitaAjuste && (
                 <div className="mt-3 flex gap-2 rounded-xl dash-bg-surface px-3 py-2.5 dash-text-secondary">
-                  <span aria-hidden>ℹ</span>
+                  <InformationCircleIcon className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
                   <p className="text-xs leading-relaxed">
                     Tu color de acento contrasta {contrasteAcento.toFixed(1)}:1 sobre blanco y el
                     mínimo para que un precio se lea es {CONTRASTE_AA}:1. En el menú los precios se
@@ -574,7 +598,10 @@ export default function ConfigPage() {
                 segundos: sin anunciarlo, quien no ve la pantalla se queda sin saber
                 si el cambio quedó. Polite y no alert porque no urge nada. */}
             {savedMsg && (
-              <span role="status" aria-live="polite" className="text-xs font-semibold text-green-400">✓ Cambios guardados</span>
+              <span role="status" aria-live="polite" className="flex items-center gap-1 text-xs font-semibold text-green-400">
+                <CheckIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                Cambios guardados
+              </span>
             )}
             <button
               onClick={handleGuardar}
@@ -589,8 +616,9 @@ export default function ConfigPage() {
 
       {/* Toast de error, discreto y auto-ocultable */}
       {errorMsg && (
-        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
-          ⚠️ {errorMsg}
+        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+          <ExclamationTriangleIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
+          {errorMsg}
         </div>
       )}
     </div>

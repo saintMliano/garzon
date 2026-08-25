@@ -2,6 +2,27 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import {
+  ArchiveBoxIcon,
+  ArrowRightOnRectangleIcon,
+  ArrowUturnLeftIcon,
+  BellIcon,
+  ChatBubbleLeftRightIcon,
+  CheckCircleIcon,
+  ClipboardDocumentListIcon,
+  ClockIcon,
+  ExclamationTriangleIcon,
+  FireIcon,
+  KeyIcon,
+  PencilSquareIcon,
+  PhoneIcon,
+  ShoppingBagIcon,
+  SparklesIcon,
+  SpeakerXMarkIcon,
+  UserIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice, orderNumber } from "@/lib/utils";
 import { formatearTelefonoChileno } from "@/lib/telefono";
@@ -12,11 +33,27 @@ import { useConfirmar } from "@/componentes/usar-confirmar";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
 import { puede } from "@/lib/roles";
 
-const COLUMNS: { key: OrderStatus; label: string; icon: string; accent: string }[] = [
-  { key: "nuevo", label: "Nuevos", icon: "🆕", accent: "from-blue-500 to-blue-600" },
-  { key: "aceptado", label: "Aceptados", icon: "✅", accent: "from-amber-500 to-amber-600" },
-  { key: "preparando", label: "En Cocina", icon: "🔥", accent: "from-orange-500 to-orange-600" },
-  { key: "listo", label: "Listos", icon: "🔔", accent: "from-green-500 to-green-600" },
+// Los iconos son componentes y no emoji: esta pantalla vive en la tablet de la
+// cocina, y ahí el emoji lo dibuja el sistema operativo — el 🔥 de Android no es
+// el que se probó en el iPhone, no se puede teñir y no acompaña al `text-lg`.
+type IconoUI = typeof BellIcon;
+
+// `accent` incluye ahora el color del TEXTO, no solo el fondo. Los contadores y
+// los botones de avance llevaban `text-white` sobre estos gradientes y en siete
+// de los ocho tonos eso no llega al AA de la WCAG: 2,15:1 sobre `amber-500`,
+// 2,28:1 sobre `green-500`, 2,80:1 sobre `orange-500`. Con `#1c1917` los tres
+// pasan holgado (8,14 / 7,68 / 6,24).
+//
+// El azul es el único donde ninguna de las dos opciones cruza el umbral en los
+// dos extremos del degradado, así que se oscurece un escalón: `blue-600→700`
+// con texto blanco da 5,17 y 7,00. Es un cambio de tono, no de significado —
+// sigue siendo el azul de "nuevos"—, y estos colores son semánticos: dicen en
+// qué columna está el pedido, no de qué marca es el local.
+const COLUMNS: { key: OrderStatus; label: string; Icono: IconoUI; accent: string }[] = [
+  { key: "nuevo", label: "Nuevos", Icono: SparklesIcon, accent: "from-blue-600 to-blue-700 text-white" },
+  { key: "aceptado", label: "Aceptados", Icono: CheckCircleIcon, accent: "from-amber-500 to-amber-600 text-stone-900" },
+  { key: "preparando", label: "En Cocina", Icono: FireIcon, accent: "from-orange-500 to-orange-600 text-stone-900" },
+  { key: "listo", label: "Listos", Icono: BellIcon, accent: "from-green-500 to-green-600 text-stone-900" },
 ];
 
 const NEXT_STATUS: Record<string, OrderStatus> = {
@@ -27,9 +64,19 @@ const ACTION_LABELS: Record<string, string> = {
   nuevo: "Aceptar", aceptado: "A Cocina", preparando: "¡Listo!", listo: "Entregar",
 };
 
-const ACTION_ICONS: Record<string, string> = {
-  nuevo: "✅", aceptado: "🔥", preparando: "🔔", listo: "📦",
+// Cada acción se dibuja con el icono de la columna a la que MANDA el pedido,
+// que es lo que ya hacía el emoji: el botón se lee junto a la columna destino.
+const ACTION_ICONS: Record<string, IconoUI> = {
+  nuevo: CheckCircleIcon, aceptado: FireIcon, preparando: BellIcon, listo: ArchiveBoxIcon,
 };
+
+// Envoltorio mínimo: el icono sale de un Record y en JSX un componente tiene que
+// estar en una variable con mayúscula, cosa que no se puede hacer dentro del
+// `.map()` de las tarjetas sin partirlo en dos.
+function IconoAccion({ estado }: { estado: string }) {
+  const Icono = ACTION_ICONS[estado];
+  return Icono ? <Icono className="w-4 h-4 shrink-0" aria-hidden="true" /> : null;
+}
 
 // Singleton AudioContext: browsers suspend contexts created without a user
 // gesture, so we create/resume this one lazily from a click handler and
@@ -97,10 +144,13 @@ function TimerBadge({ createdAt }: { createdAt: string }) {
   }, [createdAt]);
 
   return (
-    <span className={`text-xs font-mono font-bold tabular-nums ${
+    <span className={`inline-flex items-center gap-1 text-xs font-mono font-bold tabular-nums ${
       urgency === "danger" ? "text-red-400" : urgency === "warning" ? "text-amber-400" : "text-stone-500"
     }`}>
-      ⏱ {elapsed}
+      {/* El reloj hereda el color del estado de urgencia; el ⏱ se quedaba
+          siempre del color que le pusiera el sistema operativo. */}
+      <ClockIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+      {elapsed}
     </span>
   );
 }
@@ -499,7 +549,9 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
-          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">⚠️</div>
+          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center">
+            <ExclamationTriangleIcon className="w-7 h-7 text-amber-400" aria-hidden="true" />
+          </div>
           <h2 className="font-bold dash-text-primary text-base">Sin local asociado</h2>
           <p className="text-stone-500 text-sm">Tu cuenta no está vinculada a ningún local. Contacta al administrador.</p>
           <button
@@ -519,9 +571,18 @@ export default function DashboardPage() {
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-              🍔
-            </div>
+            {/* La marca del producto, no un icono de interfaz: hasta el 2026-08-24 acá
+                iba el emoji de hamburguesa, que en un local de cafe mentia y encima se
+                dibujaba distinto en cada sistema operativo. Ahora es el mismo archivo que
+                el favicon y las imagenes de compartir, generado por `npm run iconos`. */}
+            <Image
+              src="/icon-192.png"
+              alt="Garzon Digital"
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-xl shadow-lg shadow-orange-500/20"
+              priority
+            />
             <div className="min-w-0">
               {localesList.length > 1 ? (
                 <div className="flex items-center gap-2">
@@ -572,8 +633,18 @@ export default function DashboardPage() {
               </Link>
             )}
 
-            {/* Stats */}
-            <div className="hidden lg:flex items-center gap-5">
+            {/* Stats
+                `sm` y no `lg`: la versión de abajo se apaga en `sm:hidden`, así
+                que con el corte en `lg` entre 640 y 1024 px no se veía NINGUNA
+                de las dos — justo el ancho de la tablet en horizontal, que es el
+                dispositivo para el que está pensado este tablero. Los dos cortes
+                tienen que ser el mismo número; el `flex-wrap` del contenedor se
+                encarga de que en un ancho apretado esto baje de línea en vez de
+                empujar el header.
+                Además el corte va acá y no en la barra de abajo porque esta
+                versión es la que respeta `ver_reportes`: mover la otra hacia
+                arriba le mostraría la venta del día al personal. */}
+            <div className="hidden sm:flex items-center gap-5">
               <div className="text-right">
                 <p className="text-2xs dash-text-muted uppercase tracking-wider font-medium">Pedidos</p>
                 <p className="text-lg font-bold dash-text-primary tabular-nums">{todayStats.count}</p>
@@ -633,7 +704,7 @@ export default function DashboardPage() {
                 showCerrados ? "bg-stone-700 text-white" : "dash-bg-surface dash-text-secondary"
               }`}
             >
-              📦 Cerrados hoy{cerrados.length > 0 && ` (${cerrados.length})`}
+              <span className="inline-flex items-center gap-1.5"><ArchiveBoxIcon aria-hidden className="w-4 h-4 shrink-0" />Cerrados hoy{cerrados.length > 0 && ` (${cerrados.length})`}</span>
             </button>
 
             {/* El desbloqueo de sonido vive ahora en la barra de aviso de abajo:
@@ -653,7 +724,7 @@ export default function DashboardPage() {
                 tablero se actualiza solo— sí se escucha. "Polite" para no
                 cortar a quien esté leyendo una comanda a mitad de servicio. */}
             <div className="relative" aria-live="polite">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" aria-hidden="true">🔔</div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" aria-hidden="true"><BellIcon className="w-5 h-5 dash-text-secondary" /></div>
               {nuevoCount > 0 && (
                 <span
                   aria-label={nuevoCount === 1 ? "1 pedido nuevo" : `${nuevoCount} pedidos nuevos`}
@@ -671,16 +742,18 @@ export default function DashboardPage() {
               href="/dashboard/cuenta"
               className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
               title="Tu cuenta"
+              aria-label="Tu cuenta"
             >
-              🔑
+              <KeyIcon aria-hidden className="w-5 h-5 dash-text-secondary" />
             </Link>
 
             <button
               onClick={handleSignOut}
               className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
               title="Cerrar sesión"
+              aria-label="Cerrar sesión"
             >
-              🚪
+              <ArrowRightOnRectangleIcon aria-hidden className="w-5 h-5 dash-text-secondary" />
             </button>
           </div>
         </div>
@@ -702,7 +775,7 @@ export default function DashboardPage() {
           onClick={enableSound}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-950/70 border-b border-red-900/70 text-red-200 text-sm font-semibold hover:bg-red-900/60 transition-colors"
         >
-          <span className="text-base">🔕</span>
+          <SpeakerXMarkIcon aria-hidden className="w-5 h-5 shrink-0" />
           Los pedidos nuevos no van a sonar — toca aquí para activar el sonido
         </button>
       )}
@@ -713,11 +786,21 @@ export default function DashboardPage() {
           <p className="text-2xs dash-text-muted uppercase tracking-wider">Pedidos</p>
           <p className="text-xl font-bold dash-text-primary">{todayStats.count}</p>
         </div>
-        <div className="w-px h-8 bg-stone-800" />
-        <div className="flex-1 text-center">
-          <p className="text-2xs dash-text-muted uppercase tracking-wider">Venta</p>
-          <p className="text-xl font-bold text-green-400">{formatPrice(todayStats.total)}</p>
-        </div>
+        {/* La misma guarda que la copia del header. Estaba solo allá, así que
+            `personal` no veía la venta del día en el notebook de la cocina pero
+            sí en su teléfono, que es donde más la mira. Sigue siendo cosmético
+            —el personal lee `pedidos.total` porque lo necesita para trabajar, y
+            lo cerrado de verdad son los reportes—, pero que las dos copias del
+            mismo bloque digan cosas distintas es cómo se pierde una regla. */}
+        {puede(rol, "ver_reportes") && (
+          <>
+            <div className="w-px h-8 bg-stone-800" />
+            <div className="flex-1 text-center">
+              <p className="text-2xs dash-text-muted uppercase tracking-wider">Venta</p>
+              <p className="text-xl font-bold text-green-400 tabular-nums">{formatPrice(todayStats.total)}</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ===== CERRADOS HOY =====
@@ -729,13 +812,13 @@ export default function DashboardPage() {
           <div className="max-w-[1600px] mx-auto">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold dash-text-primary text-sm">
-                📦 Cerrados hoy <span className="dash-text-muted font-normal">({cerrados.length})</span>
+                <span className="inline-flex items-center gap-1.5"><ArchiveBoxIcon aria-hidden className="w-4 h-4 shrink-0" />Cerrados hoy <span className="dash-text-muted font-normal">({cerrados.length})</span></span>
               </h2>
               <button
                 onClick={() => setShowCerrados(false)}
                 className="text-xs dash-text-muted hover:opacity-70 transition-opacity"
               >
-                Cerrar ✕
+                <span className="inline-flex items-center gap-1">Cerrar<XMarkIcon aria-hidden className="w-3.5 h-3.5" /></span>
               </button>
             </div>
 
@@ -785,7 +868,7 @@ export default function DashboardPage() {
                         disabled={updatingId === pedido.id}
                         className="mt-1 px-3 py-2 rounded-lg text-xs font-semibold dash-bg-surface dash-text-secondary hover:opacity-80 transition-opacity disabled:opacity-50"
                       >
-                        ↩ Reabrir
+                        <span className="inline-flex items-center gap-1"><ArrowUturnLeftIcon aria-hidden className="w-3.5 h-3.5" />Reabrir</span>
                       </button>
                     )}
                   </div>
@@ -797,7 +880,7 @@ export default function DashboardPage() {
       )}
 
       {/* ===== KANBAN BOARD ===== */}
-      <main className="flex-1 p-3 md:p-5 overflow-x-auto">
+      <main id="contenido" className="flex-1 p-3 md:p-5 overflow-x-auto">
         {/* lg (1024px) y no xl (1280px): una tablet de 10-11" en horizontal ronda
             los 1100-1180px y caía en 2 columnas, justo en el dispositivo para el
             que está pensada esta pantalla. */}
@@ -810,10 +893,10 @@ export default function DashboardPage() {
                 {/* Column header */}
                 <div className="flex items-center justify-between mb-3 px-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{col.icon}</span>
+                    <col.Icono aria-hidden className="w-5 h-5 shrink-0 dash-text-secondary" />
                     <h2 className="font-bold dash-text-primary text-base">{col.label}</h2>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold text-white bg-gradient-to-r ${col.accent}`}>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r ${col.accent}`}>
                     {colPedidos.length}
                   </span>
                 </div>
@@ -822,7 +905,7 @@ export default function DashboardPage() {
                 <div className="flex-1 space-y-3">
                   {colPedidos.length === 0 ? (
                     <div className="dash-col-empty rounded-2xl border-2 border-dashed p-8 text-center dash-text-muted text-sm">
-                      <span className="text-2xl block mb-2 opacity-40">{col.icon}</span>
+                      <col.Icono aria-hidden className="w-7 h-7 mx-auto mb-2 opacity-40" />
                       Sin pedidos
                     </div>
                   ) : (
@@ -845,7 +928,7 @@ export default function DashboardPage() {
                                 "ojo con esto"; nunca el color de marca del local. */}
                             {pedido.tipo_entrega === "retiro" && (
                               <span className="px-2 py-0.5 rounded-lg bg-amber-950/60 text-amber-300 text-2xs font-bold">
-                                🛍 Retiro
+                                <span className="inline-flex items-center gap-1"><ShoppingBagIcon aria-hidden className="w-3 h-3 shrink-0" />Retiro</span>
                               </span>
                             )}
                             {pedido.mesa && (
@@ -859,7 +942,9 @@ export default function DashboardPage() {
 
                         {/* Customer */}
                         <p className="text-sm font-semibold dash-text-secondary mb-2.5 flex items-center gap-1.5">
-                          <span className="w-6 h-6 rounded-full dash-bg-surface flex items-center justify-center text-2xs">👤</span>
+                          <span className="w-6 h-6 rounded-full dash-bg-surface flex items-center justify-center shrink-0">
+                            <UserIcon aria-hidden className="w-3.5 h-3.5" />
+                          </span>
                           {pedido.nombre_cliente}
                         </p>
 
@@ -880,7 +965,7 @@ export default function DashboardPage() {
                               }
                               className="px-2.5 py-1.5 rounded-lg dash-bg-surface text-2xs font-semibold dash-text-secondary hover:opacity-80 transition-opacity"
                             >
-                              {telefonoVisibleId === pedido.id ? "Ocultar contacto" : "📞 Contactar"}
+                              {telefonoVisibleId === pedido.id ? "Ocultar contacto" : <span className="inline-flex items-center gap-1"><PhoneIcon aria-hidden className="w-3.5 h-3.5" />Contactar</span>}
                             </button>
 
                             {telefonoVisibleId === pedido.id && (
@@ -893,7 +978,7 @@ export default function DashboardPage() {
                                     href={`tel:${pedido.telefono}`}
                                     className="px-2.5 py-1.5 rounded-lg bg-stone-700 text-white text-2xs font-bold hover:opacity-80 transition-opacity"
                                   >
-                                    📞 Llamar
+                                    <span className="inline-flex items-center gap-1"><PhoneIcon aria-hidden className="w-3.5 h-3.5" />Llamar</span>
                                   </a>
                                   {/* `wa.me` quiere el número SIN el `+`, al revés
                                       que `tel:`, que lo necesita para no depender
@@ -906,7 +991,7 @@ export default function DashboardPage() {
                                     rel="noopener noreferrer"
                                     className="px-2.5 py-1.5 rounded-lg bg-green-700 text-white text-2xs font-bold hover:opacity-80 transition-opacity"
                                   >
-                                    💬 WhatsApp
+                                    <span className="inline-flex items-center gap-1"><ChatBubbleLeftRightIcon aria-hidden className="w-3.5 h-3.5" />WhatsApp</span>
                                   </a>
                                 </div>
                               </div>
@@ -922,7 +1007,7 @@ export default function DashboardPage() {
                                 <span className="font-bold dash-text-primary text-sm">{item.cantidad}x </span>
                                 <span className="dash-text-secondary text-sm">{item.producto?.nombre ?? "Producto"}</span>
                                 {item.notas && (
-                                  <p className="text-xs text-amber-400 italic mt-0.5">📝 {item.notas}</p>
+                                  <p className="text-xs text-amber-400 italic mt-0.5 flex items-start gap-1.5"><PencilSquareIcon aria-hidden className="w-3.5 h-3.5 shrink-0 mt-0.5" />{item.notas}</p>
                                 )}
                               </div>
                               <span className="text-2xs dash-text-muted ml-2 whitespace-nowrap tabular-nums">
@@ -935,7 +1020,7 @@ export default function DashboardPage() {
                         {/* Order notes */}
                         {pedido.notas && (
                           <div className="dash-bg-surface rounded-xl px-3 py-2 mb-3 text-xs text-amber-300 border border-amber-900/30">
-                            📋 {pedido.notas}
+                            <span className="flex items-start gap-1.5"><ClipboardDocumentListIcon aria-hidden className="w-3.5 h-3.5 shrink-0 mt-0.5" />{pedido.notas}</span>
                           </div>
                         )}
 
@@ -955,11 +1040,11 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleAvanzar(pedido)}
                               disabled={updatingId === pedido.id}
-                              className={`px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-lg bg-gradient-to-r disabled:opacity-60 disabled:hover:scale-100 ${
-                                COLUMNS.find(c => c.key === (NEXT_STATUS[pedido.estado] ?? pedido.estado))?.accent ?? "from-stone-600 to-stone-700"
+                              className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.03] active:scale-95 shadow-lg bg-gradient-to-r disabled:opacity-60 disabled:hover:scale-100 ${
+                                COLUMNS.find(c => c.key === (NEXT_STATUS[pedido.estado] ?? pedido.estado))?.accent ?? "from-stone-600 to-stone-700 text-white"
                               }`}
                             >
-                              {ACTION_ICONS[pedido.estado]} {ACTION_LABELS[pedido.estado] ?? "Siguiente"}
+                              <IconoAccion estado={pedido.estado} /> {ACTION_LABELS[pedido.estado] ?? "Siguiente"}
                             </button>
                           </div>
                         </div>
@@ -982,7 +1067,7 @@ export default function DashboardPage() {
               onClick={() => handleReabrir(undoPedido.id)}
               className="px-3 py-1.5 rounded-lg bg-stone-700 hover:bg-stone-600 text-white text-sm font-bold transition-colors"
             >
-              ↩ Deshacer
+              <span className="inline-flex items-center gap-1"><ArrowUturnLeftIcon aria-hidden className="w-4 h-4" />Deshacer</span>
             </button>
           </div>
         )}
@@ -992,7 +1077,7 @@ export default function DashboardPage() {
             que lo anuncien y el pedido queda clavado sin que nadie sepa. */}
         {errorMsg && (
           <div role="alert" className="px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
-            ⚠️ {errorMsg}
+            <span className="inline-flex items-center gap-1.5"><ExclamationTriangleIcon aria-hidden className="w-4 h-4 shrink-0" />{errorMsg}</span>
           </div>
         )}
       </div>

@@ -3,6 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  CheckCircleIcon,
+  ChevronDownIcon,
+  InformationCircleIcon,
+  NoSymbolIcon,
+  PencilSquareIcon,
+  StarIcon,
+} from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import { NavPanel } from "@/app/dashboard/nav-panel";
 import { useRolLocal, avisarCambioDeLocal } from "@/lib/usar-rol";
@@ -30,6 +38,11 @@ import Modal from "@/componentes/modal";
  *    guardar un dato personal más.
  */
 
+// Los iconos son componentes y no emoji: el garzón toma la comanda en el
+// teléfono que tenga, y el dibujo del emoji lo pone ese sistema operativo — no
+// se puede teñir y no crece con el texto. Ojo con la única excepción: el emoji
+// que el dueño le eligió a sus categorías (`cat.icono`, más abajo) es contenido
+// suyo, viene de la base y se dibuja tal cual llega.
 type Categoria = { id: string; nombre: string; icono: string | null; orden: number };
 type Producto = {
   id: string;
@@ -372,9 +385,18 @@ export default function ComandaPage() {
     <header className="dash-header border-b px-4 md:px-6 py-3 shrink-0">
       <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-            🍔
-          </div>
+          {/* La marca del producto, no un icono de interfaz: hasta el 2026-08-24 acá
+              iba el emoji de hamburguesa, que en un local de cafe mentia y encima se
+              dibujaba distinto en cada sistema operativo. Ahora es el mismo archivo que
+              el favicon y las imagenes de compartir, generado por `npm run iconos`. */}
+          <Image
+            src="/icon-192.png"
+            alt="Garzon Digital"
+            width={40}
+            height={40}
+            className="w-10 h-10 rounded-xl shadow-lg shadow-orange-500/20"
+            priority
+          />
           <div className="min-w-0">
             {locales.length > 1 ? (
               <select
@@ -418,7 +440,7 @@ export default function ComandaPage() {
     return (
       <div className="flex flex-col min-h-dvh dashboard-dark">
         {encabezado}
-        <main className="flex-1 p-4 md:p-6">
+        <main id="contenido" className="flex-1 p-4 md:p-6">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-bold dash-text-primary text-lg">¿Para qué mesa?</h2>
             <p className="text-xs dash-text-muted mt-1">
@@ -458,7 +480,7 @@ export default function ComandaPage() {
     return (
       <div className="flex flex-col min-h-dvh dashboard-dark">
         {encabezado}
-        <main className="flex-1 p-4 md:p-6 flex items-center justify-center">
+        <main id="contenido" className="flex-1 p-4 md:p-6 flex items-center justify-center">
           {/* Lo único que confirma que la cocina lo tiene. Aparece sola cuando
               vuelve el POST, así que se anuncia; `polite` y no `alert` porque es
               una buena noticia y puede esperar el renglón en curso. */}
@@ -466,7 +488,7 @@ export default function ComandaPage() {
             aria-live="polite"
             className="max-w-sm w-full dash-card rounded-2xl border-2 p-6 text-center"
           >
-            <div className="text-4xl">✅</div>
+            <CheckCircleIcon className="w-12 h-12 mx-auto text-green-400" aria-hidden="true" />
             <h2 className="font-bold dash-text-primary text-lg mt-3">Pedido enviado</h2>
             <p className="text-sm dash-text-secondary mt-1">
               N.º {exito.numero} · {exito.mesa}
@@ -510,9 +532,10 @@ export default function ComandaPage() {
               "Enviar a cocina", que está a un metro más abajo. */}
           <button
             onClick={() => setMesa(null)}
-            className="px-3 py-2 rounded-lg text-xs font-bold btn-secundario active:scale-95 transition-transform"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold btn-secundario active:scale-95 transition-transform"
           >
-            {mesa} ▾
+            {mesa}
+            <ChevronDownIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           </button>
           <input
             type="search"
@@ -541,13 +564,14 @@ export default function ComandaPage() {
             {frecuentes.length > 0 && (
               <button
                 onClick={() => setPestana(FRECUENTES)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   pestanaEfectiva === FRECUENTES
                     ? "text-stone-900 bg-orange-500"
                     : "dash-bg-surface dash-text-secondary"
                 }`}
               >
-                ⭐ Frecuentes
+                <StarIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                Frecuentes
               </button>
             )}
             {categorias.map((c) => (
@@ -567,7 +591,7 @@ export default function ComandaPage() {
         </div>
       )}
 
-      <main className="flex-1 p-3 md:p-5 pb-40">
+      <main id="contenido" className="flex-1 p-3 md:p-5 pb-40">
         <div className="max-w-[1600px] mx-auto">
           {cargando ? (
             <p className="text-xs dash-text-muted">Cargando el menú…</p>
@@ -599,7 +623,7 @@ export default function ComandaPage() {
                           aria-label={`Ver la foto y los ingredientes de ${p.nombre}`}
                           className="w-7 h-7 rounded-lg flex items-center justify-center text-xs dash-text-muted hover:text-orange-300 hover:bg-orange-500/10 transition-colors"
                         >
-                          ⓘ
+                          <InformationCircleIcon className="w-4 h-4" aria-hidden="true" />
                         </button>
                       )}
                       {p.disponible && (
@@ -610,7 +634,7 @@ export default function ComandaPage() {
                           aria-label={`Marcar ${p.nombre} como agotado`}
                           className="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-red-400 bg-red-500/10 border border-red-500/30 hover:bg-red-500/25 hover:text-red-300 disabled:opacity-40 transition-colors"
                         >
-                          ⊘
+                          <NoSymbolIcon className="w-4 h-4" aria-hidden="true" />
                         </button>
                       )}
                     </div>
@@ -652,9 +676,10 @@ export default function ComandaPage() {
                     {p.disponible && (
                       <button
                         onClick={() => abrirNota(p)}
-                        className="mt-2 self-start px-2 py-1 rounded-lg text-2xs font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
+                        className="mt-2 self-start inline-flex items-center gap-1 px-2 py-1 rounded-lg text-2xs font-semibold dash-bg-surface dash-text-secondary hover:text-orange-300 transition-colors"
                       >
-                        📝 Con nota
+                        <PencilSquareIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                        Con nota
                       </button>
                     )}
 

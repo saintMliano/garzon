@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 /**
  * Pantalla de fallo del menú.
@@ -26,12 +27,17 @@ export default function ErrorMenu({
   return (
     <div className="flex flex-1 items-center justify-center p-8 text-center min-h-dvh">
       <div className="animate-fade-in">
-        <div className="w-20 h-20 mx-auto rounded-3xl bg-red-50 flex items-center justify-center text-4xl mb-5">⚠️</div>
+        <div className="w-20 h-20 mx-auto rounded-3xl bg-red-50 flex items-center justify-center mb-5">
+          <ExclamationTriangleIcon aria-hidden className="w-9 h-9 text-red-500" />
+        </div>
         <h2 className="text-xl font-bold text-stone-800">No se pudo cargar el menú</h2>
         <p className="text-stone-500 mt-2 text-sm">Revisa tu conexión e intenta nuevamente.</p>
         <button
           onClick={reset}
-          className="mt-5 h-11 px-6 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm active:scale-95 transition-all"
+          // El último `text-white` sobre naranja que quedaba en el proyecto: sin
+          // gradiente, así que el barrido de la auditoría no lo alcanzó. Daba
+          // 2,80:1. `btn-primario` ya resuelve el color del texto.
+          className="mt-5 h-11 px-6 rounded-xl btn-primario font-semibold text-sm active:scale-95 transition-all"
         >
           Reintentar
         </button>

@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  ArrowRightOnRectangleIcon,
+  BuildingStorefrontIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+  KeyIcon,
+  LockClosedIcon,
+} from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import CarteraSuscripciones from "./cartera-suscripciones";
 import SupresionTelefono from "./supresion-telefono";
@@ -194,7 +202,9 @@ export default function AdminOnboardPage() {
     return (
       <div className="flex flex-1 items-center justify-center min-h-dvh dashboard-dark px-6">
         <div className="flex flex-col items-center gap-4 text-center max-w-sm">
-          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center text-2xl">🔒</div>
+          <div className="w-14 h-14 rounded-2xl dash-bg-surface flex items-center justify-center">
+            <LockClosedIcon className="w-7 h-7 dash-text-secondary" aria-hidden="true" />
+          </div>
           <h2 className="font-bold dash-text-primary text-base">No autorizado</h2>
           <p className="text-stone-500 text-sm">Esta sección es solo para super-admins de la plataforma.</p>
           <Link
@@ -214,8 +224,11 @@ export default function AdminOnboardPage() {
       <header className="dash-header border-b px-4 md:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">
-              🍔
+            {/* Sobre el gradiente naranja el trazo va `stone-900`: es lo que
+                devuelve `textoSobre()` para ese fondo, la misma regla que ya
+                siguen los botones primarios. */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <BuildingStorefrontIcon className="w-5 h-5 text-stone-900" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h1 className="font-bold dash-text-primary text-base">Garzón Digital</h1>
@@ -229,18 +242,20 @@ export default function AdminOnboardPage() {
                 local: la contraseña es de la persona, no del local. */}
             <Link
               href="/dashboard/cuenta"
-              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center hover:opacity-80 transition-opacity"
               title="Tu cuenta"
+              aria-label="Tu cuenta"
             >
-              🔑
+              <KeyIcon className="w-5 h-5 dash-text-secondary" aria-hidden="true" />
             </Link>
 
             <button
               onClick={handleSignOut}
-              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+              className="w-10 h-10 rounded-xl dash-bg-surface flex items-center justify-center hover:opacity-80 transition-opacity"
               title="Cerrar sesión"
+              aria-label="Cerrar sesión"
             >
-              🚪
+              <ArrowRightOnRectangleIcon className="w-5 h-5 dash-text-secondary" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -251,7 +266,7 @@ export default function AdminOnboardPage() {
       </header>
 
       {/* ===== PANEL DE ALTA ===== */}
-      <main className="flex-1 p-3 md:p-5">
+      <main id="contenido" className="flex-1 p-3 md:p-5">
         <div className="max-w-2xl mx-auto dash-card rounded-2xl border-2 p-5">
           <h2 className="font-bold dash-text-primary text-base mb-4">Dar de alta un local</h2>
 
@@ -276,9 +291,14 @@ export default function AdminOnboardPage() {
                   </div>
                   <button
                     onClick={() => copyToClipboard(result.email, "email")}
-                    className="shrink-0 px-3 py-2 rounded-lg dash-bg-surface dash-text-secondary text-xs font-semibold hover:opacity-80 transition-opacity"
+                    className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-lg dash-bg-surface dash-text-secondary text-xs font-semibold hover:opacity-80 transition-opacity"
                   >
-                    {copiedField === "email" ? "✓ Copiado" : "Copiar"}
+                    {copiedField === "email" ? (
+                      <>
+                        <CheckIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                        Copiado
+                      </>
+                    ) : "Copiar"}
                   </button>
                 </div>
 
@@ -289,9 +309,14 @@ export default function AdminOnboardPage() {
                   </div>
                   <button
                     onClick={() => copyToClipboard(result.tempPassword, "password")}
-                    className="shrink-0 px-3 py-2 rounded-lg dash-bg-surface dash-text-secondary text-xs font-semibold hover:opacity-80 transition-opacity"
+                    className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-lg dash-bg-surface dash-text-secondary text-xs font-semibold hover:opacity-80 transition-opacity"
                   >
-                    {copiedField === "password" ? "✓ Copiado" : "Copiar"}
+                    {copiedField === "password" ? (
+                      <>
+                        <CheckIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                        Copiado
+                      </>
+                    ) : "Copiar"}
                   </button>
                 </div>
               </div>
@@ -435,8 +460,9 @@ export default function AdminOnboardPage() {
           justamente porque se borra solo a los 4 segundos: si no se anuncia al
           aparecer, no se anuncia nunca. */}
       {errorMsg && (
-        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
-          ⚠️ {errorMsg}
+        <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-800/60 text-red-200 text-sm font-medium shadow-lg backdrop-blur-sm">
+          <ExclamationTriangleIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
+          {errorMsg}
         </div>
       )}
     </div>

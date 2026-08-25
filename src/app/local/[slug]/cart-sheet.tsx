@@ -1,5 +1,6 @@
 "use client";
 
+import { ShoppingCartIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import Modal from "@/componentes/modal";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
@@ -41,15 +42,18 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Cerrar el pedido"
             className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 hover:bg-stone-200 hover:text-stone-600 transition-colors text-sm"
-          >✕</button>
+          >
+            <XMarkIcon aria-hidden className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {items.length === 0 ? (
             <div className="text-center py-16 text-stone-400">
-              <span className="text-5xl block mb-4">🛒</span>
+              <ShoppingCartIcon aria-hidden className="w-12 h-12 mx-auto mb-4" />
               <p className="font-medium">Tu carrito está vacío</p>
               <p className="text-xs mt-1">Agrega productos desde el menú</p>
             </div>
@@ -61,7 +65,14 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
               >
                 <div className="flex items-start gap-3">
                   {/* Product icon */}
-                  <div className="w-11 h-11 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-lg flex-shrink-0 shadow-sm">
+                  {/* Este 🍽️ NO es chrome y por eso sobrevivió al barrido de
+                      iconos: es el mismo marcador de "producto sin foto" que usa
+                      `ProductCard`, donde sale de `cat.icono` —lo que eligió el
+                      dueño— con este emoji de reserva. Cambiarlo por un icono
+                      acá dejaría la misma línea con dos dibujos distintos entre
+                      la carta y el carrito. Cuando el carrito conozca la
+                      categoría del ítem, esto pasa a ser `cat.icono`. */}
+                  <div className="w-11 h-11 rounded-xl bg-white border border-stone-100 flex items-center justify-center text-lg shrink-0 shadow-sm">
                     🍽️
                   </div>
 
@@ -139,9 +150,7 @@ export default function CartSheet({ onClose, onCheckout }: CartSheetProps) {
                       onClick={() => removeItem(item.producto.id)}
                       className="mt-2 text-xs text-stone-500 hover:text-red-500 transition-colors flex items-center gap-1"
                     >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <TrashIcon aria-hidden className="w-3.5 h-3.5" />
                       Eliminar
                     </button>
                   </div>
