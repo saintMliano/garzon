@@ -1,7 +1,8 @@
 # Dominio propio — `garzondigital.cl`
 
-> **Estado (2026-08-26): el dominio está EN VIVO.** DNS delegado, Vercel enganchado y certificado
-> emitido. Falta solo el correo (Email Routing) y la Site URL de Supabase. Este archivo es la
+> **Estado (2026-08-26): el dominio está EN VIVO y el correo también.** DNS delegado, Vercel
+> enganchado, certificado emitido y `contacto@garzondigital.cl` recibiendo. Falta solo la Site URL
+> de Supabase, que es higiene. Este archivo es la
 > decisión escrita y el instructivo, para no volver a discutirlo desde cero ni buscar los valores
 > en tutoriales sueltos.
 >
@@ -163,20 +164,35 @@ leveraging the Anycast methodology."*
 `metadataBase` anuncia una URL que redirige y las miniaturas de WhatsApp apuntan al lado
 equivocado.
 
-### 3.3 El correo
+### 3.3 El correo *(hecho el 2026-08-26)*
 
-1. Cloudflare → **Email Routing** → activar. Crea solo los `MX`, el `TXT` de SPF y el de DKIM.
-2. Crear las direcciones y su destino (reenvío a una casilla real).
-3. **Reenviar no es enviar.** Email Routing recibe y reenvía; *responder* desde
-   `hola@garzondigital.cl` se configura aparte, con el "Enviar como" del cliente de correo más un
-   relay SMTP. Verificarlo al configurarlo en vez de darlo por hecho.
+`contacto@garzondigital.cl` → reenvía a la casilla personal. Verificado desde afuera, que es la
+única forma de saber si el correo va a llegar y no solo si el panel se puso verde:
+
+```
+MX    route1/2/3.mx.cloudflare.net   (prioridades 72 / 93 / 31)
+SPF   v=spf1 include:_spf.mx.cloudflare.net ~all
+DKIM  presente
+```
+
+El botón **"Add missing records"** de Cloudflare escribe los tres `MX` y el SPF solo; no hay que
+escribirlos a mano. El proxy no es un tema acá: la nube naranja solo aplica a `A`, `AAAA` y `CNAME`.
+
+Dos cosas que no son obvias:
+
+- **El catch-all va en `drop`, no en reenviar.** Una regla que atrapa todo lo demás termina siendo
+  un imán de spam, y no gana nada: nadie escribe a una dirección que no se publicó.
+- **Reenviar no es enviar.** Email Routing recibe y reenvía; *responder* desde
+  `contacto@garzondigital.cl` se configura aparte, con el "Enviar como" del cliente de correo más un
+  relay SMTP. Verificarlo al configurarlo en vez de darlo por hecho.
 
 ### 3.4 En el repo *(hecho el 2026-08-26)*
 
 - `metadataBase` en `src/app/layout.tsx`, tomado de `NEXT_PUBLIC_SITE_URL`.
 - `NEXT_PUBLIC_SITE_URL` en `.env.example` — **hay que definirla también en el entorno de
   producción de Vercel**, o el fallback la deja apuntando a la URL de la preview.
-- Las referencias a `garzon-one.vercel.app` en `CLAUDE.md` y `plan/PITCH-VENTAS.md`.
+- Las referencias a `garzon-one.vercel.app` en `CLAUDE.md`, `plan/PITCH-VENTAS.md` y `README.md`,
+  que ahora apuntan al dominio propio.
 
 ### 3.5 La variable de entorno
 
