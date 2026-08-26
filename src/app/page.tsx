@@ -18,6 +18,7 @@ import MarcoPanel from "@/componentes/landing/marco-panel";
 import DemoCocina from "@/componentes/landing/demo-cocina";
 import DemoReportes from "@/componentes/landing/demo-reportes";
 import IconoWhatsApp from "@/componentes/landing/icono-whatsapp";
+import DemoRecorrido from "@/componentes/landing/demo-recorrido";
 
 /**
  * Landing de la plataforma. A diferencia del resto del sitio, acá el lector no
@@ -256,6 +257,10 @@ export default function Home() {
       {/* ===== HERO ===== */}
       <section className="sobre-oscuro bg-stone-950 border-b border-stone-900">
         <div className="max-w-6xl mx-auto px-5 pt-16 md:pt-24 pb-14 md:pb-20">
+          {/* El copy y el recorrido, lado a lado desde `lg`. Antes de ese ancho el
+              recorrido empujaría el tablero fuera de la primera pantalla, y el
+              tablero es lo que de verdad hay que mostrar. */}
+          <div className="lg:flex lg:items-center lg:gap-12">
           <div className="max-w-2xl">
             <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
               Pedidos por QR para locales de comida
@@ -345,6 +350,16 @@ export default function Home() {
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Sin contrato de permanencia
               </li>
             </ul>
+          </div>
+
+            {/* El recorrido del pedido. No reproduce ninguna pantalla —eso lo
+                hace la maqueta del tablero, justo abajo—: cuenta el trayecto. */}
+            <div
+              className="hidden lg:block shrink-0 animate-fade-in"
+              style={{ animationDelay: "400ms" }}
+            >
+              <DemoRecorrido />
+            </div>
           </div>
 
           {/* La pantalla de la cocina, debajo del titular que la promete. Es lo

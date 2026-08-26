@@ -239,6 +239,192 @@ body {
    No se apaga la animación: se colapsa a un solo fotograma. Así el estado final
    (opacidad 1, posición 0) igual se aplica y nada queda invisible, que es lo que
    pasaría con `animation: none` sobre un `fade-in` que arranca en opacidad 0. */
+/* ===== EL RECORRIDO DEL HERO =====
+   La animación de `src/componentes/landing/demo-recorrido.tsx`: cuatro hitos que
+   se encienden uno a uno mientras un pulso baja por la línea que los enhebra.
+
+   **Sin JavaScript y solo con `opacity` y `transform`**, que son las dos
+   propiedades que el navegador mueve sin volver a pintar. La landing sigue
+   estática (`○ /` en el build).
+
+   **Un solo ciclo de 12 s compartido por todas las piezas**, así los porcentajes
+   son un guion común:
+
+       0-4 %     reinicio: se apaga todo
+       8-16 %    PAUSA en el hito 1, que se enciende con un golpe corto
+       16-28 %   el pulso viaja al hito 2 y la línea crece con él
+       28-36 %   PAUSA en el hito 2
+       36-48 %   viaja al hito 3
+       48-56 %   PAUSA en el hito 3
+       56-68 %   viaja al hito 4
+       68-78 %   PAUSA en el hito 4
+       78-100 %  los cuatro encendidos, quietos
+
+   **Las pausas son el punto.** Con el pulso a velocidad constante se leía como un
+   punto que pasa de largo; deteniéndose, se lee como una señal que **llega** a
+   cada etapa. Cada hito enciende al empezar su pausa, no antes: un nodo que se
+   ilumina sin que le haya llegado la señal rompe justamente lo que la animación
+   cuenta.
+
+   **El pulso se apaga durante cada pausa** y vuelve a salir al arrancar el tramo
+   siguiente. Así no queda un punto brillante encima del icono, y se lee como que
+   la señal se absorbe en la etapa y de ahí sale la próxima.
+
+   **El riel y el pulso comparten porcentajes exactos y los dos van en `linear`.**
+   No es un detalle: con curvas distintas el punto se despega del borde naranja
+   —pasó, con `ease-in-out` en la línea el punto iba en el 17 % y la línea en el
+   4 %— y eso se ve como un error. Si alguien cambia una curva o un porcentaje,
+   tiene que cambiar los dos.
+
+   **Por qué termina encendido y no apagado.** El bloque de
+   `prefers-reduced-motion` de más abajo colapsa toda animación a `0.01ms` con una
+   sola iteración: quien pide movimiento reducido no ve el recorrido, ve el
+   **fotograma 100 %**. Por eso el ciclo está escrito al revés —el reinicio va al
+   principio— y todo lleva `animation-fill-mode: both`. Si terminara apagándose,
+   esas personas verían cuatro cuadros grises.
+
+   **La geometría está acoplada.** `--rec-riel` son 324 px = tres saltos de 108
+   (44 de nodo + 64 de separación). Si cambia el nodo o la separación, cambia acá.
+   El `translateY` del pulso usa esa misma variable, así no pueden discrepar. */
+
+.rec-caja {
+  --rec-nodo: 44px;
+  --rec-salto: 64px;
+  --rec-riel: 324px; /* 3 × (44 + 64) */
+  position: relative;
+  width: 300px;
+}
+.rec-lista {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rec-salto);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rec-paso {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.rec-nodo {
+  position: relative;
+  width: var(--rec-nodo);
+  height: var(--rec-nodo);
+  flex: none;
+  border-radius: 14px;
+  border: 1px solid #44403c;
+  background: rgba(28, 25, 23, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rec-nodo-on {
+  position: absolute;
+  inset: -1px;
+  border-radius: 14px;
+  border: 1px solid rgba(249, 115, 22, 0.55);
+  background: rgba(249, 115, 22, 0.12);
+  box-shadow: 0 0 22px -4px rgba(249, 115, 22, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* El riel va detrás de los nodos, alineado con su centro. */
+.rec-riel {
+  position: absolute;
+  left: calc(var(--rec-nodo) / 2 - 1px);
+  top: calc(var(--rec-nodo) / 2);
+  width: 2px;
+  height: var(--rec-riel);
+  background: #292524;
+  border-radius: 999px;
+}
+.rec-progreso {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, #f97316, #fbbf24);
+  transform-origin: top;
+}
+.rec-pulso {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: #fbbf24;
+  box-shadow: 0 0 14px 3px rgba(251, 191, 36, 0.5);
+}
+
+.rec-progreso,
+.rec-pulso,
+.rec-nodo-on {
+  animation-duration: 12s;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-timing-function: ease-in-out;
+}
+.rec-progreso { animation-name: rec-progreso; animation-timing-function: linear; }
+.rec-pulso { animation-name: rec-pulso; animation-timing-function: linear; }
+.rec-nodo-1 { animation-name: rec-nodo-1; }
+.rec-nodo-2 { animation-name: rec-nodo-2; }
+.rec-nodo-3 { animation-name: rec-nodo-3; }
+.rec-nodo-4 { animation-name: rec-nodo-4; }
+
+/* La línea crece a saltos y se queda quieta en cada pausa. Los tercios están
+   escritos como fracción de `--rec-riel` para que no puedan discrepar del pulso. */
+@keyframes rec-progreso {
+  0% { transform: scaleY(1); }
+  4%, 16% { transform: scaleY(0); }
+  28%, 36% { transform: scaleY(0.3333); }
+  48%, 56% { transform: scaleY(0.6667); }
+  68%, 100% { transform: scaleY(1); }
+}
+@keyframes rec-pulso {
+  /* Vuelve arriba entre el 0 y el 4 %, pero invisible: nadie ve el salto. */
+  0% { transform: translateY(var(--rec-riel)); opacity: 0; }
+  4%, 16% { transform: translateY(0); opacity: 0; }
+  18%, 26% { opacity: 1; }
+  28%, 36% { transform: translateY(calc(var(--rec-riel) / 3)); opacity: 0; }
+  38%, 46% { opacity: 1; }
+  48%, 56% { transform: translateY(calc(var(--rec-riel) / 3 * 2)); opacity: 0; }
+  58%, 66% { opacity: 1; }
+  68%, 100% { transform: translateY(var(--rec-riel)); opacity: 0; }
+}
+
+/* El golpe corto de cada hito al recibir la señal: entra pasado de tamaño y se
+   asienta. Es lo que convierte la pausa en un acento y no en un hueco. */
+@keyframes rec-nodo-1 {
+  0% { opacity: 1; transform: scale(1); }
+  4%, 8% { opacity: 0; transform: scale(0.88); }
+  11% { opacity: 1; transform: scale(1.12); }
+  15%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes rec-nodo-2 {
+  0% { opacity: 1; transform: scale(1); }
+  4%, 28% { opacity: 0; transform: scale(0.88); }
+  31% { opacity: 1; transform: scale(1.12); }
+  35%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes rec-nodo-3 {
+  0% { opacity: 1; transform: scale(1); }
+  4%, 48% { opacity: 0; transform: scale(0.88); }
+  51% { opacity: 1; transform: scale(1.12); }
+  55%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes rec-nodo-4 {
+  0% { opacity: 1; transform: scale(1); }
+  4%, 68% { opacity: 0; transform: scale(0.88); }
+  71% { opacity: 1; transform: scale(1.12); }
+  75%, 100% { opacity: 1; transform: scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
