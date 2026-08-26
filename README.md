@@ -7,7 +7,7 @@ sin login. La cocina gestiona los pedidos en `/dashboard`, un Kanban en tiempo r
 tablet. Cada local se autoadministra el menú, las fotos y su identidad visual; el alta de locales
 nuevos se hace desde `/dashboard/admin`.
 
-**En producción:** <https://garzondigital.cl> · contacto: `contacto@garzondigital.cl`
+**En producción:** <https://garzondigital.cl> · contacto: `contacto@garzondigital.cl` · WhatsApp `+56 9 6436 4954`
 
 **Stack:** Next.js 16 (App Router, React 19, TypeScript) · TailwindCSS 4 · Supabase (Postgres, Auth,
 Storage, Realtime) · Vitest.
@@ -65,6 +65,9 @@ el pipeline. No se re-aplica y no se le agregan archivos.
   [F5 — Turno autónomo](plan/F5-TURNO-AUTONOMO.md).
 - **[`plan/DOMINIO.md`](plan/DOMINIO.md)** — el dominio propio y el correo: por qué el DNS vive en
   Cloudflare, por qué su proxy va apagado, y cómo verificar la cadena sin creerle a ningún panel.
+- **[`marketing/`](marketing/volante-a6.html)** — material impreso. El volante A6 se abre en el
+  navegador y se imprime a escala real, con el QR de verdad incrustado. Lo impreso no se actualiza:
+  antes de mandar a imprimir, revisar que el precio siga siendo el de `src/app/page.tsx`.
 
 ## Reglas que no se rompen
 
