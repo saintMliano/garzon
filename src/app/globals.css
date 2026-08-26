@@ -251,18 +251,30 @@ body {
    son un guion común:
 
        0-4 %     reinicio: se apaga todo
-       8-70 %    el pulso baja y la línea naranja crece detrás
-       13 %      se enciende "escanea el QR"
-       33 %      se enciende "elige y confirma"
-       53 %      se enciende "suena en la cocina"
-       74 %      se enciende "se prepara y sale"
-       74-100 %  los cuatro encendidos, quietos
+       8-16 %    PAUSA en el hito 1, que se enciende con un golpe corto
+       16-28 %   el pulso viaja al hito 2 y la línea crece con él
+       28-36 %   PAUSA en el hito 2
+       36-48 %   viaja al hito 3
+       48-56 %   PAUSA en el hito 3
+       56-68 %   viaja al hito 4
+       68-78 %   PAUSA en el hito 4
+       78-100 %  los cuatro encendidos, quietos
 
-   Cada hito se enciende **cuando el pulso ya pasó por él**, no antes. Los nodos
-   están en el 0, 33, 67 y 100 % del riel, y el pulso los alcanza en el 8, 29, 49
-   y 70 % del ciclo; por eso encienden en el 13, 33, 53 y 74. Un nodo que se
-   ilumina antes de que le llegue la señal rompe justamente lo que la animación
-   está contando.
+   **Las pausas son el punto.** Con el pulso a velocidad constante se leía como un
+   punto que pasa de largo; deteniéndose, se lee como una señal que **llega** a
+   cada etapa. Cada hito enciende al empezar su pausa, no antes: un nodo que se
+   ilumina sin que le haya llegado la señal rompe justamente lo que la animación
+   cuenta.
+
+   **El pulso se apaga durante cada pausa** y vuelve a salir al arrancar el tramo
+   siguiente. Así no queda un punto brillante encima del icono, y se lee como que
+   la señal se absorbe en la etapa y de ahí sale la próxima.
+
+   **El riel y el pulso comparten porcentajes exactos y los dos van en `linear`.**
+   No es un detalle: con curvas distintas el punto se despega del borde naranja
+   —pasó, con `ease-in-out` en la línea el punto iba en el 17 % y la línea en el
+   4 %— y eso se ve como un error. Si alguien cambia una curva o un porcentaje,
+   tiene que cambiar los dos.
 
    **Por qué termina encendido y no apagado.** El bloque de
    `prefers-reduced-motion` de más abajo colapsa toda animación a `0.01ms` con una
@@ -358,11 +370,6 @@ body {
   animation-fill-mode: both;
   animation-timing-function: ease-in-out;
 }
-/* El riel y el pulso van en `linear` y con los MISMOS porcentajes (8 % → 70 %).
-   No es un detalle: con curvas distintas el punto se despega del borde naranja
-   —con `ease-in-out` en la línea, a mitad de camino el punto iba en el 17 % y la
-   línea en el 4 %, y más tarde la línea lo adelantaba— y eso se ve como un error,
-   no como una animación. Si alguien cambia una curva, tiene que cambiar la otra. */
 .rec-progreso { animation-name: rec-progreso; animation-timing-function: linear; }
 .rec-pulso { animation-name: rec-pulso; animation-timing-function: linear; }
 .rec-nodo-1 { animation-name: rec-nodo-1; }
@@ -370,39 +377,52 @@ body {
 .rec-nodo-3 { animation-name: rec-nodo-3; }
 .rec-nodo-4 { animation-name: rec-nodo-4; }
 
+/* La línea crece a saltos y se queda quieta en cada pausa. Los tercios están
+   escritos como fracción de `--rec-riel` para que no puedan discrepar del pulso. */
 @keyframes rec-progreso {
   0% { transform: scaleY(1); }
-  4%, 8% { transform: scaleY(0); }
-  70%, 100% { transform: scaleY(1); }
+  4%, 16% { transform: scaleY(0); }
+  28%, 36% { transform: scaleY(0.3333); }
+  48%, 56% { transform: scaleY(0.6667); }
+  68%, 100% { transform: scaleY(1); }
 }
 @keyframes rec-pulso {
   /* Vuelve arriba entre el 0 y el 4 %, pero invisible: nadie ve el salto. */
   0% { transform: translateY(var(--rec-riel)); opacity: 0; }
-  4%, 8% { transform: translateY(0); opacity: 0; }
-  11% { opacity: 1; }
-  67% { opacity: 1; }
-  70% { transform: translateY(var(--rec-riel)); opacity: 0; }
-  100% { transform: translateY(var(--rec-riel)); opacity: 0; }
+  4%, 16% { transform: translateY(0); opacity: 0; }
+  18%, 26% { opacity: 1; }
+  28%, 36% { transform: translateY(calc(var(--rec-riel) / 3)); opacity: 0; }
+  38%, 46% { opacity: 1; }
+  48%, 56% { transform: translateY(calc(var(--rec-riel) / 3 * 2)); opacity: 0; }
+  58%, 66% { opacity: 1; }
+  68%, 100% { transform: translateY(var(--rec-riel)); opacity: 0; }
 }
+
+/* El golpe corto de cada hito al recibir la señal: entra pasado de tamaño y se
+   asienta. Es lo que convierte la pausa en un acento y no en un hueco. */
 @keyframes rec-nodo-1 {
-  0% { opacity: 1; }
-  4%, 9% { opacity: 0; }
-  13%, 100% { opacity: 1; }
+  0% { opacity: 1; transform: scale(1); }
+  4%, 8% { opacity: 0; transform: scale(0.88); }
+  11% { opacity: 1; transform: scale(1.12); }
+  15%, 100% { opacity: 1; transform: scale(1); }
 }
 @keyframes rec-nodo-2 {
-  0% { opacity: 1; }
-  4%, 29% { opacity: 0; }
-  33%, 100% { opacity: 1; }
+  0% { opacity: 1; transform: scale(1); }
+  4%, 28% { opacity: 0; transform: scale(0.88); }
+  31% { opacity: 1; transform: scale(1.12); }
+  35%, 100% { opacity: 1; transform: scale(1); }
 }
 @keyframes rec-nodo-3 {
-  0% { opacity: 1; }
-  4%, 49% { opacity: 0; }
-  53%, 100% { opacity: 1; }
+  0% { opacity: 1; transform: scale(1); }
+  4%, 48% { opacity: 0; transform: scale(0.88); }
+  51% { opacity: 1; transform: scale(1.12); }
+  55%, 100% { opacity: 1; transform: scale(1); }
 }
 @keyframes rec-nodo-4 {
-  0% { opacity: 1; }
-  4%, 70% { opacity: 0; }
-  74%, 100% { opacity: 1; }
+  0% { opacity: 1; transform: scale(1); }
+  4%, 68% { opacity: 0; transform: scale(0.88); }
+  71% { opacity: 1; transform: scale(1.12); }
+  75%, 100% { opacity: 1; transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {

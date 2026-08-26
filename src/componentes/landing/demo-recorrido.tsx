@@ -8,12 +8,16 @@ import {
 /**
  * El recorrido del pedido, en el hueco del hero.
  *
- * Cuatro hitos enhebrados por una línea, y un pulso que la recorre encendiéndolos
- * uno a uno: el comensal escanea, elige, suena en la cocina, se prepara. Es la
- * versión **abstracta** del banner — no reproduce ninguna pantalla del producto,
- * lo cual tiene dos consecuencias que conviene tener claras: no se desfasa nunca
- * (no es espejo de nada), pero tampoco muestra el producto. Eso lo hace la
- * maqueta del tablero, justo debajo.
+ * Cuatro hitos enhebrados por una línea, y un pulso que baja **de hito en hito, con
+ * una pausa en cada uno**: llega, el hito se enciende con un golpe corto, y recién
+ * entonces sale el siguiente pulso. El movimiento continuo se leía como un punto
+ * que pasa de largo; con la pausa se lee como una señal que **llega** a cada
+ * etapa.
+ *
+ * **Es la versión abstracta del banner.** No reproduce ninguna pantalla del
+ * producto, y eso tiene dos consecuencias que conviene tener claras: no se
+ * desfasa nunca —no es espejo de nada— pero tampoco muestra el producto. Eso lo
+ * hace la maqueta del tablero, justo debajo.
  *
  * **Sin JavaScript.** Solo `opacity` y `transform`, las dos propiedades que el
  * navegador mueve sin volver a pintar. La landing sigue estática (`○ /`).
@@ -34,11 +38,16 @@ import {
  * la separación, hay que cambiar `--rec-riel` en `globals.css`.
  */
 
+/**
+ * Los cuatro hitos, en tercera persona y describiendo lo que pasa —no lo que hay
+ * que hacer—. Es un recorrido que se mira, no una instrucción que se sigue: el
+ * dueño está viendo cómo funcionaría en su local, no aprendiendo a usarlo.
+ */
 const HITOS = [
-  { Icono: QrCodeIcon, texto: "Escanea el QR de su mesa" },
-  { Icono: DevicePhoneMobileIcon, texto: "Elige y confirma su pedido" },
-  { Icono: BellAlertIcon, texto: "Suena en la cocina" },
-  { Icono: FireIcon, texto: "Se prepara y sale" },
+  { Icono: QrCodeIcon, texto: "El cliente escanea el QR" },
+  { Icono: DevicePhoneMobileIcon, texto: "Elige y envía su pedido" },
+  { Icono: BellAlertIcon, texto: "La cocina recibe la comanda" },
+  { Icono: FireIcon, texto: "Se prepara y sale el plato" },
 ];
 
 export default function DemoRecorrido() {
