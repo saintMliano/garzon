@@ -278,8 +278,15 @@ export default function Home() {
               </span>
             </p>
 
+            {/* `flex-wrap` y `whitespace-nowrap` van juntos y por el mismo motivo.
+                Esta fila vive dentro de un `max-w-2xl`: son 672 px fijos, no el
+                ancho de la pantalla. Con tres botones el texto quedaba al borde
+                y en algunas máquinas —según cómo mida la fuente— se partía en
+                dos líneas dentro del botón. Ahora el texto nunca se parte, y si
+                de verdad no entra, es la FILA la que baja un botón: se lee como
+                una decisión y no como algo roto. */}
             <div
-              className="animate-fade-in mt-8 flex flex-col sm:flex-row gap-3"
+              className="animate-fade-in mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3"
               style={{ animationDelay: "240ms" }}
             >
               {/* El único `btn-primario` de la página. La landing existe para que el
@@ -288,7 +295,7 @@ export default function Home() {
                   tres gritan igual, el hero deja de ser el primero que se mira. */}
               <Link
                 href={`/local/${demoSlug}`}
-                className="group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl btn-primario font-bold text-base shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/25 active:scale-[0.99] transition-all"
+                className="group inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl btn-primario font-bold text-base whitespace-nowrap shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/25 active:scale-[0.99] transition-all"
               >
                 Probar la carta demo
                 <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -297,7 +304,7 @@ export default function Home() {
               </Link>
               <a
                 href="#precio"
-                className="inline-flex items-center justify-center h-12 px-7 rounded-xl border border-stone-700 text-stone-300 font-semibold text-base hover:border-stone-500 hover:text-white transition-colors"
+                className="inline-flex items-center justify-center h-12 px-7 rounded-xl border border-stone-700 text-stone-300 font-semibold text-base whitespace-nowrap hover:border-stone-500 hover:text-white transition-colors"
               >
                 Ver el plan
               </a>
@@ -312,10 +319,14 @@ export default function Home() {
                 href={WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl font-bold text-base ${CLASES_WHATSAPP}`}
+                className={`inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl font-bold text-base whitespace-nowrap ${CLASES_WHATSAPP}`}
               >
                 <IconoWhatsApp className="w-4 h-4 shrink-0" />
-                Escríbenos por WhatsApp
+                {/* Corto a propósito: acá compite con otros dos botones dentro
+                    de 672 px. Con el logotipo al lado, "WhatsApp" no necesita
+                    explicación — en el cierre, donde hay espacio de sobra, sigue
+                    diciendo "Escríbenos por WhatsApp". */}
+                WhatsApp
               </a>
             </div>
 
