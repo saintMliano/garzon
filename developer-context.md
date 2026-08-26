@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -258,6 +258,34 @@ son código:**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — Un volante A6 para dejar en mano, con el QR de verdad adentro
+
+`marketing/volante-a6.html`: el primer material impreso del proyecto. Se abre en
+el navegador y se imprime a escala real —105 × 148 mm declarados con `@page`—
+para entregar a dueños de local después de una visita.
+
+**Por qué en HTML y no en una herramienta de diseño.** Porque el QR tiene que ser
+**el archivo real**. Un código generado por un modelo de imagen se ve idéntico a
+uno bueno y no escanea, y eso no se descubre en la pantalla: se descubre cuando
+ya hay cien papeles repartidos. Acá el SVG de `npm run qr` va incrustado tal cual.
+
+**Lo que se midió, en vez de suponerlo:**
+
+- El código imprime a **32,1 mm** de lado con **4,43 mm de zona de silencio**
+  —la que trae el propio SVG—, más el blanco de la tarjeta que lo rodea.
+- **Decodifica a 600, 300, 150 y 96 dpi** ya montado dentro del volante, no solo
+  como archivo suelto. Se leyó con jsQR, que es un lector y no el generador.
+- **Cabe en la hoja aunque Inter no cargue.** La primera versión se salía 17,8 mm
+  del papel y habría cortado el pie con el correo de contacto. Corregido, y
+  verificado con Segoe UI y Arial —las sustitutas del sistema, más anchas—: con
+  las tres sobran 7,5 mm.
+
+**Y ahora hay un cuarto lugar donde viven las cifras del plan**, además de la
+landing, el pitch y el plan comercial. Quedó anotado en `CLAUDE.md`, con el
+motivo por el que este es el peligroso: una cifra vieja en una pantalla se
+corrige y ya; una cifra vieja en cien papeles repartidos, no.
+
 
 ### 2026-08-26 — Supabase Pro: decisión del dueño, postergada a propósito
 
