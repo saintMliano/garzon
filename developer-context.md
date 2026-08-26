@@ -219,6 +219,21 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F12 — Roles y comanda** | Roles por local (`dueño`/`personal`) con cumplimiento en la base, pantalla de equipo, y comanda del garzón (`/dashboard/comanda`). [Plan](plan/ROLES-Y-COMANDA.md) | **Completa** |
 | F11 — Dominios propios | Cuando un cliente lo pida **y lo pague**. *(El dominio de la plataforma, `garzondigital.cl`, ya está: ver [`plan/DOMINIO.md`](plan/DOMINIO.md). Lo pendiente son los subdominios/dominios **por local**.)* | Pendiente |
 
+**Pendiente abierto: el banner del hero (2026-08-26).** La franja negra del hero
+tiene un hueco a la derecha del titular —unos 460 × 400 px en escritorio— que hoy
+está vacío. **Falta hacer algo ahí**; el dueño lo quiere con movimiento, para que
+la página se vea más terminada.
+
+Primer intento, **descartado por ahora pero no borrado**: la rama
+`hero-telefono` tiene un teléfono animado en CSS puro que arma un pedido y lo
+manda a la cocina. Funciona y está verificado —incluida la parte difícil, que el
+fotograma final se sostenga solo para quien pide movimiento reducido— pero no
+convenció visualmente. **No se mergeó y la rama se conserva**: si se retoma la
+idea, el trabajo está hecho y el razonamiento está en su commit.
+
+Lo que se busca es que el recorrido se entienda de un vistazo: el comensal pide,
+llega a la cocina, se prepara.
+
 **Dos condiciones que hay que cumplir antes de instalar el primer local, y que no
 son código:**
 
