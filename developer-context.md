@@ -259,6 +259,34 @@ son código:**
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
 
+### 2026-08-26 — Los botones del hero se partían en dos líneas: 672 px, no el ancho de la pantalla
+
+El dueño reportó desde su notebook que los tres botones del hero mostraban el
+texto en dos líneas. En esta máquina no pasaba.
+
+**La causa, y por qué la verificación anterior no la vio.** La fila de botones
+vive dentro de un `max-w-2xl`: **672 px fijos**, independientes del ancho del
+monitor. Los tres botones sumaban 648 px más 24 de separación — exactamente 672.
+Estaban al borde, y bastaba que la fuente midiera un pelo distinto para que el
+texto se partiera.
+
+Al medir se leyó "la fila mide 672 y entra", cuando la fila **es** el contenedor.
+Y se comprobó desborde horizontal, que acá nunca ocurre: **el texto no desborda,
+envuelve**, y eso solo aparece en la altura del botón. La métrica correcta es
+**48 px de alto = una línea**.
+
+**El arreglo, en tres partes:** `whitespace-nowrap` en los tres botones para que
+el texto nunca se parta; `sm:flex-wrap` en la fila para que, si de verdad no
+entra, baje un botón entero —se lee como una decisión y no como algo roto—; y el
+rótulo del hero acortado a **"WhatsApp"**, que con el logotipo al lado no
+necesita explicación. En el cierre, donde hay espacio de sobra, sigue diciendo
+"Escríbenos por WhatsApp".
+
+**Verificado con tres fuentes de anchos distintos**, que es lo que la primera vez
+faltó: Inter 568 px, Arial 559, Georgia 590 — sobre 672. Los tres botones a 48 px
+de alto y en una sola fila con las tres. En 375 px se apilan a ancho completo.
+
+
 ### 2026-08-26 — El botón de WhatsApp también en el hero
 
 Decisión del dueño del producto. El razonamiento es correcto: quien se convence
