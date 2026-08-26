@@ -276,6 +276,15 @@ presente. El detalle operativo quedó en [`plan/DOMINIO.md`](plan/DOMINIO.md) §
 incluidas dos trampas: el catch-all va en `drop` y no en reenviar, y **reenviar
 no es enviar** — responder *desde* esa dirección necesita un relay SMTP aparte.
 
+**Y la documentación se puso al día con el hecho de que el producto tiene
+dirección.** Tres archivos seguían diciendo que el despliegue vive en
+`garzon-one.vercel.app`: `CLAUDE.md`, el pitch y —por omisión— el `README`, que
+no nombraba ninguna URL. Ahora los tres apuntan a **https://garzondigital.cl**.
+No es cosmético en el caso del pitch: **esa es la dirección que se le dicta a un
+cliente y la que va impresa en los QR**, así que si ahí dice otra cosa, alguien
+la va a dictar mal. El `README` además enlaza `plan/DOMINIO.md`, que es donde
+está el porqué de cada decisión de DNS.
+
 
 ### 2026-08-26 — Dominio propio: `garzondigital.cl`, y el `metadataBase` que faltaba
 

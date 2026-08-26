@@ -191,9 +191,11 @@ precio, se cambia en un lugar y ya está — no hay que rehacer una imagen.
 5. **Abrir los reportes de la demo** — diciendo que son datos de demostración — para que vea la
    forma que va a tener su información en un mes.
 
-**Si no se puede hacer la demo en vivo** (no te atiende el dueño, te dice "mándame algo"), la
-landing sirve de reemplazo parcial desde el 2026-08-26: muestra el tablero de la cocina y la
-pantalla de reportes completa, con el rótulo "Datos de demostración" a la vista. **No reemplaza al
+**Si no se puede hacer la demo en vivo** (no te atiende el dueño, te dice "mándame algo"), mándale
+**https://garzondigital.cl**. Desde el 2026-08-26 la landing sirve de reemplazo parcial: muestra el
+tablero de la cocina y la pantalla de reportes completa, con el rótulo "Datos de demostración" a la
+vista, y trae **`contacto@garzondigital.cl`** para que pueda responder sin tener que buscarte. El
+link pegado en WhatsApp llega con miniatura propia. **No reemplaza al
 teléfono en su mano** — el momento que convence sigue siendo que él escanee y vea aparecer su propio
 pedido en la cocina—, pero deja de ser una página de texto que hay que creerle.
 
@@ -205,8 +207,8 @@ Notas internas. No son para el cliente, pero conviene tenerlas presentes al prom
 
 - **Probado en el despliegue, sin probar en servicio.** Esto cambió y la nota anterior ya era falsa:
   la carta, el flujo de cocina y los reportes **se revisaron a mano y funcionan** sobre
-  https://garzon-one.vercel.app/ (el dominio propio `garzondigital.cl` se compró el 2026-08-26 y
-  queda por enganchar). Lo que falta es distinto y más chico de decir: **nadie escaneó
+  **https://garzondigital.cl** — dominio propio desde el 2026-08-26, que es la dirección que se
+  dicta y la que va impresa en los QR. Lo que falta es distinto y más chico de decir: **nadie escaneó
   todavía un QR desde su mesa con el local abierto**, ni la cocina trabajó un turno entero contra el
   tablero. Eso es lo que separa "funciona" de "sirve" — cuánto aguanta el wifi del local, si el
   sonido se pierde con la tablet bloqueada, si el garzón prefiere el papel — y solo se cierra

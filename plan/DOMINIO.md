@@ -191,7 +191,8 @@ Dos cosas que no son obvias:
 - `metadataBase` en `src/app/layout.tsx`, tomado de `NEXT_PUBLIC_SITE_URL`.
 - `NEXT_PUBLIC_SITE_URL` en `.env.example` — **hay que definirla también en el entorno de
   producción de Vercel**, o el fallback la deja apuntando a la URL de la preview.
-- Las referencias a `garzon-one.vercel.app` en `CLAUDE.md` y `plan/PITCH-VENTAS.md`.
+- Las referencias a `garzon-one.vercel.app` en `CLAUDE.md`, `plan/PITCH-VENTAS.md` y `README.md`,
+  que ahora apuntan al dominio propio.
 
 ### 3.5 La variable de entorno
 
