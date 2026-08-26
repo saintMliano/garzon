@@ -119,12 +119,30 @@ $w = New-Object System.IO.StreamWriter($c.GetStream()); $w.WriteLine("garzondigi
 1. Vercel → el proyecto → **Settings → Domains** → agregar **`garzondigital.cl`** y
    **`www.garzondigital.cl`** (los dos).
 2. Vercel muestra los registros que necesita. **Copiar los que muestre el panel, no los de un
-   tutorial:** el `A` del ápice puede ser el clásico `76.76.21.21` o uno de su pool anycast
-   (`216.198.79.1`), y el `CNAME` de los subdominios hoy es **único por proyecto** (del estilo
-   `d1d4fc829fe7bc7c.vercel-dns-017.com`), ya no el viejo `cname.vercel-dns.com`.
-3. Cargar esos registros en Cloudflare **con la nube en gris (DNS-only)**.
-4. Marcar el ápice como dominio de producción. `garzon-one.vercel.app` pasa a redirigir solo.
-5. El certificado TLS lo emite Vercel cuando el DNS resuelve.
+   tutorial.** Acá pasó exactamente eso: el `A` del ápice que asignó Vercel es **`216.198.79.1`**,
+   de su pool anycast, y **no** el clásico `76.76.21.21` que sale en toda la documentación vieja.
+   El `CNAME` del `www` es **único por proyecto** (del estilo `algo.vercel-dns-017.com`), ya no el
+   viejo `cname.vercel-dns.com`. Los heredados siguen funcionando, pero no son los que corresponden.
+3. Cargar esos registros en Cloudflare **con la nube en gris (DNS-only)**. Cloudflare pone el proxy
+   **en naranja por defecto** al crear un `A` o un `CNAME`: hay que apagarlo a mano en cada uno.
+4. El certificado TLS lo emite Vercel cuando el DNS resuelve.
+
+**El principal es el ápice, sin `www`** *(decidido el 2026-08-26)*. Vercel propone lo contrario por
+defecto —`www` principal y el ápice redirigiendo— y su razón es real: la especificación de DNS
+prohíbe un `CNAME` en el ápice, así que este va con un `A` de IP fija, mientras que un `CNAME` les
+permite redirigir tráfico ante un DDoS o por optimización.
+
+Se eligió al revés por una razón del producto, no técnica: **este dominio se imprime en las mesas y
+se dicta por teléfono.** Nadie dice "doble-ve doble-ve doble-ve" vendiéndole a un dueño de fuente de
+soda, y la dirección canónica de un QR pegado a una mesa tiene que ser la corta. La objeción de
+Vercel es menor a esta escala, y su propia documentación lo concede: *"Vercel maximizes the
+reliability and performance of your apex domain if you choose to use it as your primary domain by
+leveraging the Anycast methodology."*
+
+**Consecuencia que hay que respetar:** `NEXT_PUBLIC_SITE_URL` es `https://garzondigital.cl`, sin
+`www`. Si alguna vez se da vuelta la decisión, esa variable se cambia el mismo día — si no, el
+`metadataBase` anuncia una URL que redirige y las miniaturas de WhatsApp apuntan al lado
+equivocado.
 
 ### 3.3 El correo
 
