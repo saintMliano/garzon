@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **WhatsApp** en la landing y el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **WhatsApp** en el hero, el cierre y el pie de la landing, y en el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -258,6 +258,26 @@ son código:**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — El botón de WhatsApp también en el hero
+
+Decisión del dueño del producto. El razonamiento es correcto: quien se convence
+en los primeros diez segundos no debería tener que recorrer la página entera para
+encontrar cómo escribir, y WhatsApp es el canal que un dueño de local contesta.
+
+**Por qué esto no rompe la regla de un solo `btn-primario` por pantalla.** El
+hero pasa a tener tres botones, y conviene dejar escrito por qué se puede: el
+`btn-primario` sigue siendo **uno solo** —la carta demo—; "Ver el plan" es un
+ancla con borde; y el de WhatsApp es verde porque ese es **el color de WhatsApp,
+no el de la marca**. Un tercer color no compite por el primer lugar mientras no
+sea el naranja: dice "hablar con alguien", no "esto es lo más importante de la
+pantalla".
+
+**Verificado a cinco anchos**, incluido el punto donde la fila se arma y que era
+el riesgo real —640 px, justo en el `sm:`—: los tres botones entran, mantienen
+48 px de alto, el texto no se corta y no hay scroll horizontal. En 375 se apilan
+a ancho completo.
+
 
 ### 2026-08-26 — WhatsApp en la landing y en el volante, con texto oscuro sobre el verde
 

@@ -301,6 +301,22 @@ export default function Home() {
               >
                 Ver el plan
               </a>
+              {/* WhatsApp también acá arriba, no solo en el cierre: quien se
+                  convence en los primeros diez segundos no debería tener que
+                  recorrer la página entera para encontrar cómo escribir. Es el
+                  tercer botón de la fila y a propósito NO es `btn-primario` —ese
+                  sigue siendo uno solo, el de la carta demo—: acá el verde es de
+                  WhatsApp, no de la marca, y dice "hablar con alguien", no
+                  "esto es lo más importante de la pantalla". */}
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl font-bold text-base ${CLASES_WHATSAPP}`}
+              >
+                <IconoWhatsApp className="w-4 h-4 shrink-0" />
+                Escríbenos por WhatsApp
+              </a>
             </div>
 
             <ul
