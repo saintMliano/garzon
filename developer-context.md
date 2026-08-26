@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-20):** Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -22,6 +22,14 @@ Lo que antes se decidía a ojo en cada pantalla ahora tiene reglas escritas, des
 - **Escala tipográfica.** La de Tailwind más `text-2xs` (11px), que es solo del panel y solo para rótulos. En la carta el piso es `text-xs` (12px), y los campos de formulario van en `text-base` (16px) para que Safari de iOS no haga zoom al enfocarlos. **No se escribe `text-[Npx]`.**
 - **Tres niveles de botón.** `btn-primario` / `btn-secundario` / `btn-terciario`, uno solo primario por pantalla o diálogo.
 - **Diálogos.** `src/componentes/modal.tsx` (rol, foco atrapado, Escape, devolución del foco) y `src/componentes/usar-confirmar.tsx`, que reemplazó a `window.confirm()`. No se abre una ventana con `fixed inset-0` a mano.
+- **Las maquetas de la landing son espejos, y se desfasan.** `src/componentes/landing/`
+  reconstruye en HTML dos pantallas del panel —el tablero (`/dashboard`) y los
+  reportes (`/dashboard/reportes`)— para mostrarlas en la página de venta. Usan
+  las clases reales, no una imitación. **Si tocás alguna de esas dos pantallas,
+  pasá por `src/componentes/landing/` antes de cerrar el commit:** si no, la
+  landing va a estar enseñando algo que ya no existe. Los datos son inventados y
+  cuadran entre sí; `tests/landing-demo.test.ts` falla si alguien retoca un
+  número suelto y deja de cuadrar.
 - **Iconos.** `@heroicons/react` (`24/outline` por defecto). Antes convivían trazados copiados a mano y emoji haciendo de interfaz. **El emoji de las categorías es contenido del cliente y no se toca:** lo elige el dueño en `/dashboard/menu` y se guarda en `categorias.icono`.
 - **Tipografía.** Inter la carga `next/font/google` desde el layout, autoalojada. No vuelve a entrar por `@import` de Google Fonts.
 
@@ -241,6 +249,71 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — Rediseño de la landing: la página deja de contar el producto y lo muestra
+
+La landing respondía bien las tres preguntas del dueño —qué hace, cuánto cuesta,
+qué no hace— pero las respondía **solo con texto**: ocho títulos en negrita y una
+lista de lo incluido. El dueño que llegaba a la página no veía nunca el producto.
+El único botón que mostraba algo llevaba a la carta demo, que es la pantalla del
+**comensal**, no la suya. Le faltaba justamente lo que compra.
+
+**Dos pantallas del panel, dentro de la página.** Bajo el hero está ahora el
+tablero de la cocina, con sus cuatro columnas, el cronómetro que se pone ámbar a
+los ocho minutos y las notas del cliente en amarillo. Más abajo, en su propia
+sección, la página de reportes completa: venta total, desglose, tiempos de
+cocina, el gráfico de los veintiséis días del mes y la tabla de productos.
+
+**Son réplicas en HTML, no capturas.** Se evaluaron las dos opciones. Un PNG pesa,
+se ve borroso al hacer zoom, hay que rehacerlo a mano cada vez que el panel
+cambia y obliga a entrar al panel con credenciales para tomarlo. La réplica queda
+nítida en cualquier pantalla, no suma un solo kilobyte —la landing sigue siendo
+estática y sin JavaScript, se ve en el `○ /` del build— y se adapta al ancho del
+teléfono. El precio que sí tiene es el desfase: si el panel cambia, la maqueta
+miente. Por eso cada componente nombra en su cabecera el archivo del que es
+espejo y quedó anotado arriba, en el sistema de diseño.
+
+**Los datos son inventados y lo dice la página.** Un rótulo "Datos de
+demostración" en el marco de cada maqueta. Y son inventados pero cuadran, porque
+un dueño de local mira una página así y suma: la venta total es exactamente la
+suma de las barras, el ticket promedio sale de dividir por los pedidos **no**
+rechazados, entregado más pendiente da el total, y el total de cada pedido del
+tablero es la suma de sus líneas. `tests/landing-demo.test.ts` (9 pruebas puras,
+sin base) falla si alguien retoca un número y deja de cuadrar. Una de esas
+pruebas custodia la regla de negocio: **la propina no entra en la venta**.
+
+**Lo que las maquetas hacen distinto del panel, a propósito.** Nada adentro es
+interactivo: en el panel real cada barra del gráfico y cada acción de una tarjeta
+son un `<button>`, y copiarlos habría sumado unas cuarenta paradas de tabulador
+que no llevan a ningún lado. Cada maqueta va en un `<figure>` con el bloque
+visual en `aria-hidden` y un `<figcaption>` que la describe en una frase: quien
+usa lector de pantalla no tiene por qué escuchar una tabla de seis productos que
+no existen. El pie de la de reportes va en `sr-only` —se decidió no mostrarlo—,
+pero **sigue existiendo**: borrarlo dejaría esa maqueta sin nada que anunciar,
+porque el marco entero está oculto para la accesibilidad. El cronómetro no corre y el punto de "En vivo" no parpadea. Y el pie
+de la tarjeta del tablero usa `flex-wrap`, porque el total más los dos botones
+piden 259 px y una columna da 189 px cuando las cuatro entran en el ancho de la
+landing; el original se sale y lo tapa su `overflow-x-auto`.
+
+**El resto de la página.** Las ocho funciones llevan ahora un icono de Heroicons
+cada una —ocho títulos en negrita seguidos son un muro y el ojo no encuentra
+dónde empezar—. El contenedor pasó de `max-w-5xl` a `max-w-6xl` en todas las
+secciones, que es el ancho que necesitaba la maqueta de reportes, y las franjas
+claras se reordenaron para que sigan alternando. Se conservaron el copy, el
+precio, la sección "Lo que todavía no hace" y la regla de un solo `btn-primario`
+en toda la página: sigue siendo el del hero.
+
+**Verificado en local:** sin scroll horizontal a 375, 768, 1024 y 1440 px; cero
+elementos enfocables dentro de las maquetas; `dash-text-muted` a 5,85:1 y
+`dash-text-secondary` a 6,01:1 sobre sus fondos; la ruta del marco subió a
+`text-stone-400` porque el 500 caía a 3,63:1; sin errores de consola ni avisos de
+hidratación; `npm run build` deja `/` estática.
+
+*(Hallazgo anotado y no corregido, porque es del panel y no de la landing: el
+"Rechazar" de la tarjeta del tablero usa `text-red-400/70` sobre `#1c1917`, que da
+3,55:1 y no llega a AA. La maqueta lo replica tal cual. Corregirlo es tocar
+`/dashboard`.)*
+
 
 ### 2026-08-24 — Auditoría de frontend, cierre: iconos, esqueletos y las últimas retículas
 
