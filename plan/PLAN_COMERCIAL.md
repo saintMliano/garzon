@@ -66,10 +66,23 @@ Ofrecer a los primeros 5 locales una alianza estratégica:
 
 Para ejecutar esta estrategia necesitaremos preparar:
 
-1. **Demo Landing Page:** Asegurar que la landing pública (`/`) o `/local/demo` tenga el botón *"Probar Demo en Vivo"* bien visible para que un dueño pueda probarlo desde su propio teléfono sin registrarse.
-2. **Tarjeta / Flyer de Presentación:** Con un QR que abra el menú demo de *"Fuente de Soda El Lalo"*.
-3. **Muestra Física de QR:** 1 o 2 habladores de mesa de acrílico/madera de muestra para llevar a las reuniones.
-4. **Plantilla de Alta Rápida:** Formulario de 5 minutos para que el dueño nos pase su carta en PDF/foto y nosotros le dejemos el local activo mediante `/dashboard/admin` en menos de 2 horas.
+1. ~~**Demo Landing Page:**~~ **Hecho (2026-08-26).** La landing está en
+   **https://garzondigital.cl**, con el botón "Probar la carta demo" en el hero y,
+   desde el rediseño del mismo día, **muestra el panel por dentro** —el tablero de
+   cocina y los reportes— en vez de solo describirlo. Tiene contacto por
+   **WhatsApp** (con el mensaje prellenado) y por correo.
+2. ~~**Tarjeta / Flyer de Presentación:**~~ **Hecho (2026-08-26).**
+   `marketing/volante-a6.html`, listo para imprimir a escala real.
+
+   **Corrección respecto de lo que decía este plan:** el QR del volante **no** abre
+   el menú demo, abre **la landing**. El que recibe el volante es el *dueño*, y un
+   QR que lo lleva a la carta le muestra la pantalla del **comensal** — que es
+   justamente el problema que tenía la landing antes del rediseño. Desde la landing
+   ve el panel, el precio y el botón a la carta demo si la quiere. Los dos QR se
+   generan con `npm run qr` y **conviene rotularlos al imprimir**, porque se ven
+   casi iguales y llevan a lados opuestos.
+3. **Muestra Física de QR:** 1 o 2 habladores de mesa de acrílico/madera de muestra para llevar a las reuniones. *(Pendiente. El archivo del QR de mesa ya se genera: `npm run qr -- --slug <slug> --mesas N`.)*
+4. **Plantilla de Alta Rápida:** Formulario de 5 minutos para que el dueño nos pase su carta en PDF/foto y nosotros le dejemos el local activo mediante `/dashboard/admin` en menos de 2 horas. *(Pendiente.)*
 
 ---
 
@@ -91,7 +104,7 @@ gantt
 ```
 
 ### Semana 1: Armado del Kit Comercial
-- Ajustar la landing pública con propuesta de valor clara y demo en vivo.
+- ~~Ajustar la landing pública con propuesta de valor clara y demo en vivo.~~ **Hecho el 2026-08-26.**
 - Mandar a imprimir 10 muestras de QR acrílicos de prueba.
 - Definir lista de 20 locales candidatos en la zona objetivo.
 

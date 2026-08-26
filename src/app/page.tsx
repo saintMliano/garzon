@@ -17,6 +17,7 @@ import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
 import MarcoPanel from "@/componentes/landing/marco-panel";
 import DemoCocina from "@/componentes/landing/demo-cocina";
 import DemoReportes from "@/componentes/landing/demo-reportes";
+import IconoWhatsApp from "@/componentes/landing/icono-whatsapp";
 
 /**
  * Landing de la plataforma. A diferencia del resto del sitio, acá el lector no
@@ -153,6 +154,37 @@ const LIMITES = [
  * donde se busca por costumbre.
  */
 const CORREO = "contacto@garzondigital.cl";
+
+/**
+ * WhatsApp: el canal de venta declarado en `plan/PLAN_COMERCIAL.md`, y el que un
+ * dueño de local usa de verdad. El correo se lee cuando se sienta a la
+ * computadora; el WhatsApp lo contesta entre dos servicios.
+ *
+ * El mensaje va prellenado a propósito. Quien toca el botón llega al chat con la
+ * primera frase escrita y solo tiene que apretar enviar — sin eso, mucha gente
+ * abre la conversación, no sabe cómo empezar y la cierra.
+ *
+ * `wa.me` quiere el número sin `+`, sin espacios y sin guiones; el formato
+ * legible es aparte, para mostrarlo.
+ */
+const WHATSAPP_NUMERO = "56964364954";
+const WHATSAPP_LEGIBLE = "+56 9 6436 4954";
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(
+  "Hola, vi Garzón Digital y quiero saber más para mi local."
+)}`;
+
+/**
+ * El verde de WhatsApp lleva texto oscuro, no blanco.
+ *
+ * No es una preferencia: `textoSobre("#25D366")` de `src/lib/color.ts` devuelve
+ * `#1c1917`, y las cifras son contundentes — blanco sobre ese verde da **1,98:1**,
+ * todavía peor que el 2,80:1 del blanco sobre el naranja de la marca que se
+ * corrigió en la auditoría. Con `text-stone-900` sube a 8,82:1.
+ *
+ * Casi todos los sitios ponen blanco ahí. Casi todos se equivocan.
+ */
+const CLASES_WHATSAPP =
+  "bg-[#25D366] text-stone-900 hover:bg-[#20bd5a] active:scale-[0.99] transition-all";
 
 const INCLUYE = [
   "Carta por QR ilimitada, con tus fotos y tu marca",
@@ -486,15 +518,31 @@ export default function Home() {
             Instalación acompañada, carta cargada por nosotros y los QR de las mesas incluidos.
             Pruébalo una semana completa, con su fin de semana. Si no te sirve, no pagas nada.
           </p>
-          <Link
-            href={`/local/${demoSlug}`}
-            className="mt-7 inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl bg-stone-900 text-white font-bold text-sm hover:bg-stone-800 active:scale-[0.99] transition-all"
-          >
-            Ver la carta demo
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          {/* Dos acciones, no una. Quien llegó hasta acá ya leyó todo: o quiere
+              verlo funcionando, o quiere hablar con alguien. El de WhatsApp va
+              primero porque es el canal que un dueño de local contesta de
+              verdad, entre dos servicios; el correo lo lee cuando se sienta a la
+              computadora, si es que se sienta. */}
+          <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex w-full sm:w-auto items-center justify-center gap-2 h-12 px-7 rounded-xl font-bold text-sm ${CLASES_WHATSAPP}`}
+            >
+              <IconoWhatsApp className="w-4 h-4 shrink-0" />
+              Escríbenos por WhatsApp
+            </a>
+            <Link
+              href={`/local/${demoSlug}`}
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 h-12 px-7 rounded-xl bg-stone-900 text-white font-bold text-sm hover:bg-stone-800 active:scale-[0.99] transition-all"
+            >
+              Ver la carta demo
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
 
           {/* Subrayado y no solo un color distinto: el color por sí solo no
               alcanza para decir "esto es un enlace" a quien no distingue bien
@@ -517,6 +565,15 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors"
+            >
+              <IconoWhatsApp className="w-3.5 h-3.5 shrink-0" />
+              {WHATSAPP_LEGIBLE}
+            </a>
             <a
               href={`mailto:${CORREO}`}
               className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors"

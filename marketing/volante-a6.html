@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Garzón Digital — volante A6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!--
+  VOLANTE A6 (105 x 148 mm) — para entregar en mano a dueños de local.
+
+  Se imprime a escala real: todas las medidas están en milímetros y la página
+  está declarada con `@page { size: 105mm 148mm }`. Al imprimir hay que dejar la
+  escala en 100%, NO en "ajustar a la página".
+
+  Tres cosas que no se pueden tocar sin romper el volante:
+
+  1. **El QR es el archivo real**, generado con `npm run qr` y pegado acá dentro
+     como SVG. No es una imagen decorativa: si alguien lo reemplaza por un dibujo
+     o lo re-genera con una IA, deja de escanear. Se ve igual y no funciona.
+  2. **La zona de silencio.** El SVG ya trae 4 módulos de margen blanco propios
+     (viewBox de 37 con el código de 29, que a 41 mm da 32,1 mm de código). Encima, la tarjeta blanca le agrega más
+     espacio limpio. Ese blanco NO es aire de diseño: sin él muchos lectores no
+     encuentran el código. No lo recortes aunque quede "más apretado y mejor".
+  3. **El texto sobre el naranja va en #1c1917, nunca en blanco.** Blanco sobre
+     este naranja da 2,8:1 de contraste, muy por debajo del 4,5:1 del AA. Es la
+     misma regla que rige en toda la aplicación.
+
+  El logotipo de WhatsApp del pie es el oficial de Simple Icons, copiado tal
+  cual. Una marca ajena no se dibuja de memoria ni se aproxima con un icono
+  parecido. Y va en `#1c1917`, no en el verde de WhatsApp: sobre el papel blanco
+  ese verde da poco contraste, y acá lo que tiene que leerse es el número.
+
+  Y una cuarta que no es una regla sino una precaución: **Inter se pide a Google
+  Fonts, así que puede no cargar** —sin internet, o si el equipo donde se imprime
+  la bloquea—. El diseño está medido para que quepa igual con las sustitutas del
+  sistema: se verificó con Segoe UI y con Arial, que son más anchas, y en el peor
+  caso sobran unos milímetros. Si alguien agrega texto, hay que volver a
+  comprobarlo con Arial y no solo con la fuente buena.
+
+  LAS CIFRAS ESTÁN DUPLICADAS ACÁ. Si cambian, hay que cambiarlas también en
+  `src/app/page.tsx` (la landing), `src/lib/suscripcion.ts` (los días de prueba),
+  `plan/PITCH-VENTAS.md` y `plan/PLAN_COMERCIAL.md`.
+
+  Y la regla que hereda del pitch: **no se promete acá nada que no se pueda
+  demostrar en vivo.** Nada de pagos en línea, boletas, SII, caja registradora,
+  impresión de comandas, inventario ni delivery: el producto no hace nada de eso.
+-->
+<style>
+  @page { size: 105mm 148mm; margin: 0; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #e7e5e4;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .volante {
+    width: 105mm;
+    height: 148mm;
+    background: #fafaf9;
+    color: #1c1917;
+    padding: 7.5mm 8mm;
+    display: flex;
+    flex-direction: column;
+    margin: 8mm auto;
+    box-shadow: 0 2mm 8mm rgba(0,0,0,.18);
+    overflow: hidden;
+    /* Que el naranja se imprima y no lo "ahorre" el navegador. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ===== MARCA ===== */
+  .marca { display: flex; align-items: center; gap: 2mm; }
+  .marca-signo {
+    width: 5mm; height: 5mm; border-radius: 1.4mm;
+    background: linear-gradient(135deg, #f97316, #f59e0b);
+    flex: none;
+  }
+  .marca-nombre { font-size: 3.6mm; font-weight: 800; letter-spacing: -.02em; }
+
+  /* ===== TITULAR ===== */
+  .titular {
+    margin-top: 4.5mm;
+    font-size: 5.0mm;
+    font-weight: 900;
+    line-height: 1.07;
+    letter-spacing: -.032em;
+    text-wrap: balance;
+  }
+  .bajada {
+    margin-top: 2.5mm;
+    font-size: 2.9mm;
+    line-height: 1.45;
+    color: #57534e;
+  }
+  .bajada strong { color: #1c1917; font-weight: 600; }
+
+  /* ===== QR ===== */
+  .bloque-qr {
+    margin-top: 3.4mm;
+    background: #ffffff;
+    border: .3mm solid #e7e5e4;
+    border-radius: 3mm;
+    padding: 3.2mm 3.2mm 2.6mm;
+    text-align: center;
+  }
+  .qr-rotulo {
+    font-size: 2.9mm; font-weight: 700; letter-spacing: -.01em; color: #1c1917;
+  }
+  /* 41 mm de SVG = 32,1 mm de código + 4,4 mm de zona de silencio por lado.
+     El piso para que se escanee cómodo es 30 mm; por debajo no bajar. */
+  .qr { width: 41mm; height: 41mm; display: block; margin: 2mm auto 1.8mm; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .qr-url {
+    font-size: 2.9mm; font-weight: 600; color: #57534e; letter-spacing: -.01em;
+  }
+
+  /* ===== PRECIO — el único elemento con el naranja de protagonista ===== */
+  .precio {
+    margin-top: 3.4mm;
+    background: linear-gradient(90deg, #f97316, #f59e0b);
+    color: #1c1917;
+    border-radius: 2.4mm;
+    padding: 2.6mm 4mm;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2mm;
+  }
+  .precio-monto {
+    font-size: 5.4mm; font-weight: 900; letter-spacing: -.035em;
+    font-variant-numeric: tabular-nums;
+  }
+  .precio-detalle { font-size: 2.9mm; font-weight: 600; }
+
+  /* ===== PUNTOS ===== */
+  .puntos {
+    margin-top: 3mm;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1mm;
+  }
+  .puntos li {
+    font-size: 2.85mm; line-height: 1.3; color: #44403c;
+    display: flex; align-items: baseline; gap: 2mm;
+  }
+  .puntos li::before {
+    content: ""; flex: none;
+    width: 2.2mm; height: .45mm; border-radius: 1mm;
+    background: #f97316; transform: translateY(-.8mm);
+  }
+
+  /* ===== PIE ===== */
+  .pie {
+    margin-top: auto;
+    padding-top: 2.6mm;
+    border-top: .25mm solid #e7e5e4;
+    font-size: 2.75mm;
+    color: #78716c;
+  }
+  /* WhatsApp arriba y con mas peso: es el canal que un dueno de local contesta
+     de verdad, entre dos servicios. El correo lo lee cuando se sienta, si se
+     sienta. El numero va en formato legible y espaciado, para que se pueda
+     teclear desde el papel sin equivocarse. */
+  .pie-wa {
+    display: flex; align-items: center; gap: 1.6mm;
+    font-size: 3.2mm; font-weight: 700; color: #1c1917;
+    letter-spacing: -.01em;
+  }
+  .pie-wa svg { width: 3.4mm; height: 3.4mm; flex: none; fill: #1c1917; }
+  .pie-resto {
+    margin-top: 1.4mm;
+    display: flex; justify-content: space-between; gap: 3mm;
+  }
+  .pie strong { color: #44403c; font-weight: 600; }
+
+  /* ===== INSTRUCCIONES (no se imprimen) ===== */
+  .instrucciones {
+    max-width: 105mm; margin: 0 auto 10mm;
+    font-size: 11px; line-height: 1.6; color: #57534e;
+    background: #fff; border: 1px solid #d6d3d1; border-radius: 8px; padding: 12px 14px;
+  }
+  .instrucciones h2 { font-size: 12px; margin-bottom: 6px; color: #1c1917; }
+  .instrucciones li { margin-left: 16px; margin-bottom: 4px; }
+  @media print {
+    html, body { background: #fff; }
+    .instrucciones { display: none; }
+    .volante { margin: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="volante">
+  <div class="marca">
+    <span class="marca-signo" aria-hidden="true"></span>
+    <span class="marca-nombre">Garzón Digital</span>
+  </div>
+
+  <h1 class="titular">Tus clientes piden desde la mesa. La cocina lo ve al instante.</h1>
+
+  <p class="bajada">
+    Sin comisión por venta. <strong>Cobras en tu caja, con tu boleta, como siempre.</strong>
+  </p>
+
+  <div class="bloque-qr">
+    <p class="qr-rotulo">Escanea y míralo funcionando</p>
+    <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#1c1917" d="M4 4.5h7m2 0h2m1 0h1m3 0h4m2 0h7M4 5.5h1m5 0h1m1 0h2m1 0h2m2 0h4m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h2m1 0h1m2 0h2m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m3 0h6m1 0h1m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m2 0h2m3 0h2m1 0h1m2 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m3 0h3m4 0h2m1 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1m2 0h1m3 0h2m2 0h2M5 12.5h1m1 0h4m1 0h2m1 0h2m1 0h1m3 0h5m1 0h2m1 0h1M4 13.5h4m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m2 0h1m2 0h2m2 0h1M7 14.5h4m6 0h1m2 0h1m1 0h1m2 0h3m1 0h2M4 15.5h2m3 0h1m2 0h1m1 0h1m2 0h6m6 0h1m2 0h1M5 16.5h2m1 0h1m1 0h1m1 0h1m3 0h1m2 0h1m3 0h4m4 0h1M4 17.5h1m1 0h1m1 0h2m1 0h2m1 0h1m4 0h1m1 0h2m3 0h1m1 0h1m1 0h1m1 0h1M4 18.5h4m1 0h2m1 0h1m1 0h1m1 0h1m2 0h3m1 0h5m1 0h1m2 0h1M5 19.5h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h5m1 0h1m2 0h4M5 20.5h1m3 0h3m2 0h1m1 0h2m1 0h3m2 0h1m2 0h1m1 0h1M4 21.5h1m1 0h3m3 0h1m7 0h1m1 0h1m1 0h1m2 0h3M4 22.5h2m1 0h1m1 0h2m3 0h6m4 0h1m2 0h4m1 0h1M4 23.5h2m1 0h1m3 0h1m1 0h2m1 0h1m8 0h3m2 0h1M4 24.5h3m1 0h5m2 0h1m2 0h4m2 0h8M12 25.5h1m2 0h1m3 0h1m2 0h1m1 0h1m3 0h3M4 26.5h7m3 0h3m2 0h1m1 0h4m1 0h1m1 0h1m1 0h1M4 27.5h1m5 0h1m1 0h1m1 0h5m2 0h1m1 0h2m3 0h2m1 0h2M4 28.5h1m1 0h3m1 0h1m1 0h4m2 0h11m2 0h1M4 29.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m2 0h2m5 0h1m1 0h3M4 30.5h1m1 0h3m1 0h1m5 0h2m2 0h2m2 0h2m1 0h2m2 0h2M4 31.5h1m5 0h1m1 0h1m3 0h2m1 0h1m2 0h1m1 0h2m2 0h3m1 0h1M4 32.5h7m3 0h1m1 0h1m1 0h1m5 0h2m1 0h2"/></svg></div>
+    <p class="qr-url">garzondigital.cl</p>
+  </div>
+
+  <div class="precio">
+    <span class="precio-monto">$29.900</span>
+    <span class="precio-detalle">al mes, por local</span>
+  </div>
+
+  <ul class="puntos">
+    <li>0 % de comisión sobre lo que vendes</li>
+    <li>7 días de prueba, con su fin de semana</li>
+    <li>Sin contrato de permanencia</li>
+  </ul>
+
+  <div class="pie">
+    <p class="pie-wa">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      +56 9 6436 4954
+    </p>
+    <div class="pie-resto">
+      <span><strong>contacto@garzondigital.cl</strong></span>
+      <span>Viña del Mar, Chile</span>
+    </div>
+  </div>
+</div>
+
+<div class="instrucciones">
+  <h2>Antes de imprimir</h2>
+  <ul>
+    <li><strong>Escala 100 %</strong>, nunca "ajustar a la página": el QR tiene que salir a 32 mm de lado (mídelo con una regla en la primera prueba).</li>
+    <li>Tamaño de papel <strong>A6</strong>. En A4 salen cuatro por hoja si tu impresora lo ofrece.</li>
+    <li>Activa <strong>gráficos de fondo</strong> en el diálogo de impresión, o el naranja sale en blanco.</li>
+    <li><strong>Escanea la prueba impresa</strong> con tu teléfono, a un metro, antes de mandar a imprimir el resto.</li>
+    <li>No hay sangrado: el color no llega al borde, así que se puede imprimir en cualquier impresora.</li>
+  </ul>
+</div>
+
+</body>
+</html>

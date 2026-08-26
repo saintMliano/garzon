@@ -183,6 +183,11 @@ precio, se cambia en un lugar y ya está — no hay que rehacer una imagen.
 
 ## 7. La demo en vivo, en tres minutos
 
+> **Lo que se lleva a la visita:** el teléfono con la carta demo, y el **volante A6**
+> (`marketing/volante-a6.html`) para dejar. Su QR abre la landing, no la carta: al dueño hay que
+> mostrarle **su** pantalla, no la del comensal. Al imprimirlo, escala 100 % y el QR a 32 mm.
+
+
 1. **Que escanee él.** Su teléfono, su mano. Que vea la carta cargar.
 2. **Que agregue dos cosas y confirme** con su nombre. Ahí aparece la propina sugerida: se toca "sin
    propina" para mostrar que baja a cero de un toque.
@@ -194,8 +199,9 @@ precio, se cambia en un lugar y ya está — no hay que rehacer una imagen.
 **Si no se puede hacer la demo en vivo** (no te atiende el dueño, te dice "mándame algo"), mándale
 **https://garzondigital.cl**. Desde el 2026-08-26 la landing sirve de reemplazo parcial: muestra el
 tablero de la cocina y la pantalla de reportes completa, con el rótulo "Datos de demostración" a la
-vista, y trae **`contacto@garzondigital.cl`** para que pueda responder sin tener que buscarte. El
-link pegado en WhatsApp llega con miniatura propia. **No reemplaza al
+vista, y trae **un botón de WhatsApp con el mensaje ya escrito** más
+`contacto@garzondigital.cl`, para que pueda responder sin tener que buscarte. El link pegado en
+WhatsApp llega con miniatura propia. **No reemplaza al
 teléfono en su mano** — el momento que convence sigue siendo que él escanee y vea aparecer su propio
 pedido en la cocina—, pero deja de ser una página de texto que hay que creerle.
 

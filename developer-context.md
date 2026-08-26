@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **WhatsApp** en la landing y el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -258,6 +258,74 @@ son código:**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — WhatsApp en la landing y en el volante, con texto oscuro sobre el verde
+
+`+56 9 6436 4954`. Botón en el cierre de la landing, enlace en el pie, y el
+número impreso en el volante A6.
+
+**WhatsApp va antes que el correo**, y no por costumbre: es el canal declarado en
+`plan/PLAN_COMERCIAL.md`, y es el que un dueño de local contesta entre dos
+servicios. El correo lo lee cuando se sienta a la computadora, si se sienta.
+
+**El enlace lleva el mensaje prellenado.** Quien toca el botón llega al chat con
+la primera frase escrita y solo aprieta enviar. Sin eso, mucha gente abre la
+conversación, no sabe cómo empezar y la cierra — y esa persona ya había hecho lo
+difícil, que era decidirse a escribir.
+
+**El hallazgo que vale la pena guardar: el verde de WhatsApp cae en la misma
+trampa que el naranja de la marca.** En vez de suponer, se le preguntó a
+`textoSobre()` —la regla que `CLAUDE.md` manda usar— y respondió `#1c1917`. Las
+cifras:
+
+| | sobre `#25D366` | sobre `#f97316` |
+|---|---|---|
+| Blanco | **1,98:1** | 2,80:1 |
+| `#1c1917` | 8,82:1 | 6,24:1 |
+
+O sea que blanco sobre el verde de WhatsApp es **todavía peor** que el blanco
+sobre naranja que se corrigió en la auditoría de frontend. Casi todos los sitios
+lo ponen blanco. El botón de acá lleva `text-stone-900`.
+
+**Y una excepción declarada a la regla de los iconos:**
+`src/componentes/landing/icono-whatsapp.tsx` es el logotipo oficial de Simple
+Icons, copiado tal cual. Heroicons no incluye marcas de terceros, y una marca
+ajena no se dibuja de memoria ni se aproxima con un icono parecido.
+
+**Verificado:** los dos enlaces con `target="_blank"` y `rel="noopener
+noreferrer"`, el botón a 48 px de alto (por encima del mínimo táctil de 44), en
+móvil los botones se apilan a ancho completo y el pie pasa a dos filas, sin
+scroll horizontal. En el volante, el pie con el número entra dejando 4,8 mm de
+holgura incluso con Arial.
+
+
+### 2026-08-26 — Un volante A6 para dejar en mano, con el QR de verdad adentro
+
+`marketing/volante-a6.html`: el primer material impreso del proyecto. Se abre en
+el navegador y se imprime a escala real —105 × 148 mm declarados con `@page`—
+para entregar a dueños de local después de una visita.
+
+**Por qué en HTML y no en una herramienta de diseño.** Porque el QR tiene que ser
+**el archivo real**. Un código generado por un modelo de imagen se ve idéntico a
+uno bueno y no escanea, y eso no se descubre en la pantalla: se descubre cuando
+ya hay cien papeles repartidos. Acá el SVG de `npm run qr` va incrustado tal cual.
+
+**Lo que se midió, en vez de suponerlo:**
+
+- El código imprime a **32,1 mm** de lado con **4,43 mm de zona de silencio**
+  —la que trae el propio SVG—, más el blanco de la tarjeta que lo rodea.
+- **Decodifica a 600, 300, 150 y 96 dpi** ya montado dentro del volante, no solo
+  como archivo suelto. Se leyó con jsQR, que es un lector y no el generador.
+- **Cabe en la hoja aunque Inter no cargue.** La primera versión se salía 17,8 mm
+  del papel y habría cortado el pie con el correo de contacto. Corregido, y
+  verificado con Segoe UI y Arial —las sustitutas del sistema, más anchas—: con
+  las tres sobran 7,5 mm.
+
+**Y ahora hay un cuarto lugar donde viven las cifras del plan**, además de la
+landing, el pitch y el plan comercial. Quedó anotado en `CLAUDE.md`, con el
+motivo por el que este es el peligroso: una cifra vieja en una pantalla se
+corrige y ya; una cifra vieja en cien papeles repartidos, no.
+
 
 ### 2026-08-26 — Supabase Pro: decisión del dueño, postergada a propósito
 
