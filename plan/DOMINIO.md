@@ -1,16 +1,35 @@
 # Dominio propio — `garzondigital.cl`
 
-> **Estado (2026-08-26):** dominio inscrito y **nameservers ya delegados a Cloudflare**. Falta que
-> la zona `.cl` publique la delegación, el enganche con Vercel y el correo. Este archivo es la
+> **Estado (2026-08-26): el dominio está EN VIVO.** DNS delegado, Vercel enganchado y certificado
+> emitido. Falta solo el correo (Email Routing) y la Site URL de Supabase. Este archivo es la
 > decisión escrita y el instructivo, para no volver a discutirlo desde cero ni buscar los valores
 > en tutoriales sueltos.
+>
+> Verificado de punta a punta el mismo día, saltándose la caché del resolver local:
+>
+> ```
+> https://garzondigital.cl               → 200   la landing
+> https://garzondigital.cl/local/el-lalo → 200   la carta, en 0,93 s
+> https://garzondigital.cl/dashboard     → 307   redirige a /login, como debe
+> http://garzondigital.cl                → 308 → https
+> https://www.garzondigital.cl           → 308 → https://garzondigital.cl/
+> ```
 >
 > ```
 > Registrant:   Emilio Galvez
 > Creación:     2026-08-26 10:38 CLST
 > Expiración:   2027-08-26 10:38 CLST   ← un año
 > Nameservers:  andy.ns.cloudflare.com · karina.ns.cloudflare.com
+> A del ápice:  216.198.79.1
+> CNAME del www: 10a199e2e15a8bcc.vercel-dns-017.com
 > ```
+>
+> **Al verificar, no confíes en el resolver de tu máquina.** Durante la espera queda cacheado el
+> `NXDOMAIN` anterior, y sigue diciendo "no existe" mucho después de que el dominio funciona para
+> todo el mundo. Pasó exactamente eso acá: `1.1.1.1`, `9.9.9.9` y OpenDNS ya devolvían la IP
+> mientras `8.8.8.8` y el resolver local seguían en negativo. Para ver la realidad hay que
+> preguntarle al autoritativo (`-Server andy.ns.cloudflare.com`) o fijar la IP a mano
+> (`curl --resolve dominio:443:IP`).
 
 ---
 
@@ -159,7 +178,17 @@ equivocado.
   producción de Vercel**, o el fallback la deja apuntando a la URL de la preview.
 - Las referencias a `garzon-one.vercel.app` en `CLAUDE.md` y `plan/PITCH-VENTAS.md`.
 
-### 3.5 Después, con calma
+### 3.5 La variable de entorno
+
+`NEXT_PUBLIC_SITE_URL = https://garzondigital.cl` en Vercel, tipo **Config** (no *Secret*: el
+prefijo `NEXT_PUBLIC_` compila el valor dentro del bundle del navegador, así que es público por
+diseño y marcarlo secreto solo impediría releerlo) y **solo en Production**. Si se agregara también
+a Preview, cada rama de prueba anunciaría imágenes del dominio de producción — el respaldo a
+`VERCEL_URL` existe justamente para que cada preview se anuncie a sí misma.
+
+Los cambios de variables **no afectan a los despliegues ya construidos**, solo al siguiente.
+
+### 3.6 Después, con calma
 
 - **Supabase → Authentication → URL Configuration → Site URL.** Riesgo bajo: se verificó que el
   proyecto no usa `emailRedirectTo` ni enlaces mágicos en ninguna parte. Es higiene.
