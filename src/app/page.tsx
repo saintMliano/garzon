@@ -141,6 +141,19 @@ const LIMITES = [
   "No funciona sin internet.",
 ];
 
+/**
+ * La única forma de contacto que tiene la página.
+ *
+ * Le pedimos a un dueño de local que confíe $29.900 al mes en un sistema, y
+ * hasta el 2026-08-26 no le dábamos ninguna manera de escribirnos: el pie tenía
+ * "Privacidad" y "Entrar a mi local", nada más. Esconder el contacto es de las
+ * pocas cosas que un dueño lee como señal de que no hay nadie al otro lado.
+ *
+ * Va en el cierre —donde la página lo invita a dar el paso— y en el pie, que es
+ * donde se busca por costumbre.
+ */
+const CORREO = "contacto@garzondigital.cl";
+
 const INCLUYE = [
   "Carta por QR ilimitada, con tus fotos y tu marca",
   "Tablero de cocina en tiempo real, en las pantallas que necesites",
@@ -482,6 +495,19 @@ export default function Home() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
+
+          {/* Subrayado y no solo un color distinto: el color por sí solo no
+              alcanza para decir "esto es un enlace" a quien no distingue bien
+              los tonos. */}
+          <p className="mt-6 text-sm text-stone-600">
+            ¿Prefieres escribir?{" "}
+            <a
+              href={`mailto:${CORREO}`}
+              className="font-semibold text-stone-900 underline underline-offset-4 decoration-stone-400 hover:decoration-stone-900 transition-colors"
+            >
+              {CORREO}
+            </a>
+          </p>
         </div>
       </section>
 
@@ -490,7 +516,13 @@ export default function Home() {
       <footer className="border-t border-stone-200/80 py-7">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <a
+              href={`mailto:${CORREO}`}
+              className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors"
+            >
+              {CORREO}
+            </a>
             <Link href="/privacidad" className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors">
               Privacidad
             </Link>

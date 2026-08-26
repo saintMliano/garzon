@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -250,6 +250,32 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — Correo propio, y una landing que por fin se puede contestar
+
+`contacto@garzondigital.cl` funcionando con Cloudflare Email Routing (gratis,
+reenvía a la casilla personal), y **puesto en la landing**: en el cierre, debajo
+del botón, y en el pie.
+
+Lo segundo importa más de lo que parece. La página le pide a un dueño de local
+que confíe **$29.900 al mes** en un sistema, y hasta hoy no le daba **ninguna**
+forma de escribirnos: el pie tenía "Privacidad" y "Entrar a mi local", nada más.
+Esconder el contacto es de las pocas cosas que un dueño lee como señal de que no
+hay nadie al otro lado — y de paso era uno de los dos antipatrones que marcó la
+revisión de UX de la landing.
+
+El enlace del cierre va **subrayado** y no solo en otro color: el color por sí
+solo no alcanza para decir "esto es un enlace" a quien no distingue bien los
+tonos. El del pie no lo lleva, porque ahí está agrupado con los otros dos y la
+posición ya lo dice.
+
+**Verificado desde afuera**, que es la única forma de saber si el correo va a
+llegar y no solo si el panel se puso verde: los tres `MX` de Cloudflare
+publicados, el SPF (`v=spf1 include:_spf.mx.cloudflare.net ~all`) y el DKIM
+presente. El detalle operativo quedó en [`plan/DOMINIO.md`](plan/DOMINIO.md) §3.3,
+incluidas dos trampas: el catch-all va en `drop` y no en reenviar, y **reenviar
+no es enviar** — responder *desde* esa dirección necesita un relay SMTP aparte.
+
 
 ### 2026-08-26 — Dominio propio: `garzondigital.cl`, y el `metadataBase` que faltaba
 
