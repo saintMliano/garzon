@@ -1,8 +1,9 @@
 # Dominio propio — `garzondigital.cl`
 
-> **Estado (2026-08-26): el dominio está EN VIVO y el correo también.** DNS delegado, Vercel
-> enganchado, certificado emitido y `contacto@garzondigital.cl` recibiendo. Falta solo la Site URL
-> de Supabase, que es higiene. Este archivo es la
+> **Estado (2026-08-26): cerrado, salvo un pendiente en NIC.** Dominio en vivo con TLS, correo
+> recibiendo y enviando (`contacto@garzondigital.cl`), Site URL de Supabase puesta, QR generados.
+> **Lo único abierto es la delegación que NIC publica** — ver §3.7: no rompe nada hoy, pero conviene
+> cerrarlo. Este archivo es la
 > decisión escrita y el instructivo, para no volver a discutirlo desde cero ni buscar los valores
 > en tutoriales sueltos.
 >
@@ -171,9 +172,16 @@ equivocado.
 
 ```
 MX    route1/2/3.mx.cloudflare.net   (prioridades 72 / 93 / 31)
-SPF   v=spf1 include:_spf.mx.cloudflare.net ~all
-DKIM  presente
+SPF   v=spf1 include:_spf.mx.cloudflare.net include:_spf.google.com ~all
+DKIM  presente (cf2024-1._domainkey)
 ```
+
+**Ese `include:_spf.google.com` no está de adorno: no lo borres.** Autoriza a Google a enviar en
+nombre del dominio, y sin él el correo que sale por Gmail falla SPF y aterriza en spam — justo
+cuando le escribes en frío al dueño de un local. Y **tiene que haber UN solo registro `v=spf1`**: la
+especificación no combina dos, devuelve `PermError` y descarta la evaluación entera, que es peor que
+no tener SPF. Al agregar un proveedor de correo se **edita** el registro que existe, nunca se crea
+otro.
 
 El botón **"Add missing records"** de Cloudflare escribe los tres `MX` y el SPF solo; no hay que
 escribirlos a mano. El proxy no es un tema acá: la nube naranja solo aplica a `A`, `AAAA` y `CNAME`.
@@ -182,9 +190,29 @@ Dos cosas que no son obvias:
 
 - **El catch-all va en `drop`, no en reenviar.** Una regla que atrapa todo lo demás termina siendo
   un imán de spam, y no gana nada: nadie escribe a una dirección que no se publicó.
-- **Reenviar no es enviar.** Email Routing recibe y reenvía; *responder* desde
-  `contacto@garzondigital.cl` se configura aparte, con el "Enviar como" del cliente de correo más un
-  relay SMTP. Verificarlo al configurarlo en vez de darlo por hecho.
+- **Reenviar no es enviar, y por eso hay un segundo montaje.** Email Routing solo recibe. Para
+  *responder* desde `contacto@garzondigital.cl` está configurado el **"Enviar como" de Gmail**,
+  usando el propio SMTP de Google como relay:
+
+  ```
+  Servidor SMTP : smtp.gmail.com      Puerto : 587 (TLS)
+  Usuario       : la cuenta de Gmail personal
+  Contraseña    : una CONTRASEÑA DE APLICACIÓN de Google, no la normal
+  Tratar como alias : sí
+  Nombre visible    : Emilio Gálvez · Garzón Digital
+  ```
+
+  La contraseña de aplicación se genera en `myaccount.google.com/apppasswords` y **exige verificación
+  en dos pasos activa**; se muestra una sola vez. Si algún día deja de enviar, lo primero a revisar es
+  que esa contraseña siga viva.
+
+  **Probado en los dos sentidos el 2026-08-26**, con una persona real del otro lado: llega y se
+  responde desde la dirección propia.
+
+  **Lo que este montaje NO da:** el mensaje va firmado con el DKIM de Google, no con el del dominio,
+  así que algunos clientes muestran "vía gmail.com". Para correspondencia uno a uno es aceptable. Si
+  algún día hay correo transaccional —"olvidé mi contraseña", avisos— eso pide un relay propio
+  (Resend, Postmark) que firme con el dominio, y ahí el SPF cambia otra vez.
 
 ### 3.4 En el repo *(hecho el 2026-08-26)*
 
@@ -204,12 +232,49 @@ a Preview, cada rama de prueba anunciaría imágenes del dominio de producción 
 
 Los cambios de variables **no afectan a los despliegues ya construidos**, solo al siguiente.
 
-### 3.6 Después, con calma
+### 3.6 Lo que quedó cerrado *(2026-08-26)*
 
-- **Supabase → Authentication → URL Configuration → Site URL.** Riesgo bajo: se verificó que el
-  proyecto no usa `emailRedirectTo` ni enlaces mágicos en ninguna parte. Es higiene.
-- **Los QR se generan recién ahora, con el dominio definitivo.** No hay ninguno impreso todavía;
-  este es exactamente el orden correcto.
+- **Supabase → Authentication → URL Configuration → Site URL** = `https://garzondigital.cl`. Riesgo
+  bajo: se verificó que el proyecto no usa `emailRedirectTo` ni enlaces mágicos en ninguna parte.
+- **Los QR** se generan con `npm run qr`, ya con el dominio definitivo. Ninguno impreso todavía —
+  ese es exactamente el orden correcto.
+
+---
+
+## 3.7 Lo que quedó ABIERTO: la delegación que NIC publica
+
+**Este es el único pendiente técnico del dominio, y no se resuelve desde el panel de nadie.** NIC
+Chile tiene dos fuentes que no coinciden entre sí:
+
+```
+Base de datos del registro (whois)   →  andy.ns.cloudflare.com · karina.ns.cloudflare.com   ✅
+Zona .cl publicada (a/b/c.nic.cl…)   →  lee.ns.cloudflare.com  · dina.ns.cloudflare.com     ❌ vieja
+```
+
+**No se rompe nada hoy** porque los servidores de Cloudflare responden por la zona desde cualquiera
+de sus nombres — se comprobó que los cuatro devuelven los registros correctos. Pero es depender de un
+comportamiento que nadie prometió por escrito: si Cloudflare dejara de servirla desde `lee`/`dina`,
+**el dominio entero se cae**, y con él los QR de todas las mesas.
+
+`lee`/`dina` nunca se escribieron a mano: salieron de algún estado intermedio del proceso de
+inscripción que quedó publicado. **Editar el formulario de NIC no arregla nada**, porque ahí ya dice
+lo correcto.
+
+Cómo verificar si ya se corrigió solo:
+
+```bash
+nslookup -type=NS garzondigital.cl a.nic.cl
+```
+
+Si sigue devolviendo `lee` y `dina`, el camino es un **ticket a NIC Chile** con este texto:
+
+> El dominio garzondigital.cl entrega por whois los servidores `andy.ns.cloudflare.com` y
+> `karina.ns.cloudflare.com`, pero la zona .cl publicada en a.nic.cl, b.nic.cl y c.nic.cl delega a
+> `lee.ns.cloudflare.com` y `dina.ns.cloudflare.com`. Solicito que se republique la delegación con
+> los servidores registrados.
+
+*(Un empujón que se intentó y no bastó: volver a guardar el formulario de NIC con los mismos valores,
+para forzar la republicación.)*
 
 ---
 

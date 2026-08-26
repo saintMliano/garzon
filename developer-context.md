@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **El recorrido del hero, también en el teléfono** — estaba escondido bajo `lg` y eso dejaba sin animación al público que llega por WhatsApp. Antes, el mismo día: **El banner del hero**, resuelto con el recorrido del pedido —cuatro hitos que se encienden al paso de un pulso, en CSS puro y con el último fotograma pensado para quien pide movimiento reducido. Antes, el mismo día: **WhatsApp** en el hero, el cierre y el pie de la landing, y en el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26).** Día largo y todo comercial, no de producto: **el sistema no ganó ninguna función nueva**, ganó cómo se vende. En orden: la **landing se rediseñó para MOSTRAR el panel** en vez de describirlo (réplicas en HTML del tablero y de los reportes); se compró el **dominio propio `garzondigital.cl`**, con DNS en Cloudflare, TLS y el `metadataBase` que le faltaba a la miniatura de WhatsApp; se montó el **correo** `contacto@garzondigital.cl`, que recibe y envía; se agregó **WhatsApp** con mensaje prellenado; apareció **`npm run qr`** y con él el primer **material impreso** (`marketing/volante-a6.html`); y el hueco negro del hero se llenó con el **recorrido del pedido** animado en CSS puro. Se decidió además **no pagar Supabase Pro todavía**. **Lo único abierto del dominio** es la delegación que NIC publica (`plan/DOMINIO.md` §3.7), que hoy no rompe nada. Y lo de fondo **no se movió**: el producto sigue sin pasar un turno real en un local en servicio. Ver [Historial de actualizaciones](#-historial-de-actualizaciones).
 
 ---
 
@@ -245,6 +245,12 @@ son código:**
 |---|---|---|
 | **Supabase Pro** (~US$25/mes) | Antes de que un local tenga los QR pegados en sus mesas | El plan gratuito **pausa el proyecto tras varios días sin actividad**, y pausado la carta no carga. Hoy no importa porque el tráfico es nuestro; el día que dependa un cliente, sí. Decisión del dueño del 2026-08-26: no se paga todavía. |
 | **Revisar `src/lib/notas-rapidas.ts`** | Al instalar el primer cliente real | Los atajos de nota son de fuente de soda de sándwiches. En un café no aplica ninguno, y ofrecer atajos que no corresponden es peor que no ofrecer ninguno. |
+| **Actualizar dependencias** | Antes del primer cliente, no después | Medido el 2026-08-26: `supabase-js` 2.99.3 → 2.112.4, **`@supabase/ssr` 0.9.0 → 0.12.5**, `next` 16.2.0 → 16.3.3, `tailwind` 4.2.2 → 4.3.3. El delicado es `ssr`, que está en `0.x` —cualquier versión puede romper— y toca sesiones y cookies del panel. En su propia rama y con `npm test` de red. Los saltos mayores (TS 5→7, ESLint 9→10) quedan para mucho después. |
+| **Cerrar la delegación de NIC** | Sin apuro, pero no olvidarlo | El whois entrega `andy`/`karina`.ns.cloudflare.com y la zona `.cl` publica `lee`/`dina`. No rompe nada hoy porque Cloudflare responde igual, pero es depender de algo no prometido. Diagnóstico y texto del ticket en [`plan/DOMINIO.md`](plan/DOMINIO.md) §3.7. |
+
+**Y dos del kit comercial que siguen abiertas** ([`plan/PLAN_COMERCIAL.md`](plan/PLAN_COMERCIAL.md) §4):
+habladores de mesa de muestra, y la plantilla de alta rápida para cargar la carta de un local en
+menos de dos horas.
 
 **Fase 4 — "El Estudio del Local" (self-service, completa)** — que un dueño arme y personalice su local sin SQL:
 - [x] **4.1** — Gestión de menú (categorías/productos, precios, disponibilidad).
@@ -277,6 +283,52 @@ son código:**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — Cierre del día: lo operativo que no vivía en ningún archivo
+
+Repaso de lo que se hizo hoy fuera del repositorio y **solo existía en una
+conversación**. Queda escrito porque si no, se pierde.
+
+**El correo sale de verdad, y hay un montaje detrás.** Email Routing solo recibe;
+para *responder* desde `contacto@garzondigital.cl` está configurado el "Enviar
+como" de Gmail contra `smtp.gmail.com:587` con una **contraseña de aplicación**
+de Google —que exige verificación en dos pasos y se muestra una sola vez—.
+Probado en los dos sentidos con una persona real del otro lado. El límite: el
+mensaje va firmado con el DKIM de Google, así que algunos clientes muestran "vía
+gmail.com".
+
+**El SPF tiene dos `include` y ninguno sobra.**
+`v=spf1 include:_spf.mx.cloudflare.net include:_spf.google.com ~all`. El primero
+es para recibir; **el segundo autoriza a Google a enviar**, y si alguien lo borra
+el correo saliente empieza a caer en spam sin avisar. Y tiene que haber **un solo**
+registro `v=spf1`: dos dan `PermError` y anulan la evaluación entera, peor que no
+tener ninguno. Al sumar un proveedor se **edita** el que existe.
+
+**La Site URL de Supabase** quedó en `https://garzondigital.cl`. Riesgo bajo: se
+verificó que el proyecto no usa `emailRedirectTo` ni enlaces mágicos.
+
+**Y queda un pendiente que no se resuelve desde ningún panel:** NIC publica una
+delegación (`lee`/`dina`) distinta de la que tiene registrada (`andy`/`karina`).
+Hoy no rompe nada —Cloudflare responde por la zona desde cualquiera de sus
+nombres, se comprobó que los cuatro devuelven los registros correctos— pero es
+depender de un comportamiento que nadie prometió: si dejaran de servirla desde
+`lee`/`dina`, se cae el dominio y con él los QR de todas las mesas. **Editar el
+formulario de NIC no lo arregla**, porque ahí ya dice lo correcto. Diagnóstico y
+texto del ticket en `plan/DOMINIO.md` §3.7.
+
+**Deriva de dependencias, medida y no supuesta:** `supabase-js` 2.99.3 → 2.112.4,
+`@supabase/ssr` 0.9.0 → 0.12.5, `next` 16.2.0 → 16.3.3, `tailwind` 4.2.2 → 4.3.3.
+No se actualizó hoy a propósito —se movieron dominio, DNS y correo, y si algo se
+rompiera mañana no se sabría si fue eso o una versión—. Va antes del primer
+cliente, en su propia rama.
+
+**Nota para quien retome esto en otra sesión.** Hoy el producto no ganó ninguna
+función: ganó cómo se vende. La landing muestra el panel, hay dominio, correo,
+WhatsApp, QR y un volante para dejar en el mesón. **Nada de eso acerca el
+problema de fondo**, que sigue siendo el mismo de la mañana: nadie ha escaneado
+todavía un QR desde su mesa con el local abierto. Todo lo de hoy sirve para
+conseguir esa primera instalación; ninguna de esas cosas la reemplaza.
+
 
 ### 2026-08-26 — El recorrido también en el teléfono
 
