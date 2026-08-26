@@ -1,7 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  BanknotesIcon,
+  ChartBarIcon,
+  ClockIcon,
+  DevicePhoneMobileIcon,
+  MagnifyingGlassIcon,
+  PencilSquareIcon,
+  QrCodeIcon,
+  Squares2X2Icon,
+  SwatchIcon,
+  UserGroupIcon,
+} from "@heroicons/react/24/outline";
 import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
+import MarcoPanel from "@/componentes/landing/marco-panel";
+import DemoCocina from "@/componentes/landing/demo-cocina";
+import DemoReportes from "@/componentes/landing/demo-reportes";
 
 /**
  * Landing de la plataforma. A diferencia del resto del sitio, acá el lector no
@@ -11,6 +26,16 @@ import { DIAS_GRACIA, DIAS_PRUEBA } from "@/lib/suscripcion";
  * Regla que hereda de `plan/PITCH-VENTAS.md`: **no se promete nada que no se
  * pueda demostrar en vivo**. Si una función se agrega o se saca del producto,
  * se agrega o se saca de acá el mismo día.
+ *
+ * **Rediseño del 2026-08-26.** Hasta acá la página decía todo con texto: ocho
+ * títulos en negrita y una lista de lo incluido. El dueño que llegaba no veía
+ * nunca el producto —el único botón que mostraba algo llevaba a la carta, que es
+ * la pantalla del *comensal*, no la suya—. Ahora la página muestra las dos
+ * pantallas que ese lector compra: **el tablero de la cocina**, debajo del hero,
+ * y **los reportes de venta**, en su propia sección. Son réplicas en HTML de las
+ * pantallas reales (`src/componentes/landing/`), no capturas: quedan nítidas en
+ * cualquier pantalla, no pesan y se leen igual con zoom. Los datos son
+ * inventados y la página lo dice.
  */
 
 export const metadata: Metadata = {
@@ -25,37 +50,52 @@ export const metadata: Metadata = {
   },
 };
 
-/** Lo que el sistema hace hoy. Cada punto se puede mostrar funcionando. */
+/**
+ * Lo que el sistema hace hoy. Cada punto se puede mostrar funcionando.
+ *
+ * El icono no es decoración: ocho títulos en negrita seguidos son un muro de
+ * texto y el ojo no encuentra dónde empezar. Son de `@heroicons/react`, como
+ * todo el resto del sitio — nunca emoji, que lo dibuja el sistema operativo de
+ * quien lee y no se puede teñir.
+ */
 const FUNCIONES = [
   {
+    Icono: QrCodeIcon,
     titulo: "Carta por QR, sin app ni registro",
     desc: "El cliente escanea y ve la carta con fotos, descripción y precio. No descarga nada ni deja sus datos.",
   },
   {
+    Icono: Squares2X2Icon,
     titulo: "Tablero de cocina en tiempo real",
     desc: "El pedido aparece solo y suena. Si el wifi del local bloquea la conexión en vivo, la pantalla se refresca igual.",
   },
   {
+    Icono: ChartBarIcon,
     titulo: "Reportes de venta",
     desc: "Pedidos, venta, ticket promedio, productos más vendidos y tiempos reales de cocina. Se exporta a CSV para el contador.",
   },
   {
+    Icono: PencilSquareIcon,
     titulo: "Tú administras tu menú",
     desc: "Cambiar precios, agotar un producto o subir fotos toma segundos, desde tu propio panel y sin llamar a nadie.",
   },
   {
+    Icono: SwatchIcon,
     titulo: "Tu marca en la carta",
     desc: "Tu logo y tus colores. El sistema revisa que el texto se lea sobre el color que elijas.",
   },
   {
+    Icono: BanknotesIcon,
     titulo: "Propina sugerida",
     desc: "El cliente elige un porcentaje sobre su total y queda anotado en la comanda. La cobras tú, en tu caja.",
   },
   {
+    Icono: UserGroupIcon,
     titulo: "Una cuenta para cada persona",
     desc: "Tu garzón entra con su propia clave y ve solo los pedidos. No ve tu caja ni puede tocar tus precios.",
   },
   {
+    Icono: DevicePhoneMobileIcon,
     titulo: "Tu garzón toma el pedido desde su celular",
     desc: "Elige la mesa, marca los productos y lo manda a cocina. Los más vendidos aparecen primero.",
   },
@@ -66,6 +106,25 @@ const PASOS = [
   { n: "2", label: "Elige de la carta y confirma su pedido" },
   { n: "3", label: "El pedido aparece en la pantalla de la cocina" },
   { n: "4", label: "Marcas “listo” y el cliente lo ve en su teléfono" },
+];
+
+/** Los tres apoyos de la sección de reportes: lo que ese panel te dice y no sabías. */
+const LO_QUE_DICEN_LOS_NUMEROS = [
+  {
+    Icono: BanknotesIcon,
+    titulo: "Cuánto vendiste, en el período que quieras",
+    desc: "Lo entregado se separa de lo que todavía está en curso, y los pedidos rechazados no suman. La propina va aparte, porque es del personal y no del local.",
+  },
+  {
+    Icono: MagnifyingGlassIcon,
+    titulo: "Qué se vende y qué no",
+    desc: "En el mes de la maqueta la bebida es lo que más sale y el churrasco lo que más deja. Eso no se sabe de memoria, se mira.",
+  },
+  {
+    Icono: ClockIcon,
+    titulo: "Cuánto demora tu cocina de verdad",
+    desc: "No lo que te parece: la mediana medida entre que entra el pedido y sale el plato. Y todo se exporta a CSV para tu contador.",
+  },
 ];
 
 /**
@@ -98,7 +157,7 @@ export default function Home() {
     <div className="flex flex-col min-h-dvh bg-stone-50">
       {/* ===== BARRA SUPERIOR ===== */}
       <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-stone-50/85 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
             {/* La marca del producto. Era el emoji de hamburguesa, que se dibuja
                 distinto en cada sistema operativo y le prometia un rubro al
@@ -116,6 +175,12 @@ export default function Home() {
           </Link>
 
           <nav className="flex items-center gap-1">
+            <a
+              href="#panel"
+              className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
+            >
+              El panel
+            </a>
             <a
               href="#funciones"
               className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
@@ -145,7 +210,7 @@ export default function Home() {
 
       {/* ===== HERO ===== */}
       <section className="sobre-oscuro bg-stone-950 border-b border-stone-900">
-        <div className="max-w-5xl mx-auto px-5 py-16 md:py-24">
+        <div className="max-w-6xl mx-auto px-5 pt-16 md:pt-24 pb-14 md:pb-20">
           <div className="max-w-2xl">
             <p className="animate-fade-in text-xs font-semibold uppercase tracking-[0.14em] text-orange-400 mb-5">
               Pedidos por QR para locales de comida
@@ -209,11 +274,24 @@ export default function Home() {
               </li>
             </ul>
           </div>
+
+          {/* La pantalla de la cocina, debajo del titular que la promete. Es lo
+              primero que ve el dueño y responde la única pregunta que importa a
+              los diez segundos: "¿qué es esto exactamente?". */}
+          <div className="animate-fade-in mt-12 md:mt-16" style={{ animationDelay: "400ms" }}>
+            <MarcoPanel
+              ruta="/dashboard"
+              claseCaption="text-stone-400"
+              descripcion="El tablero de la cocina, con datos de demostración: el pedido entra por la izquierda y avanza hasta que se entrega. El cronómetro se pone ámbar a los ocho minutos y las notas del cliente van en amarillo, para que no se pasen por alto."
+            >
+              <DemoCocina />
+            </MarcoPanel>
+          </div>
         </div>
       </section>
 
       {/* ===== CÓMO FUNCIONA ===== */}
-      <section className="max-w-5xl mx-auto w-full px-5 py-14 md:py-20">
+      <section className="max-w-6xl mx-auto w-full px-5 py-14 md:py-20">
         <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">Cómo funciona</h2>
         <p className="text-stone-500 text-sm mt-1.5">Cuatro pasos, sin nada que instalar.</p>
 
@@ -245,117 +323,148 @@ export default function Home() {
         </ol>
       </section>
 
-      {/* ===== QUÉ HACE ===== */}
-      <section id="funciones" className="bg-white border-y border-stone-200/80 scroll-mt-14">
-        <div className="max-w-5xl mx-auto px-5 py-14 md:py-20">
-          <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">
-            Lo que incluye, en concreto
+      {/* ===== LOS NÚMEROS ===== */}
+      <section id="panel" className="bg-white border-y border-stone-200/80 scroll-mt-14">
+        <div className="max-w-6xl mx-auto px-5 py-14 md:py-20">
+          <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight text-balance">
+            Y al final del mes sabes exactamente cómo te fue
           </h2>
-          <p className="text-stone-500 text-sm mt-1.5">
-            Todo esto se puede ver funcionando antes de pagar nada.
+          <p className="text-stone-500 text-sm mt-1.5 max-w-xl">
+            La misma pantalla que ves tú, en tu teléfono o en el computador del local.
           </p>
 
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
-            {FUNCIONES.map((f, i) => (
-              <div key={f.titulo} className="stagger-card" style={{ animationDelay: `${i * 60}ms` }}>
-                <h3 className="font-bold text-stone-900 text-base leading-snug">{f.titulo}</h3>
-                <p className="mt-1.5 text-sm text-stone-500 leading-relaxed">{f.desc}</p>
+          <div className="mt-8">
+            <MarcoPanel
+              ruta="/dashboard/reportes"
+              pieVisible={false}
+              descripcion="Los reportes de venta, con datos de demostración: un mes de una fuente de soda, con los lunes cerrados. Cada barra es un día; la tabla ordena los productos por unidades vendidas."
+            >
+              <DemoReportes />
+            </MarcoPanel>
+          </div>
+
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-7">
+            {LO_QUE_DICEN_LOS_NUMEROS.map((punto, i) => (
+              <div key={punto.titulo} className="stagger-card" style={{ animationDelay: `${i * 70}ms` }}>
+                <span className="inline-flex w-9 h-9 rounded-xl bg-orange-50 text-orange-700 items-center justify-center">
+                  <punto.Icono aria-hidden className="w-5 h-5" />
+                </span>
+                <h3 className="mt-3 font-bold text-stone-900 text-base leading-snug">{punto.titulo}</h3>
+                <p className="mt-1.5 text-sm text-stone-500 leading-relaxed">{punto.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== PRECIO ===== */}
-      <section id="precio" className="max-w-5xl mx-auto w-full px-5 py-14 md:py-20 scroll-mt-14">
-        <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">Un solo plan</h2>
-        <p className="text-stone-500 text-sm mt-1.5">Sin letra chica y sin cobro por volumen de ventas.</p>
-
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-4">
-          {/* Tarjeta de precio */}
-          <div className="sobre-oscuro rounded-2xl bg-stone-950 text-white p-7 md:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-400">
-              Plan único
-            </p>
-            <div className="mt-4 flex items-baseline gap-2 flex-wrap">
-              <span className="text-4xl md:text-5xl font-black tracking-tight tabular-nums">$29.900</span>
-              <span className="text-stone-400 text-sm">al mes, por local</span>
+      {/* ===== QUÉ HACE ===== */}
+      <section id="funciones" className="max-w-6xl mx-auto w-full px-5 py-14 md:py-20 scroll-mt-14">
+        <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">
+          Lo que incluye, en concreto
+        </h2>
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8">
+          {FUNCIONES.map((f, i) => (
+            <div key={f.titulo} className="stagger-card" style={{ animationDelay: `${i * 60}ms` }}>
+              <span className="inline-flex w-9 h-9 rounded-xl bg-orange-50 text-orange-700 items-center justify-center">
+                <f.Icono aria-hidden className="w-5 h-5" />
+              </span>
+              <h3 className="mt-3 font-bold text-stone-900 text-base leading-snug">{f.titulo}</h3>
+              <p className="mt-1.5 text-sm text-stone-500 leading-relaxed">{f.desc}</p>
             </div>
-            <p className="mt-2 text-sm text-stone-400">
-              O <strong className="text-stone-200 tabular-nums">$249.900 al año</strong> — dos meses gratis.
-            </p>
+          ))}
+        </div>
+      </section>
 
-            {/* Mismo destino que el botón del hero, pero acá el que lee ya vino a ver
-                el precio: el botón acompaña, no arrastra. Por eso baja a secundario.
-                La tarjeta lleva `sobre-oscuro` porque el naranja legible sobre claro
-                (#c2410c) cae a 3,81:1 sobre este negro; esa clase le pasa al botón la
-                variante clara, igual que hace `.dashboard-dark` en el panel. */}
-            <Link
-              href={`/local/${demoSlug}`}
-              className="mt-7 inline-flex w-full items-center justify-center h-12 rounded-xl btn-secundario font-bold text-base shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.99] transition-all"
-            >
-              Probar la carta demo
-            </Link>
+      {/* ===== PRECIO ===== */}
+      <section id="precio" className="bg-white border-y border-stone-200/80 scroll-mt-14">
+        <div className="max-w-6xl mx-auto px-5 py-14 md:py-20">
+          <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">Un solo plan</h2>
+          <p className="text-stone-500 text-sm mt-1.5">Sin letra chica y sin cobro por volumen de ventas.</p>
 
-            <p className="mt-4 text-xs text-stone-400 leading-relaxed">
-              La primera semana es gratis, con su fin de semana incluido. Si un pago se atrasa,
-              tienes {DIAS_GRACIA} días más antes de que se pausen los pedidos: el servicio nunca se
-              corta en medio de un turno.
-            </p>
-          </div>
-
-          {/* Qué incluye + comparación honesta */}
-          <div className="rounded-2xl bg-white border border-stone-200/80 p-7 md:p-8">
-            <h3 className="font-bold text-stone-900 text-base">Incluido en el plan</h3>
-            <ul className="mt-4 flex flex-col gap-2.5">
-              {INCLUYE.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-sm text-stone-700">
-                  <svg className="w-4 h-4 mt-0.5 shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                  {item}
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-6 pt-6 border-t border-stone-200/80">
-              <p className="text-sm text-stone-600 leading-relaxed">
-                <strong className="text-stone-900">Sin comisión por venta.</strong> Los sistemas que
-                cobran un porcentaje se llevan entre un 2 % y un 5 % de todo lo que vendes. Acá pagas
-                lo mismo vendas lo que vendas.
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-4">
+            {/* Tarjeta de precio */}
+            <div className="sobre-oscuro rounded-2xl bg-stone-950 text-white p-7 md:p-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-400">
+                Plan único
               </p>
-              <p className="mt-3 text-sm text-stone-600 leading-relaxed">
-                <strong className="text-stone-900">Sin permanencia.</strong> Cancelas cuando quieras y
-                tus reportes se exportan a CSV, incluso después.
+              <div className="mt-4 flex items-baseline gap-2 flex-wrap">
+                <span className="text-4xl md:text-5xl font-black tracking-tight tabular-nums">$29.900</span>
+                <span className="text-stone-400 text-sm">al mes, por local</span>
+              </div>
+              <p className="mt-2 text-sm text-stone-400">
+                O <strong className="text-stone-200 tabular-nums">$249.900 al año</strong> — dos meses gratis.
               </p>
+
+              {/* Mismo destino que el botón del hero, pero acá el que lee ya vino a ver
+                  el precio: el botón acompaña, no arrastra. Por eso baja a secundario.
+                  La tarjeta lleva `sobre-oscuro` porque el naranja legible sobre claro
+                  (#c2410c) cae a 3,81:1 sobre este negro; esa clase le pasa al botón la
+                  variante clara, igual que hace `.dashboard-dark` en el panel. */}
+              <Link
+                href={`/local/${demoSlug}`}
+                className="mt-7 inline-flex w-full items-center justify-center h-12 rounded-xl btn-secundario font-bold text-base shadow-lg shadow-orange-500/20 hover:shadow-xl active:scale-[0.99] transition-all"
+              >
+                Probar la carta demo
+              </Link>
+
+              <p className="mt-4 text-xs text-stone-400 leading-relaxed">
+                La primera semana es gratis, con su fin de semana incluido. Si un pago se atrasa,
+                tienes {DIAS_GRACIA} días más antes de que se pausen los pedidos: el servicio nunca se
+                corta en medio de un turno.
+              </p>
+            </div>
+
+            {/* Qué incluye + comparación honesta */}
+            <div className="rounded-2xl bg-stone-50 border border-stone-200/80 p-7 md:p-8">
+              <h3 className="font-bold text-stone-900 text-base">Incluido en el plan</h3>
+              <ul className="mt-4 flex flex-col gap-2.5">
+                {INCLUYE.map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-stone-700">
+                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-6 pt-6 border-t border-stone-200/80">
+                <p className="text-sm text-stone-600 leading-relaxed">
+                  <strong className="text-stone-900">Sin comisión por venta.</strong> Los sistemas que
+                  cobran un porcentaje se llevan entre un 2 % y un 5 % de todo lo que vendes. Acá pagas
+                  lo mismo vendas lo que vendas.
+                </p>
+                <p className="mt-3 text-sm text-stone-600 leading-relaxed">
+                  <strong className="text-stone-900">Sin permanencia.</strong> Cancelas cuando quieras y
+                  tus reportes se exportan a CSV, incluso después.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ===== LÍMITES ===== */}
-      <section className="bg-white border-y border-stone-200/80">
-        <div className="max-w-5xl mx-auto px-5 py-14 md:py-20">
-          <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">
-            Lo que todavía no hace
-          </h2>
-          <p className="text-stone-500 text-sm mt-1.5 max-w-xl">
-            Preferimos decirlo acá y no en tu segunda semana de uso.
-          </p>
+      <section className="max-w-6xl mx-auto w-full px-5 py-14 md:py-20">
+        <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">
+          Lo que todavía no hace
+        </h2>
+        <p className="text-stone-500 text-sm mt-1.5 max-w-xl">
+          Preferimos decirlo acá y no en tu segunda semana de uso.
+        </p>
 
-          <ul className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-            {LIMITES.map((limite) => (
-              <li key={limite} className="flex items-start gap-2.5 text-sm text-stone-500">
-                <span aria-hidden className="mt-2 w-3 h-px bg-stone-300 shrink-0" />
-                {limite}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+          {LIMITES.map((limite) => (
+            <li key={limite} className="flex items-start gap-2.5 text-sm text-stone-500">
+              <span aria-hidden className="mt-2 w-3 h-px bg-stone-300 shrink-0" />
+              {limite}
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* ===== CIERRE ===== */}
-      <section className="max-w-5xl mx-auto w-full px-5 py-14 md:py-20">
+      <section className="max-w-6xl mx-auto w-full px-5 pb-14 md:pb-20">
         <div className="rounded-2xl bg-stone-100 border border-stone-200/80 p-8 md:p-12 text-center">
           <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight text-balance">
             Estamos eligiendo los primeros locales
@@ -379,7 +488,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-stone-200/80 py-7">
-        <div className="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-stone-500">Garzón Digital · Viña del Mar, Chile</p>
           <div className="flex items-center gap-5">
             <Link href="/privacidad" className="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors">

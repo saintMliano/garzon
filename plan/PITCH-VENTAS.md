@@ -191,14 +191,26 @@ precio, se cambia en un lugar y ya está — no hay que rehacer una imagen.
 5. **Abrir los reportes de la demo** — diciendo que son datos de demostración — para que vea la
    forma que va a tener su información en un mes.
 
+**Si no se puede hacer la demo en vivo** (no te atiende el dueño, te dice "mándame algo"), la
+landing sirve de reemplazo parcial desde el 2026-08-26: muestra el tablero de la cocina y la
+pantalla de reportes completa, con el rótulo "Datos de demostración" a la vista. **No reemplaza al
+teléfono en su mano** — el momento que convence sigue siendo que él escanee y vea aparecer su propio
+pedido en la cocina—, pero deja de ser una página de texto que hay que creerle.
+
 ---
 
 ## 8. Lo que sabés vos y no va en el pitch
 
 Notas internas. No son para el cliente, pero conviene tenerlas presentes al prometer.
 
-- **Nada de esto lo usó una persona real todavía.** Ni la carta en un celular sobre 4G dentro de un
-  local con muros. Es el riesgo más grande que queda y solo se cierra instalando el primer piloto.
+- **Probado en el despliegue, sin probar en servicio.** Esto cambió y la nota anterior ya era falsa:
+  la carta, el flujo de cocina y los reportes **se revisaron a mano y funcionan** sobre
+  https://garzon-one.vercel.app/. Lo que falta es distinto y más chico de decir: **nadie escaneó
+  todavía un QR desde su mesa con el local abierto**, ni la cocina trabajó un turno entero contra el
+  tablero. Eso es lo que separa "funciona" de "sirve" — cuánto aguanta el wifi del local, si el
+  sonido se pierde con la tablet bloqueada, si el garzón prefiere el papel — y solo se cierra
+  instalando el primer piloto. **No digas "sin probar": es falso. Decí "probado en el despliegue,
+  sin probar en servicio".**
 - **El menú se midió desde fibra**, no desde 4G: la consulta de la carta baja de 385 ms a 185 ms tras
   el cambio a Server Component. Es la consulta, no la pantalla completa. **No prometas segundos de
   carga**: prometé que se ve rápido y dejá que lo compruebe en su propio teléfono.
@@ -211,3 +223,7 @@ Notas internas. No son para el cliente, pero conviene tenerlas presentes al prom
   pocos locales no es un problema; con veinte, sí.
 - **Los tiempos de cocina de la demo (1 min 45 s / 14 min / 17 min) son simulados.** No los cites
   como rendimiento real de nadie.
+- **Los números de las maquetas de la landing son inventados a mano** — otros que los de la demo
+  sembrada: $7.154.200 de venta al mes, 1.234 pedidos, ticket de $5.898. Cuadran entre sí a
+  propósito, para que nadie los pille sumando, pero **no son de ningún local**. La página lo rotula;
+  vos no los cites como si fueran de un cliente.
