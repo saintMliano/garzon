@@ -213,13 +213,20 @@ Los cambios de variables **no afectan a los despliegues ya construidos**, solo a
 
 ---
 
-## 4. Dos cosas que quedan abiertas
+## 4. La renovación, y lo que esto desbloquea
 
-**La renovación no es un trámite administrativo.** $9.990 al año, exento de IVA, sin descuento por
-volumen (2 años son exactamente $19.980). **Se compró por un año: vence el 2027-08-26.** Hay que
-ponerse un recordatorio propio, sin depender solo del aviso de NIC — y conviene extenderlo a dos o
-tres años apenas haya un cliente real, que no sale más caro por año y saca el vencimiento del
-camino. La razón no es la del sitio web de cualquier empresa:
+### ⚠️ El dominio vence el **2027-08-26**
+
+Recordatorio propio ya puesto por el dueño *(2026-08-26)* — no depende solo del aviso de NIC.
+
+$9.990 al año, exento de IVA, sin descuento por volumen (2 años son exactamente $19.980). **Conviene
+extenderlo a dos o tres años apenas haya un cliente real**: no sale más caro por año y saca el
+vencimiento del camino.
+
+Por qué esta fecha no es un trámite administrativo cualquiera: **los QR van impresos y pegados en
+las mesas de los clientes**. Si el dominio vence no se cae un sitio — se caen todos los QR de todos
+los locales a la vez, y eso no se arregla con un correo de disculpa, se arregla reimprimiendo local
+por local. La razón no es la del sitio web de cualquier empresa:
 **los QR van impresos y pegados en las mesas de los clientes**. Si el dominio vence, cada QR de cada
 local queda muerto de golpe, y eso no se arregla con un correo de disculpa — se arregla
 reimprimiendo, local por local.

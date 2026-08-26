@@ -31,6 +31,7 @@ key hace falta para el alta de locales, y las dos variables del CLI solo para mi
 | `npm run build` | Build de producción |
 | `npm test` | Tests de integración contra Supabase real (necesita `.env.test`) |
 | `npm run lint` | ESLint |
+| `npm run qr` | Genera los QR de las mesas en `qr/` (SVG, corrección `Q`) |
 | `npm run db:backup` | **Respaldo de datos. Correr antes de cada `db:push`.** |
 | `npm run db:push` | Aplica las migraciones pendientes de `supabase/migrations/` |
 | `npm run db:diff` | Deriva entre el repo y la base *(requiere Docker)* |
