@@ -353,9 +353,16 @@ export default function Home() {
           </div>
 
             {/* El recorrido del pedido. No reproduce ninguna pantalla —eso lo
-                hace la maqueta del tablero, justo abajo—: cuenta el trayecto. */}
+                hace la maqueta del tablero, justo abajo—: cuenta el trayecto.
+
+                **Se ve también en el teléfono**, que es donde lo mira la mayoría:
+                el canal de venta es WhatsApp y el dueño abre el link en su
+                celular. Estuvo escondido bajo `lg` para no empujar el tablero, y
+                era el razonamiento equivocado —dejaba sin animación justo al
+                público principal—. En móvil cae después de las viñetas y antes del
+                tablero: primero el recorrido, después la pantalla donde ocurre. */}
             <div
-              className="hidden lg:block shrink-0 animate-fade-in"
+              className="mt-12 lg:mt-0 shrink-0 animate-fade-in"
               style={{ animationDelay: "400ms" }}
             >
               <DemoRecorrido />
