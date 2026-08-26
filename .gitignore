@@ -51,3 +51,7 @@ backups/
 # Claude Code: preferencias locales de la máquina (incluye comandos permitidos, que pueden llevar credenciales)
 .claude/settings.local.json
 .claude/.claude/
+
+# QR generados por `npm run qr`. Son material operativo de cada cliente
+# (uno por mesa, por local), no del repositorio.
+/qr

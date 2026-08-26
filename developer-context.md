@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -250,6 +250,41 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — `npm run qr`: los códigos de las mesas dejan de depender de una web cualquiera
+
+Ahora que hay dominio propio se pueden generar los QR, y se generan acá.
+
+**Por qué un script y no una de las mil webs gratis de QR.** El QR se imprime y
+se pega. Uno mal generado no falla en pantalla: falla cuando un comensal con
+hambre apunta el teléfono en un local con media luz, y para entonces ya se
+imprimieron cuarenta. `scripts/generar-qr.mjs` deja fijos los tres parámetros que
+deciden eso:
+
+- **SVG y no PNG.** Vectorial: la misma imagen sirve para un adhesivo de 4 cm y
+  para un cartel. Un PNG se pixela al ampliarlo y el escáner falla en los bordes
+  de los módulos.
+- **Corrección de errores `Q` (25%).** Las webs eligen `L` por defecto porque da
+  un dibujo más limpio. Pero estos códigos viven sobre una mesa de fuente de
+  soda: aceite, rayones, una esquina despegada. `Q` tolera que un cuarto del
+  código esté ilegible, y el costo es densidad, no tamaño de impresión.
+- **Zona de silencio de 4 módulos.** El margen blanco no es estética: sin él
+  muchos lectores no encuentran el código. Recortarlo "para que quepa mejor en el
+  diseño" es el error más común.
+
+`--mesas N` genera una por mesa con su `?mesa=`, que es lo que hace que el pedido
+llegue a la cocina sabiendo de dónde vino. La salida va a `qr/`, que **no se
+versiona**: son archivos operativos de cada cliente, no del repositorio.
+
+**Verificado decodificando, no mirando.** El SVG se pasó por un lector real
+(jsQR, que es un lector y no el mismo generador) a 1024, 300 y 160 píxeles de
+lado: los tres devuelven `https://garzondigital.cl/local/el-lalo`. Generar un QR
+y mirar que "se ve como un QR" no prueba nada.
+
+Se agregó `qrcode` como **devDependency** — no viaja al navegador. Es la primera
+dependencia nueva desde `@heroicons/react`, y se justifica porque esto no es un
+archivo único: cada mesa de cada local va a necesitar el suyo.
+
 
 ### 2026-08-26 — Correo propio, y una landing que por fin se puede contestar
 
