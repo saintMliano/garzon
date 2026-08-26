@@ -239,6 +239,172 @@ body {
    No se apaga la animación: se colapsa a un solo fotograma. Así el estado final
    (opacidad 1, posición 0) igual se aplica y nada queda invisible, que es lo que
    pasaría con `animation: none` sobre un `fade-in` que arranca en opacidad 0. */
+/* ===== EL RECORRIDO DEL HERO =====
+   La animación de `src/componentes/landing/demo-recorrido.tsx`: cuatro hitos que
+   se encienden uno a uno mientras un pulso baja por la línea que los enhebra.
+
+   **Sin JavaScript y solo con `opacity` y `transform`**, que son las dos
+   propiedades que el navegador mueve sin volver a pintar. La landing sigue
+   estática (`○ /` en el build).
+
+   **Un solo ciclo de 12 s compartido por todas las piezas**, así los porcentajes
+   son un guion común:
+
+       0-4 %     reinicio: se apaga todo
+       8-70 %    el pulso baja y la línea naranja crece detrás
+       13 %      se enciende "escanea el QR"
+       33 %      se enciende "elige y confirma"
+       53 %      se enciende "suena en la cocina"
+       74 %      se enciende "se prepara y sale"
+       74-100 %  los cuatro encendidos, quietos
+
+   Cada hito se enciende **cuando el pulso ya pasó por él**, no antes. Los nodos
+   están en el 0, 33, 67 y 100 % del riel, y el pulso los alcanza en el 8, 29, 49
+   y 70 % del ciclo; por eso encienden en el 13, 33, 53 y 74. Un nodo que se
+   ilumina antes de que le llegue la señal rompe justamente lo que la animación
+   está contando.
+
+   **Por qué termina encendido y no apagado.** El bloque de
+   `prefers-reduced-motion` de más abajo colapsa toda animación a `0.01ms` con una
+   sola iteración: quien pide movimiento reducido no ve el recorrido, ve el
+   **fotograma 100 %**. Por eso el ciclo está escrito al revés —el reinicio va al
+   principio— y todo lleva `animation-fill-mode: both`. Si terminara apagándose,
+   esas personas verían cuatro cuadros grises.
+
+   **La geometría está acoplada.** `--rec-riel` son 324 px = tres saltos de 108
+   (44 de nodo + 64 de separación). Si cambia el nodo o la separación, cambia acá.
+   El `translateY` del pulso usa esa misma variable, así no pueden discrepar. */
+
+.rec-caja {
+  --rec-nodo: 44px;
+  --rec-salto: 64px;
+  --rec-riel: 324px; /* 3 × (44 + 64) */
+  position: relative;
+  width: 300px;
+}
+.rec-lista {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rec-salto);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rec-paso {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.rec-nodo {
+  position: relative;
+  width: var(--rec-nodo);
+  height: var(--rec-nodo);
+  flex: none;
+  border-radius: 14px;
+  border: 1px solid #44403c;
+  background: rgba(28, 25, 23, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rec-nodo-on {
+  position: absolute;
+  inset: -1px;
+  border-radius: 14px;
+  border: 1px solid rgba(249, 115, 22, 0.55);
+  background: rgba(249, 115, 22, 0.12);
+  box-shadow: 0 0 22px -4px rgba(249, 115, 22, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* El riel va detrás de los nodos, alineado con su centro. */
+.rec-riel {
+  position: absolute;
+  left: calc(var(--rec-nodo) / 2 - 1px);
+  top: calc(var(--rec-nodo) / 2);
+  width: 2px;
+  height: var(--rec-riel);
+  background: #292524;
+  border-radius: 999px;
+}
+.rec-progreso {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, #f97316, #fbbf24);
+  transform-origin: top;
+}
+.rec-pulso {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: #fbbf24;
+  box-shadow: 0 0 14px 3px rgba(251, 191, 36, 0.5);
+}
+
+.rec-progreso,
+.rec-pulso,
+.rec-nodo-on {
+  animation-duration: 12s;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-timing-function: ease-in-out;
+}
+/* El riel y el pulso van en `linear` y con los MISMOS porcentajes (8 % → 70 %).
+   No es un detalle: con curvas distintas el punto se despega del borde naranja
+   —con `ease-in-out` en la línea, a mitad de camino el punto iba en el 17 % y la
+   línea en el 4 %, y más tarde la línea lo adelantaba— y eso se ve como un error,
+   no como una animación. Si alguien cambia una curva, tiene que cambiar la otra. */
+.rec-progreso { animation-name: rec-progreso; animation-timing-function: linear; }
+.rec-pulso { animation-name: rec-pulso; animation-timing-function: linear; }
+.rec-nodo-1 { animation-name: rec-nodo-1; }
+.rec-nodo-2 { animation-name: rec-nodo-2; }
+.rec-nodo-3 { animation-name: rec-nodo-3; }
+.rec-nodo-4 { animation-name: rec-nodo-4; }
+
+@keyframes rec-progreso {
+  0% { transform: scaleY(1); }
+  4%, 8% { transform: scaleY(0); }
+  70%, 100% { transform: scaleY(1); }
+}
+@keyframes rec-pulso {
+  /* Vuelve arriba entre el 0 y el 4 %, pero invisible: nadie ve el salto. */
+  0% { transform: translateY(var(--rec-riel)); opacity: 0; }
+  4%, 8% { transform: translateY(0); opacity: 0; }
+  11% { opacity: 1; }
+  67% { opacity: 1; }
+  70% { transform: translateY(var(--rec-riel)); opacity: 0; }
+  100% { transform: translateY(var(--rec-riel)); opacity: 0; }
+}
+@keyframes rec-nodo-1 {
+  0% { opacity: 1; }
+  4%, 9% { opacity: 0; }
+  13%, 100% { opacity: 1; }
+}
+@keyframes rec-nodo-2 {
+  0% { opacity: 1; }
+  4%, 29% { opacity: 0; }
+  33%, 100% { opacity: 1; }
+}
+@keyframes rec-nodo-3 {
+  0% { opacity: 1; }
+  4%, 49% { opacity: 0; }
+  53%, 100% { opacity: 1; }
+}
+@keyframes rec-nodo-4 {
+  0% { opacity: 1; }
+  4%, 70% { opacity: 0; }
+  74%, 100% { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
