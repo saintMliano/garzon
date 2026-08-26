@@ -205,7 +205,8 @@ Notas internas. No son para el cliente, pero conviene tenerlas presentes al prom
 
 - **Probado en el despliegue, sin probar en servicio.** Esto cambió y la nota anterior ya era falsa:
   la carta, el flujo de cocina y los reportes **se revisaron a mano y funcionan** sobre
-  https://garzon-one.vercel.app/. Lo que falta es distinto y más chico de decir: **nadie escaneó
+  https://garzon-one.vercel.app/ (el dominio propio `garzondigital.cl` se compró el 2026-08-26 y
+  queda por enganchar). Lo que falta es distinto y más chico de decir: **nadie escaneó
   todavía un QR desde su mesa con el local abierto**, ni la cocina trabajó un turno entero contra el
   tablero. Eso es lo que separa "funciona" de "sirve" — cuánto aguanta el wifi del local, si el
   sonido se pierde con la tablet bloqueada, si el garzón prefiere el papel — y solo se cierra

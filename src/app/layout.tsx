@@ -21,7 +21,26 @@ const inter = Inter({
   variable: "--fuente-inter",
 });
 
+/**
+ * La URL pública del sitio, de la que cuelga `metadataBase`.
+ *
+ * Sin `metadataBase`, Next resuelve las imágenes de OpenGraph contra una ruta
+ * relativa, y una ruta relativa no le sirve a WhatsApp: el que recibe el link
+ * no está en nuestro dominio cuando su cliente va a buscar la miniatura. El
+ * canal de venta declarado en `plan/PLAN_COMERCIAL.md` **es** WhatsApp, y la
+ * imagen de `opengraph-image.tsx` existe justamente para que el link no llegue
+ * como una línea de texto gris. Faltaba la pieza que la vuelve absoluta.
+ *
+ * El orden importa: la variable manda en producción; en los despliegues de
+ * vista previa cae a la URL que Vercel inyecta —así una preview no anuncia
+ * imágenes del dominio de producción—; y en local, a localhost.
+ */
+const URL_SITIO =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(URL_SITIO),
   title: "Garzón Digital | Pide sin espera",
   description:
     "Arma tu pedido, elige tu mesa, y recíbelo sin hacer fila. El garzón digital para tu local favorito.",
