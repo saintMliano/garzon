@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **WhatsApp** en el hero, el cierre y el pie de la landing, y en el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **El banner del hero**, resuelto con el recorrido del pedido —cuatro hitos que se encienden al paso de un pulso, en CSS puro y con el último fotograma pensado para quien pide movimiento reducido. Antes, el mismo día: **WhatsApp** en el hero, el cierre y el pie de la landing, y en el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -219,20 +219,24 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F12 — Roles y comanda** | Roles por local (`dueño`/`personal`) con cumplimiento en la base, pantalla de equipo, y comanda del garzón (`/dashboard/comanda`). [Plan](plan/ROLES-Y-COMANDA.md) | **Completa** |
 | F11 — Dominios propios | Cuando un cliente lo pida **y lo pague**. *(El dominio de la plataforma, `garzondigital.cl`, ya está: ver [`plan/DOMINIO.md`](plan/DOMINIO.md). Lo pendiente son los subdominios/dominios **por local**.)* | Pendiente |
 
-**Pendiente abierto: el banner del hero (2026-08-26).** La franja negra del hero
-tiene un hueco a la derecha del titular —unos 460 × 400 px en escritorio— que hoy
-está vacío. **Falta hacer algo ahí**; el dueño lo quiere con movimiento, para que
-la página se vea más terminada.
+**El banner del hero: resuelto (2026-08-26).** El hueco a la derecha del titular
+—unos 460 × 400 px en escritorio— lleva ahora el **recorrido del pedido**
+(`src/componentes/landing/demo-recorrido.tsx`): cuatro hitos que se encienden al
+paso de un pulso.
 
-Primer intento, **descartado por ahora pero no borrado**: la rama
-`hero-telefono` tiene un teléfono animado en CSS puro que arma un pedido y lo
-manda a la cocina. Funciona y está verificado —incluida la parte difícil, que el
-fotograma final se sostenga solo para quien pide movimiento reducido— pero no
-convenció visualmente. **No se mergeó y la rama se conserva**: si se retoma la
-idea, el trabajo está hecho y el razonamiento está en su commit.
+Queda constancia de la alternativa descartada, porque **la rama `hero-telefono`
+no se borró**: tiene un teléfono animado que arma un pedido y lo manda a la
+cocina. Funciona y está verificado —incluida la parte difícil, que el fotograma
+final se sostenga para quien pide movimiento reducido— pero no convenció
+visualmente. Si alguna vez se quiere mostrar la pantalla del comensal en el hero,
+el trabajo está hecho ahí.
 
-Lo que se busca es que el recorrido se entienda de un vistazo: el comensal pide,
-llega a la cocina, se prepara.
+Y una tercera vía que se evaluó y **no** se tomó: subir el propio tablero al hero,
+recortado por el borde, y animarlo. Se descartó por su costo, no por la idea — es
+un cambio estructural, obliga a decidir qué pasa con el tablero que ya está
+debajo, y animar un espejo que se desfasa cuando alguien toca `/dashboard` lo
+vuelve bastante más caro de mantener. Vale la pena retomarla solo si alguna vez el
+hero se siente "texto más adorno" en vez de "texto más producto".
 
 **Dos condiciones que hay que cumplir antes de instalar el primer local, y que no
 son código:**
@@ -273,6 +277,53 @@ son código:**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — El banner del hero: el recorrido del pedido
+
+El hueco negro a la derecha del titular lleva ahora cuatro hitos enhebrados por
+una línea, y un pulso que baja encendiéndolos: **el cliente escanea el QR · elige
+y envía su pedido · la cocina recibe la comanda · se prepara y sale el plato.**
+
+**Es la versión abstracta, elegida sobre dos alternativas.** No reproduce ninguna
+pantalla, y eso tiene dos caras: no se desfasa nunca —no es espejo de nada— pero
+tampoco muestra el producto. Eso lo sigue haciendo la maqueta del tablero, justo
+debajo. Las otras dos opciones y el porqué de descartarlas están anotados arriba,
+en "El banner del hero: resuelto".
+
+**Sin JavaScript.** Solo `opacity` y `transform`. La landing sigue estática.
+
+**Tres decisiones que no son de gusto y conviene no deshacer:**
+
+1. **El ciclo termina encendido, no apagado.** El bloque de
+   `prefers-reduced-motion` de `globals.css` colapsa toda animación a `0.01ms`
+   con **una sola iteración**: quien tiene esa preferencia no ve el recorrido, ve
+   el **fotograma 100 %**. Por eso el reinicio va al principio (0-4 %) y todo
+   lleva `animation-fill-mode: both`. Si alguien "arregla" el ciclo para que se
+   apague al final, esas personas verán cuatro cuadros grises.
+2. **El riel y el pulso comparten porcentajes exactos y los dos van en `linear`.**
+   Con curvas distintas el punto se despega del borde naranja: con `ease-in-out`
+   en la línea, el punto iba en el 17 % del riel y la línea en el 4 %, y más tarde
+   la línea lo adelantaba. Se veía como un error, no como una animación.
+3. **Cada hito enciende cuando el pulso ya llegó**, nunca antes. Un nodo que se
+   ilumina sin haber recibido la señal rompe justo lo que la animación cuenta.
+
+**Las pausas fueron una corrección del dueño y mejoraron el resultado.** El pulso
+se detiene en cada hito, el hito da un golpe corto —entra pasado de tamaño y se
+asienta— y el punto **se apaga durante la pausa**, para no quedar brillando encima
+del icono. Con movimiento continuo se leía como un punto que pasa de largo; con la
+pausa se lee como una señal que **llega**.
+
+**Verificado con un barrido del ciclo cada 0,05 s**, no mirándolo: las cuatro
+pausas son reales —el pulso queda quieto en 0 / 33,3 / 66,7 / 100 %—, el desfase
+máximo entre la línea y el pulso es de 0,1 % (redondeo) y ningún hito se enciende
+adelantado.
+
+*(Trampa de herramienta, anotada también en `CLAUDE.md`: al agregar `@keyframes` a
+`globals.css`, el servidor de desarrollo puede seguir sirviendo la hoja vieja y
+parecer que el CSS no existe. Se detecta con `grep -rl` sobre `.next` — si la
+regla está en el build de producción y no en `.next/dev`, es caché: borrar
+`.next/dev` y reiniciar.)*
+
 
 ### 2026-08-26 — Los botones del hero se partían en dos líneas: 672 px, no el ancho de la pantalla
 
