@@ -12,7 +12,7 @@
 >
 > **Decisiones tomadas y postergadas** (para no volver a discutirlas desde cero):
 > [teléfono del comensal](TELEFONO-COMENSAL.md) · [anti-abuso del checkout](F8-CONFIANZA.md) ·
-> [imprimir comandas](IMPRESION-COMANDAS.md).
+> [imprimir comandas](IMPRESION-COMANDAS.md) · [dominio propio y correo](DOMINIO.md).
 
 Este directorio es el **plan ejecutable** de consolidación de Garzón Digital, producido por la
 revisión de consolidación del 2026-07-10 (ver [`AUDITORIA.md`](AUDITORIA.md)). Las tareas están

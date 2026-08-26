@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -250,6 +250,49 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — Dominio propio: `garzondigital.cl`, y el `metadataBase` que faltaba
+
+Se compró el dominio en NIC Chile. La decisión completa —por qué ese nombre, por
+qué el DNS queda en Cloudflare y no en Vercel, y el instructivo paso a paso—
+vive en [`plan/DOMINIO.md`](plan/DOMINIO.md), para no volver a discutirla ni
+buscar los valores en tutoriales sueltos.
+
+**Lo que se decidió.** El DNS queda en **Cloudflare**, no en Vercel, porque Email
+Routing exige ser el DNS autoritativo del dominio y tener `hola@garzondigital.cl`
+importa hoy para vender. Correo y web nunca compitieron —son tipos de registro
+distintos en la misma zona—, pero **solo puede haber un proveedor autoritativo**,
+y esa era la única decisión real. El costo aceptado a sabiendas: **no hay
+comodín**, porque un certificado `*.garzondigital.cl` exigiría los nameservers de
+Vercel. Los subdominios por local (F11) se agregarán uno por uno, que para "lo
+último del roadmap, cuando un cliente lo pida y lo pague" es un minuto de trabajo.
+El proxy de Cloudflare va **apagado**: Vercel desaconseja un proxy inverso por
+delante, y la nube naranja es la causa conocida de "Invalid Configuration".
+
+**El cambio de código: `metadataBase`.** No existía en ninguna parte, y sin él
+Next resuelve las imágenes de OpenGraph contra una ruta relativa. Una ruta
+relativa no le sirve a WhatsApp: quien recibe el link no está en nuestro dominio
+cuando su cliente va a buscar la miniatura. Y **WhatsApp es el canal de venta
+declarado** en `plan/PLAN_COMERCIAL.md` — `src/app/opengraph-image.tsx` se
+escribió justamente para que el link no llegara como una línea de texto gris, y
+le faltaba la pieza que la vuelve absoluta. Ahora sale de `NEXT_PUBLIC_SITE_URL`,
+con dos escalones de respaldo: la URL que Vercel inyecta en las vistas previa
+—así una preview no anuncia imágenes del dominio de producción— y localhost.
+
+**Ojo al desplegar:** hay que definir `NEXT_PUBLIC_SITE_URL` en el entorno de
+producción de Vercel. Si no, el respaldo la deja apuntando a la URL de la preview.
+
+**Lo que queda por hacer y no es de código:** delegar los nameservers en NIC,
+agregar los dos dominios en Vercel, activar Email Routing, y la Site URL de
+Supabase (riesgo bajo: se verificó que el proyecto no usa `emailRedirectTo` ni
+enlaces mágicos en ninguna parte). **Los QR se generan recién ahora**, con el
+dominio definitivo: no hay ninguno impreso todavía y ese es el orden correcto.
+
+**Anotado en `plan/DOMINIO.md` §4 y no es burocracia:** la renovación anual deja
+de ser un trámite cuando los QR están impresos y pegados en las mesas de los
+clientes. Si el dominio vence no se cae un sitio — se caen todos los QR de todos
+los locales, y eso se arregla reimprimiendo, local por local.
+
 
 ### 2026-08-26 — Rediseño de la landing: la página deja de contar el producto y lo muestra
 

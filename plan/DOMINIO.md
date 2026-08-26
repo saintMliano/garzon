@@ -1,0 +1,142 @@
+# Dominio propio — `garzondigital.cl`
+
+> **Estado (2026-08-26):** dominio comprado en NIC Chile. Falta la configuración de DNS, el
+> enganche con Vercel y el correo. Este archivo es la decisión escrita y el instructivo, para
+> no volver a discutirlo desde cero ni buscar los valores en tutoriales sueltos.
+
+---
+
+## 1. Por qué este nombre
+
+El producto **ya se llama Garzón Digital** en el `<title>`, el `manifest.json`, la imagen de
+OpenGraph, el favicon, la landing y el pitch. Un dominio que no fuera la marca obligaba a explicar
+la diferencia en cada conversación de venta, para siempre.
+
+Que sea autoexplicativo es una ventaja, no un defecto: se vende puerta a puerta y por WhatsApp a
+dueños de fuentes de soda, y el nombre tiene que sobrevivir a una conversación de tres minutos y
+poder dictarse por teléfono sin deletrear.
+
+**Descartados:** `garzon.cl` (tomado por *Domainer.cl*, un revendedor: sería pagar precio de reventa
+por seis letras), `migarzon.cl` y `tugarzon.cl` (libres y más cortos, pero no son la marca), y
+cualquier versión con tilde — un `xn--` rompe cosas en lugares difíciles de prever.
+
+**Sin tilde en el dominio, con tilde en el texto.** "Garzón Digital" se escribe con tilde en toda
+la interfaz; `garzondigital.cl` no la lleva. No es una inconsistencia, es cómo funcionan los
+dominios.
+
+---
+
+## 2. La arquitectura elegida
+
+```
+NIC Chile  →  nameservers de Cloudflare
+                    │
+     Cloudflare (DNS autoritativo, gratis)
+                    ├─ A / CNAME  →  Vercel              (la web, en DNS-only)
+                    └─ MX + SPF + DKIM  →  Email Routing (el correo)
+```
+
+**La decisión de fondo era una sola: quién tiene el DNS.** Correo y web no compiten —son tipos de
+registro distintos en la misma zona— pero **solo puede haber un proveedor autoritativo**.
+
+Se eligió Cloudflare porque **Email Routing exige ser el DNS del dominio**: *"You must be using
+Cloudflare DNS to use Email Service."* No funciona en modo parcial. Y tener
+`hola@garzondigital.cl` importa hoy, para vender.
+
+### Lo que cuesta esa elección
+
+**Se pierde el comodín automático.** Vercel exige *sus* nameservers para emitir un certificado de
+`*.garzondigital.cl`. Con el DNS en Cloudflare, cada subdominio de local (F11) se agrega uno por uno
+como `CNAME`.
+
+Se aceptó a sabiendas: **F11 es lo último del roadmap** y está declarado "para cuando un cliente lo
+pida y lo pague". Agregar tres subdominios a mano cuando haya tres clientes es trabajo de un minuto,
+y de paso evita que `cualquiercosa.garzondigital.cl` resuelva para locales que no existen. Si alguna
+vez son cientos, la respuesta es *Cloudflare for SaaS*, no dar vuelta esta decisión.
+
+### El proxy de Cloudflare va APAGADO
+
+Los registros que apuntan a Vercel van en **DNS-only (nube gris)**, nunca proxiados (nube naranja).
+No es una preferencia: Vercel desaconseja explícitamente un proxy inverso por delante —le quita
+visibilidad del tráfico para sus medidas de seguridad, agrega latencia y ensucia el caché—, y la
+nube naranja es la causa conocida de los errores *"Invalid Configuration"* y *"Failed to Generate
+Cert"* al agregar el dominio.
+
+Cloudflare acá es **el DNS y el correo**, no un CDN por delante.
+
+---
+
+## 3. Instructivo
+
+### 3.1 Cloudflare toma el DNS
+
+1. Crear cuenta en Cloudflare → **Add a site** → `garzondigital.cl` → plan **Free**.
+2. Cloudflare entrega **dos nameservers propios** (del estilo `algo.ns.cloudflare.com`). Son los
+   suyos, asignados a la cuenta: no sirven los de ningún tutorial.
+3. En NIC Chile (`clientes.nic.cl`) → el dominio → **Configuración Técnica** → **Servidores DNS**
+   → pegar esos dos. NIC recibe cambios las 24 horas y **republica la zona cada 30 minutos**.
+4. Esperar a que Cloudflare marque el sitio como **Active**.
+
+> **Nunca marcar "Redireccionamiento Web" en NIC.** Ese servicio no deja el dominio en la barra de
+> direcciones —muestra la URL de destino—, **solo funciona sobre http** (sin HTTPS), rompería los
+> enlaces profundos tipo `/local/el-lalo?mesa=4` que van codificados en cada QR, y al activarlo
+> **borra la configuración de servidores DNS**.
+
+### 3.2 Vercel toma la web
+
+1. Vercel → el proyecto → **Settings → Domains** → agregar **`garzondigital.cl`** y
+   **`www.garzondigital.cl`** (los dos).
+2. Vercel muestra los registros que necesita. **Copiar los que muestre el panel, no los de un
+   tutorial:** el `A` del ápice puede ser el clásico `76.76.21.21` o uno de su pool anycast
+   (`216.198.79.1`), y el `CNAME` de los subdominios hoy es **único por proyecto** (del estilo
+   `d1d4fc829fe7bc7c.vercel-dns-017.com`), ya no el viejo `cname.vercel-dns.com`.
+3. Cargar esos registros en Cloudflare **con la nube en gris (DNS-only)**.
+4. Marcar el ápice como dominio de producción. `garzon-one.vercel.app` pasa a redirigir solo.
+5. El certificado TLS lo emite Vercel cuando el DNS resuelve.
+
+### 3.3 El correo
+
+1. Cloudflare → **Email Routing** → activar. Crea solo los `MX`, el `TXT` de SPF y el de DKIM.
+2. Crear las direcciones y su destino (reenvío a una casilla real).
+3. **Reenviar no es enviar.** Email Routing recibe y reenvía; *responder* desde
+   `hola@garzondigital.cl` se configura aparte, con el "Enviar como" del cliente de correo más un
+   relay SMTP. Verificarlo al configurarlo en vez de darlo por hecho.
+
+### 3.4 En el repo *(hecho el 2026-08-26)*
+
+- `metadataBase` en `src/app/layout.tsx`, tomado de `NEXT_PUBLIC_SITE_URL`.
+- `NEXT_PUBLIC_SITE_URL` en `.env.example` — **hay que definirla también en el entorno de
+  producción de Vercel**, o el fallback la deja apuntando a la URL de la preview.
+- Las referencias a `garzon-one.vercel.app` en `CLAUDE.md` y `plan/PITCH-VENTAS.md`.
+
+### 3.5 Después, con calma
+
+- **Supabase → Authentication → URL Configuration → Site URL.** Riesgo bajo: se verificó que el
+  proyecto no usa `emailRedirectTo` ni enlaces mágicos en ninguna parte. Es higiene.
+- **Los QR se generan recién ahora, con el dominio definitivo.** No hay ninguno impreso todavía;
+  este es exactamente el orden correcto.
+
+---
+
+## 4. Dos cosas que quedan abiertas
+
+**La renovación no es un trámite administrativo.** $9.990 al año, exento de IVA, sin descuento por
+volumen (2 años son exactamente $19.980). Se compró con holgura y **hay que ponerse un recordatorio
+propio, sin depender solo del aviso de NIC**. La razón no es la del sitio web de cualquier empresa:
+**los QR van impresos y pegados en las mesas de los clientes**. Si el dominio vence, cada QR de cada
+local queda muerto de golpe, y eso no se arregla con un correo de disculpa — se arregla
+reimprimiendo, local por local.
+
+**Esto desbloquea "olvidé mi contraseña".** `CLAUDE.md` lo tiene como no-existe porque *"necesita
+correo y el SMTP del plan gratis no es confiable"*. Con dominio propio y un proveedor de correo
+transaccional de verdad (Resend, Postmark — **no** el reenvío de Cloudflare, que no sirve para eso)
+esa función pasa de imposible a una tarde de trabajo. No es para ahora, pero conviene saber que la
+puerta se abrió.
+
+---
+
+## 5. Titularidad
+
+Inscrito a nombre de **una persona natural**, no de una sociedad. Si más adelante se factura a
+través de una SpA, el traspaso es un trámite aparte de **$9.990**. No es un problema, pero conviene
+tenerlo anotado y no descubrirlo el día de la primera factura.
