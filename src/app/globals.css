@@ -287,12 +287,29 @@ body {
    (44 de nodo + 64 de separación). Si cambia el nodo o la separación, cambia acá.
    El `translateY` del pulso usa esa misma variable, así no pueden discrepar. */
 
+/* Dos tamaños. El de abajo es el del teléfono, que es donde más gente lo va a
+   ver: el canal de venta es WhatsApp, así que el dueño abre el link en su
+   celular. Se aprieta el SALTO entre hitos —no el nodo, que quedaría enano—
+   para que el recorrido cueste el mínimo de scroll antes del tablero.
+
+   `--rec-riel` tiene que seguir siendo 3 × (nodo + salto): el `translateY` del
+   pulso se calcula desde esa misma variable, así que al cambiarla el recorrido
+   se reajusta solo y no hay que tocar ningún keyframe. */
 .rec-caja {
-  --rec-nodo: 44px;
-  --rec-salto: 64px;
-  --rec-riel: 324px; /* 3 × (44 + 64) */
+  --rec-nodo: 40px;
+  --rec-salto: 36px;
+  --rec-riel: 228px; /* 3 × (40 + 36) */
   position: relative;
-  width: 300px;
+  width: 100%;
+  max-width: 340px;
+}
+@media (min-width: 1024px) {
+  .rec-caja {
+    --rec-nodo: 44px;
+    --rec-salto: 64px;
+    --rec-riel: 324px; /* 3 × (44 + 64) */
+    width: 300px;
+  }
 }
 .rec-lista {
   position: relative;

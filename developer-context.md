@@ -2,7 +2,7 @@
 
 Este documento sirve como transferencia de contexto de diseño (UX/UI) y arquitectura de desarrollo para que cualquier instancia de IA o desarrollador pueda continuar el proyecto sin perder la línea conceptual.
 
-> **Última actualización (2026-08-26):** **El banner del hero**, resuelto con el recorrido del pedido —cuatro hitos que se encienden al paso de un pulso, en CSS puro y con el último fotograma pensado para quien pide movimiento reducido. Antes, el mismo día: **WhatsApp** en el hero, el cierre y el pie de la landing, y en el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
+> **Última actualización (2026-08-26):** **El recorrido del hero, también en el teléfono** — estaba escondido bajo `lg` y eso dejaba sin animación al público que llega por WhatsApp. Antes, el mismo día: **El banner del hero**, resuelto con el recorrido del pedido —cuatro hitos que se encienden al paso de un pulso, en CSS puro y con el último fotograma pensado para quien pide movimiento reducido. Antes, el mismo día: **WhatsApp** en el hero, el cierre y el pie de la landing, y en el volante, con texto oscuro sobre el verde porque el blanco da 1,98:1. Antes, el mismo día: **Volante A6** en `marketing/`, con el QR real incrustado y verificado a toda resolución de impresión. Antes, el mismo día: **`npm run qr`** — los códigos de las mesas, en SVG y con corrección `Q`, verificados decodificándolos. Antes, el mismo día: **Correo propio** — `contacto@garzondigital.cl` con Cloudflare Email Routing, y por fin visible en la landing. Antes, el mismo día: **Dominio propio** `garzondigital.cl`, comprado en NIC Chile — DNS en Cloudflare por el correo, y el `metadataBase` que le faltaba a la imagen de OpenGraph (ver [`plan/DOMINIO.md`](plan/DOMINIO.md)). Antes, el mismo día: **Rediseño de la landing** (`src/app/page.tsx`): la página que le vende al dueño ahora **muestra el producto** en vez de solo describirlo — el tablero de la cocina bajo el hero y los reportes de venta en su propia sección, como réplicas en HTML de las pantallas reales (`src/componentes/landing/`). Antes de eso (2026-08-20): Fases 5 a 10 completas. Lo último: **roles por local (F12)** — `dueño` y `personal`, con los permisos hechos cumplir por la base (RLS + guardas en las RPC de reportes), pantalla de **equipo** para dar de alta gente, y la **comanda del garzón** (`/dashboard/comanda`). Antes de eso: teléfono del comensal con su tratamiento de datos personales, y cambio de contraseña. Queda **F11 — dominios propios**, para cuando un cliente lo pida y lo pague. Ver [Historial de actualizaciones](#-historial-de-actualizaciones) al final.
 
 ---
 
@@ -277,6 +277,35 @@ son código:**
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — El recorrido también en el teléfono
+
+Lo reportó el dueño: se veía bien en el notebook y no aparecía en el celular, ni
+vertical ni horizontal. Era a propósito —estaba `hidden lg:block`— **y era la
+decisión equivocada.**
+
+**Por qué.** El razonamiento original fue no empujar el tablero fuera de la primera
+pantalla. Es un costo real, pero pesa menos que el otro: **el canal de venta
+declarado es WhatsApp**, o sea que el dueño de local recibe el link y lo abre en su
+teléfono. Esconderlo bajo 1024 px dejaba sin la animación justo al público
+principal de esa página.
+
+**El costo, medido y no supuesto:** a 375 px el tablero pasa de empezar a **0,92
+pantallas** de scroll a **1,31**. Se aprieta el *salto* entre hitos —de 64 a 36 px—
+y no el nodo, que quedaría enano y perdería el icono.
+
+**Lo que hizo que esto fuera un cambio de dos líneas y no una reescritura:**
+`--rec-riel` ya existía como variable y el `translateY` del pulso se calcula desde
+ella. Basta declararla distinta en la media query —228 px en teléfono, 324 desde
+`lg`— y **la coreografía se reajusta sola, sin tocar un solo keyframe**. La regla a
+respetar: el riel es siempre **3 × (nodo + salto)**.
+
+**Verificado en los tres casos**, con el mismo barrido cada 0,05 s que la versión de
+escritorio: en teléfono vertical (375), horizontal (844 × 390) y escritorio (1440)
+el riel coincide con la distancia entre el primer y el último hito, las cuatro
+pausas son reales, el desfase máximo entre línea y pulso es 0,1 % y ningún hito se
+enciende adelantado. Sin scroll horizontal en ninguno.
+
 
 ### 2026-08-26 — El banner del hero: el recorrido del pedido
 
