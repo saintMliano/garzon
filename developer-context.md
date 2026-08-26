@@ -217,7 +217,15 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 | **F9 — Marca completa** | White-label completo del flujo del cliente y validación de contraste WCAG en el editor de identidad. [Plan](plan/F9-MARCA.md) | **Completa** |
 | **F10 — Negocio** | Propina sugerida + base demo de un año ([plan](plan/F10-PROPINA-Y-DEMO.md)), y suscripción por local con corte en el servidor + pitch de ventas ([plan](plan/F10-SUSCRIPCION.md)). **Pago en línea descartado**: la plata no pasa por la plataforma. | **Completa** |
 | **F12 — Roles y comanda** | Roles por local (`dueño`/`personal`) con cumplimiento en la base, pantalla de equipo, y comanda del garzón (`/dashboard/comanda`). [Plan](plan/ROLES-Y-COMANDA.md) | **Completa** |
-| F11 — Dominios propios | Cuando un cliente lo pida **y lo pague** | Pendiente |
+| F11 — Dominios propios | Cuando un cliente lo pida **y lo pague**. *(El dominio de la plataforma, `garzondigital.cl`, ya está: ver [`plan/DOMINIO.md`](plan/DOMINIO.md). Lo pendiente son los subdominios/dominios **por local**.)* | Pendiente |
+
+**Dos condiciones que hay que cumplir antes de instalar el primer local, y que no
+son código:**
+
+| Qué | Cuándo | Por qué |
+|---|---|---|
+| **Supabase Pro** (~US$25/mes) | Antes de que un local tenga los QR pegados en sus mesas | El plan gratuito **pausa el proyecto tras varios días sin actividad**, y pausado la carta no carga. Hoy no importa porque el tráfico es nuestro; el día que dependa un cliente, sí. Decisión del dueño del 2026-08-26: no se paga todavía. |
+| **Revisar `src/lib/notas-rapidas.ts`** | Al instalar el primer cliente real | Los atajos de nota son de fuente de soda de sándwiches. En un café no aplica ninguno, y ofrecer atajos que no corresponden es peor que no ofrecer ninguno. |
 
 **Fase 4 — "El Estudio del Local" (self-service, completa)** — que un dueño arme y personalice su local sin SQL:
 - [x] **4.1** — Gestión de menú (categorías/productos, precios, disponibilidad).
@@ -250,6 +258,30 @@ dominio propio, pero sí decide renovar según si pudo operar solo un mediodía.
 ## 📝 Historial de actualizaciones
 
 > Bitácora de cambios. **Protocolo:** cada actualización del repositorio (commit) agrega aquí una entrada con la fecha y un resumen de lo que cambió.
+
+### 2026-08-26 — Supabase Pro: decisión del dueño, postergada a propósito
+
+Queda escrito para no rediscutirlo cada vez que alguien lea "plan gratis" y lo
+tome por un descuido: **no se paga Supabase todavía. Es una decisión, no un
+olvido.**
+
+El riesgo real del plan gratuito es que **un proyecto se pausa tras varios días
+sin actividad**, y pausado la carta del comensal no carga. Mientras el tráfico
+sea nuestro —demos, pruebas, la carta de `el-lalo` que mostramos en una reunión—
+eso se resuelve despausando a mano y no le arruina el día a nadie.
+
+**El disparador para pagar no es una fecha ni el primer QR impreso: es el primer
+local con los QR pegados en sus mesas.** Ahí el costo cambia de naturaleza: un
+lunes tranquilo puede pausar el proyecto, y el que se entera no somos nosotros
+sino un comensal que apunta el teléfono y no ve la carta, en el local de un
+cliente que nos está pagando $29.900 al mes. Antes de esa instalación hay que
+estar en Pro (~US$25/mes).
+
+*(La formulación anterior en `CLAUDE.md` decía "hay que pasar a Pro antes del
+primer QR real", que ya no distingue bien: el primer QR real se generó hoy y no
+hay ninguna urgencia. Lo que importa es cuándo hay alguien del otro lado que
+depende de que la carta cargue.)*
+
 
 ### 2026-08-26 — `npm run qr`: los códigos de las mesas dejan de depender de una web cualquiera
 
