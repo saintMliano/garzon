@@ -1,8 +1,16 @@
 # Dominio propio — `garzondigital.cl`
 
-> **Estado (2026-08-26):** dominio comprado en NIC Chile. Falta la configuración de DNS, el
-> enganche con Vercel y el correo. Este archivo es la decisión escrita y el instructivo, para
-> no volver a discutirlo desde cero ni buscar los valores en tutoriales sueltos.
+> **Estado (2026-08-26):** dominio inscrito y **nameservers ya delegados a Cloudflare**. Falta que
+> la zona `.cl` publique la delegación, el enganche con Vercel y el correo. Este archivo es la
+> decisión escrita y el instructivo, para no volver a discutirlo desde cero ni buscar los valores
+> en tutoriales sueltos.
+>
+> ```
+> Registrant:   Emilio Galvez
+> Creación:     2026-08-26 10:38 CLST
+> Expiración:   2027-08-26 10:38 CLST   ← un año
+> Nameservers:  andy.ns.cloudflare.com · karina.ns.cloudflare.com
+> ```
 
 ---
 
@@ -77,6 +85,30 @@ Cloudflare acá es **el DNS y el correo**, no un CDN por delante.
    → pegar esos dos. NIC recibe cambios las 24 horas y **republica la zona cada 30 minutos**.
 4. Esperar a que Cloudflare marque el sitio como **Active**.
 
+> **No marcar "Configurar a NIC Chile como servidor secundario".** Esa casilla del formulario de NIC
+> parece gratis y sensata, pero un DNS secundario necesita transferir la zona desde el primario por
+> AXFR, y **Cloudflare solo ofrece transferencias salientes en el plan Enterprise**: *"Outgoing zone
+> transfers are available to Enterprise customers"*. En el plan Free, NIC quedaría anunciado como
+> autoritativo sin poder obtener nunca la zona — un secundario roto es peor que ningún secundario,
+> porque una parte de las consultas se va a un servidor que no sabe responder.
+
+Verificar la delegación desde afuera, sin depender del panel de Cloudflare:
+
+```powershell
+Resolve-DnsName -Name garzondigital.cl -Type NS -Server 8.8.8.8
+```
+
+Mientras la zona `.cl` no publique la delegación, la respuesta es `NXDOMAIN` — y eso es lo esperado,
+no una señal de que algo salió mal. **NIC republica la zona cada 30 minutos.** Para saber si la
+inscripción en sí quedó bien, que es una cosa distinta de la publicación, el whois responde al
+instante:
+
+```powershell
+$c = New-Object System.Net.Sockets.TcpClient("whois.nic.cl", 43)
+$w = New-Object System.IO.StreamWriter($c.GetStream()); $w.WriteLine("garzondigital.cl"); $w.Flush()
+(New-Object System.IO.StreamReader($c.GetStream())).ReadToEnd()
+```
+
 > **Nunca marcar "Redireccionamiento Web" en NIC.** Ese servicio no deja el dominio en la barra de
 > direcciones —muestra la URL de destino—, **solo funciona sobre http** (sin HTTPS), rompería los
 > enlaces profundos tipo `/local/el-lalo?mesa=4` que van codificados en cada QR, y al activarlo
@@ -121,8 +153,10 @@ Cloudflare acá es **el DNS y el correo**, no un CDN por delante.
 ## 4. Dos cosas que quedan abiertas
 
 **La renovación no es un trámite administrativo.** $9.990 al año, exento de IVA, sin descuento por
-volumen (2 años son exactamente $19.980). Se compró con holgura y **hay que ponerse un recordatorio
-propio, sin depender solo del aviso de NIC**. La razón no es la del sitio web de cualquier empresa:
+volumen (2 años son exactamente $19.980). **Se compró por un año: vence el 2027-08-26.** Hay que
+ponerse un recordatorio propio, sin depender solo del aviso de NIC — y conviene extenderlo a dos o
+tres años apenas haya un cliente real, que no sale más caro por año y saca el vencimiento del
+camino. La razón no es la del sitio web de cualquier empresa:
 **los QR van impresos y pegados en las mesas de los clientes**. Si el dominio vence, cada QR de cada
 local queda muerto de golpe, y eso no se arregla con un correo de disculpa — se arregla
 reimprimiendo, local por local.
